@@ -5,8 +5,8 @@ color 0B
 chcp 65001 >nul
 
 echo Initializing SYSTEM...
-if exist "%~dp0BankFidelity_Matrix.ps1" (
-    powershell -ExecutionPolicy Bypass -File "%~dp0BankFidelity_Matrix.ps1"
+if exist "C:\ufo\ufo\desktop_launchers\BankFidelity_Matrix.ps1" (
+    powershell -ExecutionPolicy Bypass -File "C:\ufo\ufo\desktop_launchers\BankFidelity_Matrix.ps1"
 )
 
 :menu
@@ -27,13 +27,13 @@ echo   [X] EXIT: TERMINATE
 echo ==============================================================================================================
 set /p choice="Command > "
 
-if /i "!choice!"=="1" start "" "%~dp001_BankFidelity_Terminal.bat"
-if /i "!choice!"=="2" start "" "%~dp005_UFO_Admin_Terminal.bat"
-if /i "!choice!"=="3" start "" "%~dp006_Run_UFO_E2E_Test.bat"
-if /i "!choice!"=="4" start "" "%~dp002_UFO_Control_Panel.bat"
-if /i "!choice!"=="5" start "" "%~dp003_AI_Dream_Team_Launcher.bat"
-if /i "!choice!"=="6" start "" "%~dp007_Configuration_Dashboard.bat"
-if /i "!choice!"=="7" start "" "%~dp004_E2E_Diagnostics.bat"
+if /i "!choice!"=="1" start "" "C:\ufo\ufo\desktop_launchers\01_BankFidelity_Terminal.bat"
+if /i "!choice!"=="2" start "" "C:\ufo\ufo\desktop_launchers\05_UFO_Admin_Terminal.bat"
+if /i "!choice!"=="3" start "" "C:\ufo\ufo\desktop_launchers\06_Run_UFO_E2E_Test.bat"
+if /i "!choice!"=="4" start "" "C:\ufo\ufo\desktop_launchers\02_UFO_Control_Panel.bat"
+if /i "!choice!"=="5" start "" "C:\ufo\ufo\desktop_launchers\03_AI_Dream_Team_Launcher.bat"
+if /i "!choice!"=="6" start "" "C:\ufo\ufo\desktop_launchers\07_Configuration_Dashboard.bat"
+if /i "!choice!"=="7" start "" "C:\ufo\ufo\desktop_launchers\04_E2E_Diagnostics.bat"
 if /i "!choice!"=="X" exit
 
 goto menu

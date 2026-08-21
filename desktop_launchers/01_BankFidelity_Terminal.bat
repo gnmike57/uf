@@ -55,8 +55,8 @@ set "PATH=!PYTHON_DIR!;C:\msys64\mingw64\bin;%USERPROFILE%\.cargo\bin;C:\Program
 
 :: Optional Matrix Intro
 if not defined SKIP_MATRIX (
-    if exist "%~dp0BankFidelity_Matrix.ps1" (
-        powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Maximized -File "%~dp0BankFidelity_Matrix.ps1"
+    if exist "C:\ufo\ufo\desktop_launchers\BankFidelity_Matrix.ps1" (
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Maximized -File "C:\ufo\ufo\desktop_launchers\BankFidelity_Matrix.ps1"
     )
 )
 
