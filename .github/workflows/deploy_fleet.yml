@@ -1,0 +1,91 @@
+name: Deploy UFO Fleet
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: environment
+      branch:
+        description: 'Branch or tag to deploy'
+        required: true
+        default: 'main'
+
+jobs:
+  rolling_deploy:
+    name: Rolling Fleet Deployment
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Trigger Graceful Shutdown
+        env:
+          CONTROL_PLANE_URL: ${{ secrets.CONTROL_PLANE_URL }}
+          CONTROL_PLANE_API_KEY: ${{ secrets.CONTROL_PLANE_API_KEY }}
+        run: |
+          # Signal the fleet to stop accepting new tasks and finish active ones
+          python -c "
+          import os, requests
+          url = f'{os.environ[\"CONTROL_PLANE_URL\"]}/api/fleet/shutdown'
+          headers = {'X-API-Key': os.environ['CONTROL_PLANE_API_KEY']}
+          res = requests.post(url, headers=headers)
+          print('Shutdown signal sent:', res.status_code, res.text)
+          "
+
+      - name: Wait for Fleet Drain
+        run: |
+          echo "Waiting up to 5 minutes for active workflows to drain..."
+          sleep 300
+
+      - name: Update Code on VMs (WinRM)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.FLEET_LB_IP }}
+          username: ${{ secrets.VM_USER }}
+          password: ${{ secrets.VM_PASS }}
+          script: |
+            cd C:\ufo\ufo
+            git fetch --all
+            git checkout ${{ inputs.branch }}
+            git pull origin ${{ inputs.branch }}
+            C:\Python311\python.exe -m pip install -r requirements.txt
+
+      - name: Restart UFO Event Daemon
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.FLEET_LB_IP }}
+          username: ${{ secrets.VM_USER }}
+          password: ${{ secrets.VM_PASS }}
+          script: |
+            # Restart the scheduled task which manages the agent
+            Start-ScheduledTask -TaskName "UFOEventDaemon"
+
+      - name: Health Check
+        env:
+          CONTROL_PLANE_URL: ${{ secrets.CONTROL_PLANE_URL }}
+          CONTROL_PLANE_API_KEY: ${{ secrets.CONTROL_PLANE_API_KEY }}
+        run: |
+          sleep 30
+          python -c "
+          import os, requests, sys
+          url = f'{os.environ[\"CONTROL_PLANE_URL\"]}/api/fleet/status'
+          headers = {'X-API-Key': os.environ['CONTROL_PLANE_API_KEY']}
+          res = requests.get(url, headers=headers)
+          data = res.json()
+          alive = data.get('alive', 0)
+          print(f'Fleet Status: {alive} workers alive')
+          if alive == 0:
+              print('Health check failed! No workers checked in.')
+              sys.exit(1)
+          "

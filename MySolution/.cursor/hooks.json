@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "node .cursor/hooks/promptrail-hook.js"
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "node .cursor/hooks/promptrail-hook.js"
+      }
+    ],
+    "afterAgentResponse": [
+      {
+        "command": "node .cursor/hooks/promptrail-hook.js"
+      }
+    ],
+    "stop": [
+      {
+        "command": "node .cursor/hooks/promptrail-hook.js"
+      }
+    ]
+  }
+}

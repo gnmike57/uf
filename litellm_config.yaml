@@ -1,0 +1,41 @@
+model_list:
+  - model_name: "ufo-host-model"
+    litellm_params:
+      model: "openai/qwen3-vl"
+      api_base: "http://127.0.0.1:8080/v1"
+      api_key: "sk-local"
+      rpm: 10000
+      max_tokens: 2000
+      temperature: 0.0
+      num_retries: 2
+  - model_name: "ufo-app-model"
+    litellm_params:
+      model: "openai/gemma4"
+      api_base: "http://127.0.0.1:8081/v1"
+      api_key: "sk-local"
+      rpm: 10000
+      max_tokens: 2000
+      temperature: 0.0
+      num_retries: 2
+  - model_name: "ufo-model"
+    litellm_params:
+      model: "openai/qwen3-vl"
+      api_base: "http://127.0.0.1:8080/v1"
+      api_key: "sk-local"
+      rpm: 10000
+      max_tokens: 2000
+      temperature: 0.0
+  - model_name: "gemini-complex"
+    litellm_params:
+      model: "gemini/gemini-3.7-flash"
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: "gemini-computer-use"
+    litellm_params:
+      model: "gemini/gemini-3.7-flash"
+      api_key: "os.environ/GEMINI_API_KEY"
+
+router_settings:
+  fallbacks:
+    - {"ufo-host-model": ["gemini-complex"]}
+    - {"ufo-app-model": ["gemini-computer-use"]}
+    - {"ufo-model": ["gemini-complex"]}

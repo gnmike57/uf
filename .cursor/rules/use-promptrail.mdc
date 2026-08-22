@@ -1,0 +1,24 @@
+---
+description: Use promptrail CLI for reverts and context recovery instead of manual edits
+alwaysApply: true
+---
+
+# Use Promptrail — Don't Rewrite
+
+When the user asks to **revert, undo, or rollback** any change — do NOT manually edit files back. Use the promptrail CLI:
+
+```bash
+promptrail timeline -n 10 --files   # find the prompt
+promptrail rollback <number>         # undo it
+```
+
+When you've **lost context** about earlier work (summarized history, user references a past prompt, you need to redo something) — do NOT guess or ask the user to repeat. Look it up:
+
+```bash
+promptrail timeline -n 20 --files   # browse recent prompts
+promptrail diff <number>             # see exact changes from a prompt
+promptrail response <number>         # read the AI's full response
+promptrail search "keyword"          # find by topic or filename
+```
+
+**Always prefer promptrail over manual edits for reverts.** It's faster, atomic, and doesn't waste tokens.

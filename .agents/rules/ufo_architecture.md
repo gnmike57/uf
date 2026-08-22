@@ -1,0 +1,7 @@
+# UFO Testing & Architecture Invariants
+
+1. **ConfigLoader Tests**: When testing `_load_with_fallback`, remember that it reads from the live `config/ufo/` directory. Live values will override test fixture values. Assert for key presence or explicitly mock the config paths rather than asserting strict equality with fixture values.
+2. **Blackboard Memory**: `Blackboard.add_image()` stores all images. Memory capping (`max_images`) is exclusively enforced at read-time via `screenshots_to_prompt()`. Do not write tests assuming write-time memory eviction.
+3. **Screenshot Diagnostics**: If all capture methods fail, `screenshot.py` generates a synthetic 800x600 warning frame. `is_valid_capture_image()` is hardcoded to return `False` for this frame to ensure upstream retry loops are triggered. Tests must expect this frame to evaluate as invalid.
+4. **Python 3.15 Compatibility**: `matplotlib` and `networkx` imports will fail on the current Python 3.15 env. Always guard these imports (e.g., in `galaxy_parser.py` or topology visualization).
+5. **Local MCP Servers (`stdio` JSONRPC)**: All local MCP servers in `C:\ufo\ufo\client\mcp\local_servers\` must invoke `mcp.run()` in their `__main__` block (with logging suppressed). Never run test code or asyncio loops here, as doing so will corrupt the `stdio` JSONRPC stream causing `EOF` and `invalid character` parsing errors in orchestrator clients (such as IDEs).
