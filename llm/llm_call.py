@@ -64,8 +64,8 @@ class _CircuitBreakerState:
                 self._reset_timeout = float(cb_cfg.get('RESET_TIMEOUT_SECONDS', 300))
                 self._half_open_max_trials = cb_cfg.get('HALF_OPEN_MAX_TRIALS', 1)
                 self._fallback_agent = cb_cfg.get('FALLBACK_AGENT', AgentType.BACKUP)
-        except Exception:
-            raise RuntimeError('Automation failed')
+        except Exception as e:
+            logger.debug(f'Failed to load CB config, using defaults: {e}')
 
     @property
     def fallback_agent(self) -> str:

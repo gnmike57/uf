@@ -183,9 +183,8 @@ class UIABackendStrategy(BackendStrategy):
         """
         try:
             window.is_enabled()
-        except Exception:
-            return []
-            raise RuntimeError('Automation failed')
+        except Exception as e:
+            logger.debug(f'UI Control Inspector warning: {e}')
         assert class_name_list is None or len(class_name_list) == 0, 'class_name_list is not supported for UIA backend'
         _, iuia_dll = UIABackendStrategy._get_uia_defs()
         window_elem_info = cast(UIAElementInfo, window.element_info)
