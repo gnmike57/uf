@@ -183,27 +183,24 @@ def _is_retryable_error(error: Exception) -> bool:
         return True
     return False
 
+from tenacity import retry, retry_if_exception, wait_exponential, stop_after_attempt, before_sleep_log
+
+def _is_retryable_for_tenacity(e: Exception) -> bool:
+    return _is_retryable_error(e)
+
+@retry(
+    retry=retry_if_exception(_is_retryable_for_tenacity),
+    wait=wait_exponential(multiplier=1, min=2, max=60),
+    stop=stop_after_attempt(5),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True
+)
 async def _retry_with_backoff(service: BaseService, messages: list, n: int) -> LLMResult:
     """
     Attempt service.chat_completion with retry on transient errors.
     Returns LLMResult on success, raises on exhaustion.
     """
-    max_retries = getattr(service, 'max_retry', _DEFAULT_MAX_RETRIES)
-    if not isinstance(max_retries, int) or max_retries <= 0:
-        max_retries = _DEFAULT_MAX_RETRIES
-    last_error = None
-    for attempt in range(max_retries):
-        try:
-            return await service.chat_completion(messages, n=n)
-        except Exception as e:
-            last_error = e
-            if not _is_retryable_error(e):
-                raise
-            backoff = _RETRY_BACKOFF[min(attempt, len(_RETRY_BACKOFF) - 1)]
-            logger.warning(f'Retryable error (attempt {attempt + 1}/{max_retries}): {e}. Backing off {backoff}s...')
-            await asyncio.sleep(backoff)
-            raise RuntimeError('Automation failed') from e
-    raise last_error
+    return await service.chat_completion(messages, n=n)
 _SCHEMA_VALIDATION_MAX_RETRIES = 2
 
 def _validate_response_schema(response: str, schema: Type[BaseModel]) -> Optional[str]:
@@ -220,7 +217,6 @@ def _validate_response_schema(response: str, schema: Type[BaseModel]) -> Optiona
         return f'Schema validation failed: {e}'
     except Exception as e:
         return f'Response parsing failed: {e}'
-        raise RuntimeError('Automation failed') from e
 
 async def get_completion(messages, agent: str=AgentType.APP, use_backup_engine: bool=True, configs: Optional[dict]=None, response_schema: Optional[Type[BaseModel]]=None) -> LLMResult:
     """
