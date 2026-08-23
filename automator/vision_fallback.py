@@ -273,10 +273,15 @@ class VisionFallbackManager:
                 
             # Step 2: Parse with agentic OCR
             parse_url = "https://platform.reducto.ai/parse"
+            prompt_text = (
+                f"Analyze the screenshot and locate the UI element described as: '{target_description}'. "
+                f"Return ONLY a JSON object with the absolute pixel coordinates for the center of the element and your confidence level:\n"
+                f"{{\"center_x\": <int>, \"center_y\": <int>, \"width\": <int>, \"height\": <int>, \"confidence\": <float 0.0-1.0>}}"
+            )
             payload = {
                 "document_url": f"reducto://{file_id}",
                 "ocr_mode": "agentic",
-                "custom_prompt": f"Analyze the screenshot and locate the UI element described as: '{target_description}'. Return ONLY a JSON object with the absolute pixel coordinates for the center of the element and your confidence level:\\n{{\\"center_x\\": <int>, \\"center_y\\": <int>, \\"width\\": <int>, \\"height\\": <int>, \\"confidence\\": <float 0.0-1.0>}}"
+                "custom_prompt": prompt_text
             }
             parse_res = requests.post(parse_url, headers=headers, json=payload)
             parse_res.raise_for_status()
