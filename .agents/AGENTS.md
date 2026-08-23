@@ -65,3 +65,9 @@ This workspace contains **Microsoft UFO** (`C:\ufo\ufo`), a vision-based Windows
 | Successful E2E task | ⚠️ Pending (smoke test ready to attempt from desktop shell) |
 | VirtualBox installed | ❌ Not yet installed on this machine |
 | Hardware | AMD Ryzen 7 PRO 8840HS, Radeon 780M iGPU (512MB), 32GB RAM — CPU inference only |
+
+## Anti-Fragile Orchestration Principles (Learned)
+
+1. **Zero-Brittle Boundaries**: Never use bare `except Exception:` in Python, especially in JSON parsing or API calls. Always use typed exceptions (`json.JSONDecodeError`) or `exc_info=True`. In Rust, never use `.unwrap()` or `.expect()` at I/O boundaries (Network, FS, IPC); always propagate `Result` or use `unwrap_or_default()`.
+2. **Explicit IPC Handoffs**: When BankFidelity (Rust) orchestrates Microsoft UFO (Python), do not rely on UFO's internal `status` flags alone. Always parse `result.json`'s `output` field using strict Regex (e.g., `(?i)[a-z]:\\[^<>\x22\|\?\*]+\.pdf`) to programmatically intercept artifacts and inject them into the next Pipeline Job (e.g., `Job::ExtractTransactions`).
+3. **Smart Retries**: Always wrap agentic subprocess calls (`UfoClient::dispatch_task`) in a localized retry loop (max 1-2 attempts) to recover from LLM hallucinations before crashing back to the user terminal.

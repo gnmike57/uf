@@ -369,7 +369,7 @@ class ControlInspectorFacade:
                 window.is_normal()
                 desktop_windows_with_gui.append(window)
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
         desktop_windows_dict = dict(zip([str(i + 1) for i in range(len(desktop_windows_with_gui))], desktop_windows_with_gui))
         return desktop_windows_dict
 
@@ -428,9 +428,8 @@ class ControlInspectorFacade:
             if is_selected:
                 return is_selected
             return None
-        except Exception as e:
+        except Exception:
             return None
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def get_control_info(window: UIAWrapper, field_list: List[str]=[]) -> Dict[str, str]:
@@ -461,11 +460,10 @@ class ControlInspectorFacade:
                 assign('source', lambda: source)
             except Exception:
                 assign('source', lambda: '')
-                raise RuntimeError('Automation failed')
             return control_info
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Failed to get control info: {e}")
             return {}
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def get_application_root_name(window: UIAWrapper) -> str:

@@ -79,7 +79,6 @@ class VisionFallbackManager:
                 self._cloud_vlm_agent = vf_cfg.get('CLOUD_VLM_AGENT', 'BACKUP_AGENT')
         except Exception as e:
             logger.debug(f'Using default vision fallback config: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def resolve_element(self, target_description: str, screenshot_path: Optional[str]=None, application_window: Any=None, uia_tree: Optional[Dict[str, Any]]=None) -> Optional[BoundingBox]:
         """
@@ -203,7 +202,6 @@ class VisionFallbackManager:
         except Exception as e:
             logger.warning(f'Stage 1 (OmniParser) failed: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     async def _stage2_cloud_vlm(self, screenshot_path: str, target_description: str, uia_tree: Optional[Dict[str, Any]]=None) -> Optional[BoundingBox]:
         """
@@ -224,7 +222,6 @@ class VisionFallbackManager:
                         effective_screenshot_path = redacted_path
             except Exception as e:
                 logger.warning(f'PII redaction on vision fallback screenshot failed: {e}')
-                raise RuntimeError('Automation failed') from e
             with open(effective_screenshot_path, 'rb') as f:
                 img_b64 = base64.b64encode(f.read()).decode('utf-8')
             ext = os.path.splitext(effective_screenshot_path)[1].lower()
@@ -243,7 +240,6 @@ class VisionFallbackManager:
         except Exception as e:
             logger.warning(f'Stage 2 (Cloud VLM) failed: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     async def _stage3_reducto(self, screenshot_path: str, target_description: str) -> Optional[BoundingBox]:
         """
@@ -313,14 +309,12 @@ class VisionFallbackManager:
                     pyautogui.screenshot(path, region=(rect.left, rect.top, rect.width(), rect.height()))
                 except Exception:
                     pyautogui.screenshot(path)
-                    raise RuntimeError('Automation failed')
             else:
                 pyautogui.screenshot(path)
             return path
         except Exception as e:
             logger.error(f'Screenshot capture failed: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _find_best_match(parsed_boxes: List[Dict[str, Any]], target_description: str) -> Optional[Dict[str, Any]]:

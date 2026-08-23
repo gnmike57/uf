@@ -164,32 +164,37 @@ def json_parser(json_string: str) -> Dict[str, Any]:
         try:
             parsed = json.loads(extracted)
             return _normalize_keys(parsed)
-        except Exception:
-            raise RuntimeError('Automation failed')
+        except json.JSONDecodeError:
+            pass
     match_obj = re.search('(\\{[\\s\\S]*\\})', json_str_norm)
     if match_obj:
         extracted = match_obj.group(1).strip()
         try:
             parsed = json.loads(extracted)
             return _normalize_keys(parsed)
-        except Exception:
+        except json.JSONDecodeError:
             recovered = _attempt_truncated_json_recovery(extracted)
             if recovered is not None:
                 return _normalize_keys(recovered)
-            raise RuntimeError('Automation failed')
     try:
         parsed = json.loads(json_str_norm)
         return _normalize_keys(parsed)
-    except Exception:
+    except json.JSONDecodeError:
         brace_start = json_str_norm.find('{')
         if brace_start >= 0:
             truncated_candidate = json_str_norm[brace_start:]
             recovered = _attempt_truncated_json_recovery(truncated_candidate)
             if recovered is not None:
                 return _normalize_keys(recovered)
-        parsed = json.loads(json_str_clean)
-        return _normalize_keys(parsed)
-        raise RuntimeError('Automation failed')
+        
+        try:
+            parsed = json.loads(json_str_clean)
+            return _normalize_keys(parsed)
+        except json.JSONDecodeError:
+            pass
+            
+    # If all parsing fails, return a safe fallback or raise a specific error
+    raise ValueError(f"Failed to parse JSON: {json_str_clean}")
 
 def _attempt_truncated_json_recovery(json_str: str) -> Optional[Dict[str, Any]]:
     """
@@ -224,9 +229,8 @@ def _attempt_truncated_json_recovery(json_str: str) -> Optional[Dict[str, Any]]:
         parsed = json.loads(recovered)
         logger.info(f'Recovered truncated JSON (closed {open_braces} braces, {open_brackets} brackets)')
         return parsed
-    except Exception:
+    except json.JSONDecodeError:
         return None
-        raise RuntimeError('Automation failed')
 
 def is_json_serializable(obj: Any) -> bool:
     """
