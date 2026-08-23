@@ -56,6 +56,6 @@ goto menu
 :audit
 cls
 echo !ESC![93m[Audit] Running UFO Sequential E2E Architecture Audit...!ESC![0m
-"%PYTHON_EXE%" scripts\audit_e2e_sequential.py
+"%PYTHON_EXE%" scripts\diagnostics.py --audit
 pause
 goto menu
