@@ -103,21 +103,26 @@ class VisionFallbackManager:
             if screenshot_path is None:
                 logger.error('Failed to capture screenshot for vision fallback.')
                 return None
-        stage1_result = self._stage1_omniparser(screenshot_path, target_description, application_window)
-        if stage1_result and stage1_result.confidence >= self._confidence_threshold:
-            logger.info(f'Stage 1 (OmniParser) succeeded: confidence={stage1_result.confidence:.2f}')
+        # RANK 1: Reducto Agentic OCR
+        logger.info('Engaging Rank 1 Vision Grounding: Reducto Agentic OCR')
+        stage1_result = await self._stage3_reducto(screenshot_path, target_description)
+        if stage1_result:
+            logger.info(f'Rank 1 (Reducto API) succeeded: confidence={stage1_result.confidence:.2f}')
             return stage1_result
-        stage1_conf = stage1_result.confidence if stage1_result else 0.0
-        logger.warning(f'Stage 1 confidence={stage1_conf:.2f} < threshold={self._confidence_threshold}. Cascading to Stage 2 (Cloud VLM).')
-        stage2_result = await self._stage2_cloud_vlm(screenshot_path, target_description, uia_tree)
-        if stage2_result:
-            logger.info(f'Stage 2 (Cloud VLM) succeeded: confidence={stage2_result.confidence:.2f}')
+            
+        # RANK 2: OmniParser
+        logger.warning('Rank 1 failed. Cascading to Rank 2: Local OmniParser V2')
+        stage2_result = self._stage1_omniparser(screenshot_path, target_description, application_window)
+        if stage2_result and stage2_result.confidence >= self._confidence_threshold:
+            logger.info(f'Rank 2 (OmniParser) succeeded: confidence={stage2_result.confidence:.2f}')
             return stage2_result
-        
-        logger.warning('Stage 2 failed. Cascading to Stage 3 (Reducto API).')
-        stage3_result = await self._stage3_reducto(screenshot_path, target_description)
+            
+        # RANK 3: Cloud VLM
+        stage2_conf = stage2_result.confidence if stage2_result else 0.0
+        logger.warning(f'Rank 2 failed (confidence={stage2_conf:.2f} < threshold={self._confidence_threshold}). Cascading to Rank 3: Cloud VLM.')
+        stage3_result = await self._stage2_cloud_vlm(screenshot_path, target_description, uia_tree)
         if stage3_result:
-            logger.info(f'Stage 3 (Reducto API) succeeded: confidence={stage3_result.confidence:.2f}')
+            logger.info(f'Rank 3 (Cloud VLM) succeeded: confidence={stage3_result.confidence:.2f}')
             return stage3_result
         
         logger.error('All vision grounding stages failed.')
@@ -136,28 +141,36 @@ class VisionFallbackManager:
             if screenshot_path is None:
                 result.error = 'Screenshot capture failed'
                 return result
+                
+        # RANK 1: Reducto Agentic OCR
         result.stage_1_attempted = True
-        stage1_box = self._stage1_omniparser(screenshot_path, target_description, application_window)
+        logger.info('Engaging Rank 1 Vision Grounding: Reducto Agentic OCR')
+        stage1_box = await self._stage3_reducto(screenshot_path, target_description)
         if stage1_box:
-            result.stage_1_confidence = stage1_box.confidence
-            if stage1_box.confidence >= self._confidence_threshold:
-                result.resolved = True
-                result.bounding_box = stage1_box
-                return result
-        result.stage_2_attempted = True
-        stage2_box = await self._stage2_cloud_vlm(screenshot_path, target_description, uia_tree)
-        if stage2_box:
             result.resolved = True
-            result.bounding_box = stage2_box
+            result.bounding_box = stage1_box
             return result
             
+        # RANK 2: OmniParser
+        result.stage_2_attempted = True
+        logger.warning('Rank 1 failed. Cascading to Rank 2: Local OmniParser V2')
+        stage2_box = self._stage1_omniparser(screenshot_path, target_description, application_window)
+        if stage2_box:
+            result.stage_1_confidence = stage2_box.confidence
+            if stage2_box.confidence >= self._confidence_threshold:
+                result.resolved = True
+                result.bounding_box = stage2_box
+                return result
+                
+        # RANK 3: Cloud VLM
         result.stage_3_attempted = True
-        stage3_box = await self._stage3_reducto(screenshot_path, target_description)
+        logger.warning('Rank 2 failed or low confidence. Cascading to Rank 3: Cloud VLM (Gemini)')
+        stage3_box = await self._stage2_cloud_vlm(screenshot_path, target_description, uia_tree)
         if stage3_box:
             result.resolved = True
             result.bounding_box = stage3_box
         else:
-            result.error = 'All stages (including Reducto) failed to resolve element'
+            result.error = 'All vision fallback ranks (Reducto, OmniParser, Cloud VLM) failed to resolve element.'
         return result
 
     def _stage1_omniparser(self, screenshot_path: str, target_description: str, application_window: Any=None) -> Optional[BoundingBox]:
