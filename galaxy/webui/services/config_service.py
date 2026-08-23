@@ -1,19 +1,13 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Configuration service for Galaxy Web UI.
 
 This service handles reading and writing configuration files,
 particularly the devices.yaml file.
 """
-
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 import yaml
-
 
 class ConfigService:
     """
@@ -23,14 +17,14 @@ class ConfigService:
     with specific support for the devices.yaml file.
     """
 
-    def __init__(self, config_dir: Path = Path("config/galaxy")) -> None:
+    def __init__(self, config_dir: Path=Path('config/galaxy')) -> None:
         """
         Initialize the configuration service.
 
         :param config_dir: Directory containing configuration files
         """
         self.config_dir = config_dir
-        self.devices_config_path = config_dir / "devices.yaml"
+        self.devices_config_path = config_dir / 'devices.yaml'
         self.logger: logging.Logger = logging.getLogger(__name__)
 
     def load_devices_config(self) -> Dict[str, Any]:
@@ -42,19 +36,14 @@ class ConfigService:
         :raises yaml.YAMLError: If YAML parsing fails
         """
         if not self.devices_config_path.exists():
-            raise FileNotFoundError(
-                f"Configuration file not found: {self.devices_config_path}"
-            )
-
+            raise FileNotFoundError(f'Configuration file not found: {self.devices_config_path}')
         try:
-            with open(self.devices_config_path, "r", encoding="utf-8") as f:
+            with open(self.devices_config_path, 'r', encoding='utf-8') as f:
                 config_data = yaml.safe_load(f) or {}
-
-            self.logger.debug(f"Loaded devices config from {self.devices_config_path}")
+            self.logger.debug(f'Loaded devices config from {self.devices_config_path}')
             return config_data
-
         except yaml.YAMLError as e:
-            self.logger.error(f"Failed to parse YAML config: {e}")
+            self.logger.error(f'Failed to parse YAML config: {e}')
             raise
 
     def save_devices_config(self, config_data: Dict[str, Any]) -> None:
@@ -65,22 +54,12 @@ class ConfigService:
         :raises IOError: If file writing fails
         """
         try:
-            # Ensure the directory exists
             self.config_dir.mkdir(parents=True, exist_ok=True)
-
-            with open(self.devices_config_path, "w", encoding="utf-8") as f:
-                yaml.dump(
-                    config_data,
-                    f,
-                    default_flow_style=False,
-                    sort_keys=False,
-                    allow_unicode=True,
-                )
-
-            self.logger.debug(f"Saved devices config to {self.devices_config_path}")
-
+            with open(self.devices_config_path, 'w', encoding='utf-8') as f:
+                yaml.dump(config_data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            self.logger.debug(f'Saved devices config to {self.devices_config_path}')
         except IOError as e:
-            self.logger.error(f"Failed to write config file: {e}")
+            self.logger.error(f'Failed to write config file: {e}')
             raise
 
     def get_all_device_ids(self) -> List[str]:
@@ -91,15 +70,12 @@ class ConfigService:
         """
         try:
             config_data = self.load_devices_config()
-            devices = config_data.get("devices", [])
-            return [
-                d.get("device_id")
-                for d in devices
-                if isinstance(d, dict) and "device_id" in d
-            ]
+            devices = config_data.get('devices', [])
+            return [d.get('device_id') for d in devices if isinstance(d, dict) and 'device_id' in d]
         except Exception as e:
-            self.logger.error(f"Failed to get device IDs: {e}")
+            self.logger.error(f'Failed to get device IDs: {e}')
             return []
+            raise RuntimeError('Automation failed') from e
 
     def device_id_exists(self, device_id: str) -> bool:
         """
@@ -111,16 +87,7 @@ class ConfigService:
         existing_ids = self.get_all_device_ids()
         return device_id in existing_ids
 
-    def add_device_to_config(
-        self,
-        device_id: str,
-        server_url: str,
-        os: str,
-        capabilities: List[str],
-        metadata: Optional[Dict[str, Any]],
-        auto_connect: bool,
-        max_retries: int,
-    ) -> Dict[str, Any]:
+    def add_device_to_config(self, device_id: str, server_url: str, os: str, capabilities: List[str], metadata: Optional[Dict[str, Any]], auto_connect: bool, max_retries: int) -> Dict[str, Any]:
         """
         Add a new device to the configuration.
 
@@ -134,36 +101,15 @@ class ConfigService:
         :return: The device entry that was added
         :raises ValueError: If device ID already exists
         """
-        # Load existing configuration
         config_data = self.load_devices_config()
-
-        # Ensure devices list exists
-        if "devices" not in config_data:
-            config_data["devices"] = []
-
-        # Check for device_id conflict
+        if 'devices' not in config_data:
+            config_data['devices'] = []
         if self.device_id_exists(device_id):
             raise ValueError(f"Device ID '{device_id}' already exists")
-
-        # Create new device entry
-        new_device = {
-            "device_id": device_id,
-            "server_url": server_url,
-            "os": os,
-            "capabilities": capabilities,
-            "auto_connect": auto_connect,
-            "max_retries": max_retries,
-        }
-
-        # Add metadata if provided
+        new_device = {'device_id': device_id, 'server_url': server_url, 'os': os, 'capabilities': capabilities, 'auto_connect': auto_connect, 'max_retries': max_retries}
         if metadata:
-            new_device["metadata"] = metadata
-
-        # Append new device to configuration
-        config_data["devices"].append(new_device)
-
-        # Save updated configuration
+            new_device['metadata'] = metadata
+        config_data['devices'].append(new_device)
         self.save_devices_config(config_data)
-
         self.logger.info(f"✅ Device '{device_id}' added to configuration")
         return new_device

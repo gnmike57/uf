@@ -53,3 +53,5 @@ playwright
 networkx
 websocket-client
 litellm
+tenacity
+circuitbreaker

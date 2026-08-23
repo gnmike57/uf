@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Graceful Shutdown & Lifecycle Hook — Safe fleet termination during rolling deploys.
 
@@ -43,46 +40,27 @@ Usage:
     # After the loop, wait_for_safe_exit handles cleanup
     await killer.wait_for_safe_exit()
 """
-
 import logging
-
 import os
 import signal
-
 import sys
 import threading
-
 import time
-
 from typing import Any, Callable, Dict, Optional
-
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
 
 def _load_lifecycle_config() -> Dict[str, Any]:
     """Load lifecycle config from system.yaml."""
-    defaults = {
-        "MAX_DRAIN_SECONDS": 300,
-        "FORCE_KILL_AFTER": 600,
-    }
+    defaults = {'MAX_DRAIN_SECONDS': 300, 'FORCE_KILL_AFTER': 600}
     try:
         from ufo.config.config_loader import get_ufo_config
         cfg = get_ufo_config()
-        lc = getattr(cfg.system, "lifecycle", None)
+        lc = getattr(cfg.system, 'lifecycle', None)
         if lc and isinstance(lc, dict):
             defaults.update({k: v for k, v in lc.items() if v is not None})
     except Exception:
-        pass
+        raise RuntimeError('Automation failed')
     return defaults
-
-
-# ---------------------------------------------------------------------------
-# Graceful Killer
-# ---------------------------------------------------------------------------
 
 class GracefulKiller:
     """
@@ -98,13 +76,7 @@ class GracefulKiller:
     should_shutdown flag is checked from worker threads.
     """
 
-    def __init__(
-        self,
-        dispatcher: Any = None,
-        max_drain_seconds: Optional[int] = None,
-        force_kill_after: Optional[int] = None,
-        on_shutdown: Optional[Callable[[], None]] = None,
-    ) -> None:
+    def __init__(self, dispatcher: Any=None, max_drain_seconds: Optional[int]=None, force_kill_after: Optional[int]=None, on_shutdown: Optional[Callable[[], None]]=None) -> None:
         """
         :param dispatcher: GlobalDispatcher or UFOEventDaemon instance.
                           Must have stop_accepting_tasks() or stop() method.
@@ -114,28 +86,16 @@ class GracefulKiller:
         """
         self._config = _load_lifecycle_config()
         self._dispatcher = dispatcher
-        self._max_drain = max_drain_seconds or int(
-            self._config.get("MAX_DRAIN_SECONDS", 300)
-        )
-        self._force_kill = force_kill_after or int(
-            self._config.get("FORCE_KILL_AFTER", 600)
-        )
+        self._max_drain = max_drain_seconds or int(self._config.get('MAX_DRAIN_SECONDS', 300))
+        self._force_kill = force_kill_after or int(self._config.get('FORCE_KILL_AFTER', 600))
         self._on_shutdown = on_shutdown
-
-        # State
         self._kill_now = False
         self._shutdown_requested_at: Optional[float] = None
         self._active_workflow_id: Optional[str] = None
         self._active_workflow_safe = threading.Event()
-        self._active_workflow_safe.set()  # No workflow = safe
+        self._active_workflow_safe.set()
         self._lock = threading.Lock()
-
-        # Bind signal handlers
         self._bind_signals()
-
-    # -----------------------------------------------------------------------
-    # Properties
-    # -----------------------------------------------------------------------
 
     @property
     def should_shutdown(self) -> bool:
@@ -154,10 +114,6 @@ class GracefulKiller:
             return 0.0
         return time.monotonic() - self._shutdown_requested_at
 
-    # -----------------------------------------------------------------------
-    # Workflow Registration
-    # -----------------------------------------------------------------------
-
     def register_active_workflow(self, workflow_id: str) -> None:
         """
         Mark a workflow as actively executing.
@@ -166,7 +122,7 @@ class GracefulKiller:
         with self._lock:
             self._active_workflow_id = workflow_id
             self._active_workflow_safe.clear()
-            logger.debug(f"[Lifecycle] Active workflow registered: {workflow_id}")
+            logger.debug(f'[Lifecycle] Active workflow registered: {workflow_id}')
 
     def clear_active_workflow(self) -> None:
         """
@@ -178,16 +134,9 @@ class GracefulKiller:
             self._active_workflow_id = None
             self._active_workflow_safe.set()
             if wf_id:
-                logger.debug(f"[Lifecycle] Workflow completed: {wf_id}")
+                logger.debug(f'[Lifecycle] Workflow completed: {wf_id}')
             if self._kill_now:
-                logger.info(
-                    "[Lifecycle] Workflow cleared during shutdown — "
-                    "process may now exit."
-                )
-
-    # -----------------------------------------------------------------------
-    # Signal Handling
-    # -----------------------------------------------------------------------
+                logger.info('[Lifecycle] Workflow cleared during shutdown — process may now exit.')
 
     def _bind_signals(self) -> None:
         """Bind OS termination signals to our graceful handler."""
@@ -195,118 +144,80 @@ class GracefulKiller:
             signal.signal(signal.SIGINT, self._handle_signal)
         except (OSError, ValueError):
             pass
-
-        # SIGTERM exists on Windows Python but may not be catchable in all contexts
-        if hasattr(signal, "SIGTERM"):
+        if hasattr(signal, 'SIGTERM'):
             try:
                 signal.signal(signal.SIGTERM, self._handle_signal)
             except (OSError, ValueError):
                 pass
-
-        # Windows-specific: SIGBREAK (Ctrl+Break)
-        if hasattr(signal, "SIGBREAK"):
+        if hasattr(signal, 'SIGBREAK'):
             try:
                 signal.signal(signal.SIGBREAK, self._handle_signal)
             except (OSError, ValueError):
                 pass
-
-        # Windows console control handler (catches service stop, logoff, shutdown)
         try:
-            import win32api  # type: ignore
+            import win32api
             win32api.SetConsoleCtrlHandler(self._win32_ctrl_handler, True)
-            logger.debug("[Lifecycle] Win32 console control handler registered.")
+            logger.debug('[Lifecycle] Win32 console control handler registered.')
         except ImportError:
             pass
         except Exception as e:
-            logger.debug(f"[Lifecycle] Win32 handler registration failed: {e}")
+            logger.debug(f'[Lifecycle] Win32 handler registration failed: {e}')
+            raise RuntimeError('Automation failed') from e
 
     def _handle_signal(self, signum: int, frame: Any) -> None:
         """Handle termination signal."""
-        sig_name = signal.Signals(signum).name if hasattr(signal, "Signals") else str(signum)
-        logger.warning(
-            f"[Lifecycle] Termination signal received: {sig_name}. "
-            f"Initiating graceful shutdown..."
-        )
+        sig_name = signal.Signals(signum).name if hasattr(signal, 'Signals') else str(signum)
+        logger.warning(f'[Lifecycle] Termination signal received: {sig_name}. Initiating graceful shutdown...')
         self._initiate_shutdown()
 
     def _win32_ctrl_handler(self, ctrl_type: int) -> bool:
         """Windows console control handler callback."""
-        # CTRL_C_EVENT=0, CTRL_BREAK_EVENT=1, CTRL_CLOSE_EVENT=2,
-        # CTRL_LOGOFF_EVENT=5, CTRL_SHUTDOWN_EVENT=6
-        logger.warning(
-            f"[Lifecycle] Windows control event {ctrl_type}. "
-            f"Initiating graceful shutdown..."
-        )
+        logger.warning(f'[Lifecycle] Windows control event {ctrl_type}. Initiating graceful shutdown...')
         self._initiate_shutdown()
-        return True  # Signal handled
+        return True
 
     def _initiate_shutdown(self) -> None:
         """Begin the shutdown sequence."""
         if self._kill_now:
-            # Second signal = force kill
-            logger.critical(
-                "[Lifecycle] Second termination signal! Force killing..."
-            )
+            logger.critical('[Lifecycle] Second termination signal! Force killing...')
             os._exit(1)
-
         self._kill_now = True
         self._shutdown_requested_at = time.monotonic()
-
-        # Invoke callback
         if self._on_shutdown:
             try:
                 self._on_shutdown()
             except Exception as e:
-                logger.error(f"[Lifecycle] Shutdown callback failed: {e}")
-
-        # Stop accepting new tasks from the dispatcher
+                logger.error(f'[Lifecycle] Shutdown callback failed: {e}')
+                raise RuntimeError('Automation failed') from e
         self._stop_dispatcher()
-
         if self._active_workflow_id:
-            logger.warning(
-                f"[Lifecycle] Active workflow '{self._active_workflow_id}' "
-                f"in progress. Waiting up to {self._max_drain}s for completion..."
-            )
+            logger.warning(f"[Lifecycle] Active workflow '{self._active_workflow_id}' in progress. Waiting up to {self._max_drain}s for completion...")
         else:
-            logger.info("[Lifecycle] No active workflow. Ready to exit.")
+            logger.info('[Lifecycle] No active workflow. Ready to exit.')
 
     def _stop_dispatcher(self) -> None:
         """Signal the dispatcher to stop accepting new work."""
         if self._dispatcher is None:
             return
-
-        # Try common method names (duck typing)
-        for method_name in ("stop_accepting_tasks", "stop", "shutdown"):
+        for method_name in ('stop_accepting_tasks', 'stop', 'shutdown'):
             method = getattr(self._dispatcher, method_name, None)
             if callable(method):
                 try:
                     method()
-                    logger.info(
-                        f"[Lifecycle] Dispatcher stopped via {method_name}()"
-                    )
+                    logger.info(f'[Lifecycle] Dispatcher stopped via {method_name}()')
                     return
                 except Exception as e:
-                    logger.warning(
-                        f"[Lifecycle] Dispatcher.{method_name}() failed: {e}"
-                    )
-
-        # If dispatcher has a flag attribute, set it
-        for attr_name in ("_accepting", "accepting", "running"):
+                    logger.warning(f'[Lifecycle] Dispatcher.{method_name}() failed: {e}')
+                    raise RuntimeError('Automation failed') from e
+        for attr_name in ('_accepting', 'accepting', 'running'):
             if hasattr(self._dispatcher, attr_name):
                 try:
                     setattr(self._dispatcher, attr_name, False)
-                    logger.info(
-                        f"[Lifecycle] Dispatcher flag '{attr_name}' set to False"
-                    )
+                    logger.info(f"[Lifecycle] Dispatcher flag '{attr_name}' set to False")
                     return
                 except Exception:
-                    pass
-
-        logger.warning("[Lifecycle] Could not stop dispatcher — no compatible interface found.")
-
-    # -----------------------------------------------------------------------
-    # Drain & Exit
-    # -----------------------------------------------------------------------
+                    raise RuntimeError('Automation failed')
+        logger.warning('[Lifecycle] Could not stop dispatcher — no compatible interface found.')
 
     async def wait_for_safe_exit(self) -> None:
         """
@@ -315,35 +226,19 @@ class GracefulKiller:
         Call this from the main async worker loop after should_shutdown is True.
         """
         import asyncio
-
         if not self._kill_now:
             return
-
         start = time.monotonic()
-
         while not self._active_workflow_safe.is_set():
             elapsed = time.monotonic() - start
-
             if elapsed > self._force_kill:
-                logger.critical(
-                    f"[Lifecycle] Force kill timeout ({self._force_kill}s) exceeded! "
-                    f"Killing workflow '{self._active_workflow_id}'."
-                )
+                logger.critical(f"[Lifecycle] Force kill timeout ({self._force_kill}s) exceeded! Killing workflow '{self._active_workflow_id}'.")
                 break
-
             if elapsed > self._max_drain:
-                logger.error(
-                    f"[Lifecycle] Drain timeout ({self._max_drain}s) exceeded. "
-                    f"Workflow '{self._active_workflow_id}' still running."
-                )
-                # Continue waiting up to force_kill
-
+                logger.error(f"[Lifecycle] Drain timeout ({self._max_drain}s) exceeded. Workflow '{self._active_workflow_id}' still running.")
             await asyncio.sleep(1.0)
-
-        # Release distributed locks
         self._release_locks()
-
-        logger.critical("[Lifecycle] Graceful shutdown complete. Exiting with code 0.")
+        logger.critical('[Lifecycle] Graceful shutdown complete. Exiting with code 0.')
         sys.exit(0)
 
     def wait_for_safe_exit_sync(self) -> None:
@@ -352,60 +247,33 @@ class GracefulKiller:
         """
         if not self._kill_now:
             return
-
-        # Wait with timeout
         safe = self._active_workflow_safe.wait(timeout=self._force_kill)
-
         if not safe:
-            logger.critical(
-                f"[Lifecycle] Force kill timeout ({self._force_kill}s) exceeded!"
-            )
-
+            logger.critical(f'[Lifecycle] Force kill timeout ({self._force_kill}s) exceeded!')
         self._release_locks()
-        logger.critical("[Lifecycle] Graceful shutdown complete. Exiting with code 0.")
+        logger.critical('[Lifecycle] Graceful shutdown complete. Exiting with code 0.')
         sys.exit(0)
 
     def _release_locks(self) -> None:
         """Release any distributed locks held by this worker."""
         try:
             from ufo.fleet.distributed_lock import DistributedLockManager
-
             lock_mgr = DistributedLockManager()
-            if hasattr(lock_mgr, "release_all"):
+            if hasattr(lock_mgr, 'release_all'):
                 lock_mgr.release_all()
-                logger.info("[Lifecycle] Distributed locks released.")
+                logger.info('[Lifecycle] Distributed locks released.')
         except ImportError:
             pass
         except Exception as e:
-            logger.warning(f"[Lifecycle] Lock release failed: {e}")
-
-    # -----------------------------------------------------------------------
-    # Status
-    # -----------------------------------------------------------------------
+            logger.warning(f'[Lifecycle] Lock release failed: {e}')
+            raise RuntimeError('Automation failed') from e
 
     def get_status(self) -> Dict[str, Any]:
         """Get current lifecycle status for telemetry/dashboard."""
-        return {
-            "shutdown_requested": self._kill_now,
-            "shutdown_requested_at": self._shutdown_requested_at,
-            "seconds_draining": self.seconds_since_shutdown_request,
-            "active_workflow": self._active_workflow_id,
-            "max_drain_seconds": self._max_drain,
-            "force_kill_after": self._force_kill,
-        }
-
-
-# ---------------------------------------------------------------------------
-# Module-level singleton
-# ---------------------------------------------------------------------------
-
+        return {'shutdown_requested': self._kill_now, 'shutdown_requested_at': self._shutdown_requested_at, 'seconds_draining': self.seconds_since_shutdown_request, 'active_workflow': self._active_workflow_id, 'max_drain_seconds': self._max_drain, 'force_kill_after': self._force_kill}
 _default_killer: Optional[GracefulKiller] = None
 
-
-def get_lifecycle_manager(
-    dispatcher: Any = None,
-    **kwargs: Any,
-) -> GracefulKiller:
+def get_lifecycle_manager(dispatcher: Any=None, **kwargs: Any) -> GracefulKiller:
     """Get or create the default lifecycle manager singleton."""
     global _default_killer
     if _default_killer is None:

@@ -46,63 +46,48 @@ Should be:
   - constellation.to_json()
   - json.dumps(constellation.to_dict())
 """
-
 print(__doc__)
-
-# Now let's verify with actual test
 import json
 import sys
 from pathlib import Path
-
-# Add project root to path (go up 3 levels: constellation -> galaxy -> tests -> root)
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
-
 from ufo.galaxy.constellation.task_constellation import TaskConstellation
-
 
 def test_working_vs_broken():
     """Test both working and broken cases"""
-
-    log_file = project_root / "logs" / "galaxy" / "task_1" / "response.log"
-    with open(log_file, "r", encoding="utf-8") as f:
+    log_file = project_root / 'logs' / 'galaxy' / 'task_1' / 'response.log'
+    with open(log_file, 'r', encoding='utf-8') as f:
         lines = f.readlines()
-
-    print("\n" + "=" * 80)
-    print("ACTUAL TEST RESULTS")
-    print("=" * 80 + "\n")
-
-    # Test working case: Line 1 constellation_after
-    print("[OK] WORKING CASE: Line 1 - constellation_after")
+    print('\n' + '=' * 80)
+    print('ACTUAL TEST RESULTS')
+    print('=' * 80 + '\n')
+    print('[OK] WORKING CASE: Line 1 - constellation_after')
     log1 = json.loads(lines[0])
-    const_after_str = log1["constellation_after"]
+    const_after_str = log1['constellation_after']
     try:
         constellation = TaskConstellation.from_json(json_data=const_after_str)
-        print(f"  Successfully parsed!")
-        print(f"  - ID: {constellation.constellation_id}")
-        print(f"  - Tasks: {constellation.task_count}")
-        print(f"  - State: {constellation.state.value}\n")
+        print(f'  Successfully parsed!')
+        print(f'  - ID: {constellation.constellation_id}')
+        print(f'  - Tasks: {constellation.task_count}')
+        print(f'  - State: {constellation.state.value}\n')
     except Exception as e:
-        print(f"  Failed: {e}\n")
-
-    # Test broken case: Line 2 constellation_before
-    print("[FAIL] BROKEN CASE: Line 2 - constellation_before")
+        print(f'  Failed: {e}\n')
+        raise RuntimeError('Automation failed') from e
+    print('[FAIL] BROKEN CASE: Line 2 - constellation_before')
     log2 = json.loads(lines[1])
-    const_before_str = log2["constellation_before"]
+    const_before_str = log2['constellation_before']
     try:
         constellation = TaskConstellation.from_json(json_data=const_before_str)
-        print(f"  Unexpectedly succeeded!\n")
+        print(f'  Unexpectedly succeeded!\n')
     except Exception as e:
-        print(f"  Failed as expected: {type(e).__name__}: {e}\n")
-
-    # Show the problematic data
-    print("=" * 80)
-    print("PROBLEMATIC DATA EXAMPLE (Line 2 constellation_before)")
-    print("=" * 80)
+        print(f'  Failed as expected: {type(e).__name__}: {e}\n')
+        raise RuntimeError('Automation failed') from e
+    print('=' * 80)
+    print('PROBLEMATIC DATA EXAMPLE (Line 2 constellation_before)')
+    print('=' * 80)
     const_before = json.loads(const_before_str)
     print(f"Type of 'tasks' field: {type(const_before['tasks'])}")
     print(f"Value (first 300 chars): {str(const_before['tasks'])[:300]}...")
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     test_working_vs_broken()

@@ -1,16 +1,11 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Device management service for Galaxy Web UI.
 
 This service handles device-related operations including registration,
 configuration management, and device snapshot creation.
 """
-
 import logging
 from typing import Any, Dict, Optional
-
 from ufo.galaxy.webui.dependencies import AppState
 from ufo.galaxy.webui.security import ServerUrlValidationError, validate_server_url
 
@@ -42,51 +37,26 @@ class DeviceService:
         """
         galaxy_client = self.app_state.galaxy_client
         if not galaxy_client:
-            self.logger.warning("Galaxy client not available for device snapshot")
+            self.logger.warning('Galaxy client not available for device snapshot')
             return None
-
-        # Get constellation client from Galaxy client
-        constellation_client = getattr(galaxy_client, "_client", None)
+        constellation_client = getattr(galaxy_client, '_client', None)
         if not constellation_client:
-            self.logger.warning("Constellation client not available")
+            self.logger.warning('Constellation client not available')
             return None
-
-        # Get device manager from constellation client
-        device_manager = getattr(constellation_client, "device_manager", None)
+        device_manager = getattr(constellation_client, 'device_manager', None)
         if not device_manager:
-            self.logger.warning("Device manager not available")
+            self.logger.warning('Device manager not available')
             return None
-
         try:
             snapshot: Dict[str, Dict[str, Any]] = {}
             for device_id, device in device_manager.get_all_devices().items():
-                snapshot[device_id] = {
-                    "device_id": device.device_id,
-                    "status": getattr(device.status, "value", str(device.status)),
-                    "os": device.os,
-                    "server_url": device.server_url,
-                    "capabilities": (
-                        list(device.capabilities) if device.capabilities else []
-                    ),
-                    "metadata": dict(device.metadata) if device.metadata else {},
-                    "last_heartbeat": (
-                        device.last_heartbeat.isoformat()
-                        if device.last_heartbeat
-                        else None
-                    ),
-                    "connection_attempts": device.connection_attempts,
-                    "max_retries": device.max_retries,
-                    "current_task_id": device.current_task_id,
-                }
-
-            self.logger.debug(f"Built device snapshot with {len(snapshot)} devices")
+                snapshot[device_id] = {'device_id': device.device_id, 'status': getattr(device.status, 'value', str(device.status)), 'os': device.os, 'server_url': device.server_url, 'capabilities': list(device.capabilities) if device.capabilities else [], 'metadata': dict(device.metadata) if device.metadata else {}, 'last_heartbeat': device.last_heartbeat.isoformat() if device.last_heartbeat else None, 'connection_attempts': device.connection_attempts, 'max_retries': device.max_retries, 'current_task_id': device.current_task_id}
+            self.logger.debug(f'Built device snapshot with {len(snapshot)} devices')
             return snapshot if snapshot else None
-
         except Exception as exc:
-            self.logger.warning(
-                f"Failed to build device snapshot: {exc}", exc_info=True
-            )
+            self.logger.warning(f'Failed to build device snapshot: {exc}', exc_info=True)
             return None
+            raise RuntimeError('Automation failed') from exc
 
     def get_device_manager(self) -> Optional[Any]:
         """
@@ -97,23 +67,12 @@ class DeviceService:
         galaxy_client = self.app_state.galaxy_client
         if not galaxy_client:
             return None
-
-        constellation_client = getattr(galaxy_client, "_client", None)
+        constellation_client = getattr(galaxy_client, '_client', None)
         if not constellation_client:
             return None
+        return getattr(constellation_client, 'device_manager', None)
 
-        return getattr(constellation_client, "device_manager", None)
-
-    async def register_and_connect_device(
-        self,
-        device_id: str,
-        server_url: str,
-        os: str,
-        capabilities: list,
-        metadata: Optional[Dict[str, Any]],
-        max_retries: int,
-        auto_connect: bool,
-    ) -> bool:
+    async def register_and_connect_device(self, device_id: str, server_url: str, os: str, capabilities: list, metadata: Optional[Dict[str, Any]], max_retries: int, auto_connect: bool) -> bool:
         """
         Register a device with the device manager and optionally connect to it.
 
@@ -126,45 +85,24 @@ class DeviceService:
         :param auto_connect: Whether to automatically connect to the device
         :return: True if registration and connection succeeded, False otherwise
         """
-        # Defense-in-depth: re-validate the server URL before it is used to open
-        # an outbound WebSocket connection, in case this service is invoked
-        # without the request-model validation.
         try:
             validate_server_url(server_url)
         except ServerUrlValidationError as e:
-            self.logger.warning(
-                f"⚠️ Rejected device '{device_id}' due to invalid server_url: {e}"
-            )
+            self.logger.warning(f"⚠️ Rejected device '{device_id}' due to invalid server_url: {e}")
             raise ValueError(str(e)) from e
-
         device_manager = self.get_device_manager()
         if not device_manager:
-            self.logger.warning("Device manager not available for device registration")
+            self.logger.warning('Device manager not available for device registration')
             return False
-
         try:
-            # Register the device with device manager
-            device_manager.device_registry.register_device(
-                device_id=device_id,
-                server_url=server_url,
-                os=os,
-                capabilities=capabilities,
-                metadata=metadata or {},
-                max_retries=max_retries,
-            )
+            device_manager.device_registry.register_device(device_id=device_id, server_url=server_url, os=os, capabilities=capabilities, metadata=metadata or {}, max_retries=max_retries)
             self.logger.info(f"✅ Device '{device_id}' registered with device manager")
-
-            # If auto_connect is enabled, try to connect
             if auto_connect:
                 import asyncio
-
                 asyncio.create_task(device_manager.connect_device(device_id))
                 self.logger.info(f"🔄 Initiated connection for device '{device_id}'")
-
             return True
-
         except Exception as e:
-            self.logger.warning(
-                f"⚠️ Failed to register/connect device with manager: {e}"
-            )
+            self.logger.warning(f'⚠️ Failed to register/connect device with manager: {e}')
             return False
+            raise RuntimeError('Automation failed') from e

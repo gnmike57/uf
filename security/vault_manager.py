@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Zero-Trust Auth Vault — Secure credential retrieval and direct-to-OS injection.
 
@@ -39,45 +36,27 @@ Usage:
         username_key="bank_portal_admin",
     )
 """
-
 import ctypes
 import logging
 import sys
 import time
 from typing import Any, Dict, Optional
-
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
 
 def _load_vault_config() -> Dict[str, Any]:
     """Load vault config from system.yaml."""
-    defaults = {
-        "ENABLED": True,
-        "SERVICE_NAME": "BankFidelity_UFO",
-        "TYPE_INTERVAL": 0.02,
-        "SCRUB_MEMORY": True,
-    }
+    defaults = {'ENABLED': True, 'SERVICE_NAME': 'BankFidelity_UFO', 'TYPE_INTERVAL': 0.02, 'SCRUB_MEMORY': True}
     try:
-        
         from ufo.config.config_loader import get_ufo_config
         cfg = get_ufo_config()
-        sec = getattr(cfg.system, "security", None)
+        sec = getattr(cfg.system, 'security', None)
         if sec and isinstance(sec, dict):
-            vault = sec.get("VAULT", {})
+            vault = sec.get('VAULT', {})
             if isinstance(vault, dict):
                 defaults.update({k: v for k, v in vault.items() if v is not None})
     except Exception:
-        pass
+        raise RuntimeError('Automation failed')
     return defaults
-
-
-# ---------------------------------------------------------------------------
-# Memory Scrubber
-# ---------------------------------------------------------------------------
 
 def _scrub_string(s: str) -> None:
     """
@@ -87,19 +66,10 @@ def _scrub_string(s: str) -> None:
     measure. The real protection is that we never log/serialize the value.
     """
     try:
-        # Get the buffer address of the string object
-        str_buffer = ctypes.cast(
-            id(s) + sys.getsizeof("") - 1,
-            ctypes.POINTER(ctypes.c_char * len(s)),
-        )
-        ctypes.memset(str_buffer, ord("X"), len(s))
+        str_buffer = ctypes.cast(id(s) + sys.getsizeof('') - 1, ctypes.POINTER(ctypes.c_char * len(s)))
+        ctypes.memset(str_buffer, ord('X'), len(s))
     except Exception:
-        pass  # Best effort — not all platforms support this
-
-
-# ---------------------------------------------------------------------------
-# Vault Manager
-# ---------------------------------------------------------------------------
+        raise RuntimeError('Automation failed')
 
 class VaultManager:
     """
@@ -110,13 +80,11 @@ class VaultManager:
     plaintext credential.
     """
 
-    def __init__(self, service_name: Optional[str] = None) -> None:
+    def __init__(self, service_name: Optional[str]=None) -> None:
         self._config = _load_vault_config()
-        self._service_name = service_name or self._config.get(
-            "SERVICE_NAME", "BankFidelity_UFO"
-        )
-        self._type_interval = float(self._config.get("TYPE_INTERVAL", 0.02))
-        self._scrub_memory = bool(self._config.get("SCRUB_MEMORY", True))
+        self._service_name = service_name or self._config.get('SERVICE_NAME', 'BankFidelity_UFO')
+        self._type_interval = float(self._config.get('TYPE_INTERVAL', 0.02))
+        self._scrub_memory = bool(self._config.get('SCRUB_MEMORY', True))
         self._keyring_available = False
         self._pyautogui_available = False
         self._check_dependencies()
@@ -124,42 +92,21 @@ class VaultManager:
     def _check_dependencies(self) -> None:
         """Verify that keyring and pyautogui are importable."""
         try:
-            import keyring  # noqa: F401
+            import keyring
             self._keyring_available = True
         except ImportError:
-            logger.warning(
-                "[Vault] keyring not installed. "
-                "Install with: pip install keyring"
-            )
-
+            logger.warning('[Vault] keyring not installed. Install with: pip install keyring')
         try:
-            import pyautogui  # noqa: F401
+            import pyautogui
             self._pyautogui_available = True
         except ImportError:
-            logger.warning(
-                "[Vault] pyautogui not installed. "
-                "Secure injection requires pyautogui."
-            )
+            logger.warning('[Vault] pyautogui not installed. Secure injection requires pyautogui.')
 
     def is_enabled(self) -> bool:
         """Check if the vault is enabled and dependencies are available."""
-        return (
-            self._config.get("ENABLED", True)
-            and self._keyring_available
-            and self._pyautogui_available
-        )
+        return self._config.get('ENABLED', True) and self._keyring_available and self._pyautogui_available
 
-    # -----------------------------------------------------------------------
-    # Credential Injection
-    # -----------------------------------------------------------------------
-
-    def inject_credential(
-        self,
-        username_key: str,
-        service_name: Optional[str] = None,
-        press_enter: bool = False,
-        pre_clear: bool = True,
-    ) -> bool:
+    def inject_credential(self, username_key: str, service_name: Optional[str]=None, press_enter: bool=False, pre_clear: bool=True) -> bool:
         """
         Retrieve a credential from the vault and type it into the active field.
 
@@ -175,66 +122,40 @@ class VaultManager:
         :return: True if injection succeeded.
         """
         if not self.is_enabled():
-            logger.error("[Vault] Vault is disabled or dependencies missing.")
+            logger.error('[Vault] Vault is disabled or dependencies missing.')
             return False
-
         svc = service_name or self._service_name
-        logger.info(
-            f"[Vault] Secure injection requested: "
-            f"service='{svc}', key='{username_key}'"
-        )
-
+        logger.info(f"[Vault] Secure injection requested: service='{svc}', key='{username_key}'")
         import keyring
         import pyautogui
-
-        # Retrieve secret
         secret = keyring.get_password(svc, username_key)
-
         if not secret:
-            logger.error(
-                f"[Vault] Credential not found: "
-                f"service='{svc}', key='{username_key}'. "
-                f"Store it with: keyring.set_password('{svc}', '{username_key}', '<value>')"
-            )
+            logger.error(f"[Vault] Credential not found: service='{svc}', key='{username_key}'. Store it with: keyring.set_password('{svc}', '{username_key}', '<value>')")
             return False
-
-        # Log masked representation ONLY
         masked = f"{'*' * min(len(secret), 8)}... ({len(secret)} chars)"
-        logger.info(f"[Vault] Credential retrieved: {masked}")
-
+        logger.info(f'[Vault] Credential retrieved: {masked}')
         try:
-            # Clear existing field content
             if pre_clear:
-                pyautogui.hotkey("ctrl", "a")
+                pyautogui.hotkey('ctrl', 'a')
                 time.sleep(0.05)
-                pyautogui.press("delete")
+                pyautogui.press('delete')
                 time.sleep(0.05)
-
-            # Type credential directly into OS
             pyautogui.write(secret, interval=self._type_interval)
-
             if press_enter:
                 time.sleep(0.1)
-                pyautogui.press("enter")
-
-            logger.info("[Vault] Secure injection completed successfully.")
+                pyautogui.press('enter')
+            logger.info('[Vault] Secure injection completed successfully.')
             return True
-
         except Exception as e:
-            logger.error(f"[Vault] Injection failed: {e}")
+            logger.error(f'[Vault] Injection failed: {e}')
             return False
-
+            raise RuntimeError('Automation failed') from e
         finally:
-            # Scrub the secret from memory
             if self._scrub_memory and secret:
                 _scrub_string(secret)
                 del secret
 
-    def inject_credential_for_action(
-        self,
-        action: Any,
-        username_key: str,
-    ) -> bool:
+    def inject_credential_for_action(self, action: Any, username_key: str) -> bool:
         """
         Process a TaskAction of type 'secure_type'.
 
@@ -245,25 +166,13 @@ class VaultManager:
         :param username_key: The credential key.
         :return: True if injection succeeded.
         """
-        action_type = getattr(action, "action_type", None)
-        if action_type != "secure_type":
-            logger.debug(
-                f"[Vault] Action type '{action_type}' is not 'secure_type'. Skipping."
-            )
+        action_type = getattr(action, 'action_type', None)
+        if action_type != 'secure_type':
+            logger.debug(f"[Vault] Action type '{action_type}' is not 'secure_type'. Skipping.")
             return False
-
         return self.inject_credential(username_key)
 
-    # -----------------------------------------------------------------------
-    # Credential Management
-    # -----------------------------------------------------------------------
-
-    def store_credential(
-        self,
-        username_key: str,
-        password: str,
-        service_name: Optional[str] = None,
-    ) -> bool:
+    def store_credential(self, username_key: str, password: str, service_name: Optional[str]=None) -> bool:
         """
         Store a credential in the platform keyring.
 
@@ -274,58 +183,43 @@ class VaultManager:
         """
         if not self._keyring_available:
             return False
-
         import keyring
         svc = service_name or self._service_name
-
         try:
             keyring.set_password(svc, username_key, password)
-            logger.info(
-                f"[Vault] Credential stored: service='{svc}', key='{username_key}'"
-            )
+            logger.info(f"[Vault] Credential stored: service='{svc}', key='{username_key}'")
             return True
         except Exception as e:
-            logger.error(f"[Vault] Failed to store credential: {e}")
+            logger.error(f'[Vault] Failed to store credential: {e}')
             return False
+            raise RuntimeError('Automation failed') from e
         finally:
             if self._scrub_memory:
                 _scrub_string(password)
 
-    def delete_credential(
-        self,
-        username_key: str,
-        service_name: Optional[str] = None,
-    ) -> bool:
+    def delete_credential(self, username_key: str, service_name: Optional[str]=None) -> bool:
         """Delete a credential from the keyring."""
         if not self._keyring_available:
             return False
-
         import keyring
         svc = service_name or self._service_name
-
         try:
             keyring.delete_password(svc, username_key)
-            logger.info(
-                f"[Vault] Credential deleted: service='{svc}', key='{username_key}'"
-            )
+            logger.info(f"[Vault] Credential deleted: service='{svc}', key='{username_key}'")
             return True
         except Exception as e:
-            logger.error(f"[Vault] Failed to delete credential: {e}")
+            logger.error(f'[Vault] Failed to delete credential: {e}')
             return False
+            raise RuntimeError('Automation failed') from e
 
-    def has_credential(
-        self,
-        username_key: str,
-        service_name: Optional[str] = None,
-    ) -> bool:
+    def has_credential(self, username_key: str, service_name: Optional[str]=None) -> bool:
         """Check if a credential exists in the keyring (without retrieving it)."""
         if not self._keyring_available:
             return False
-
         import keyring
         svc = service_name or self._service_name
-
         try:
             return keyring.get_password(svc, username_key) is not None
         except Exception:
             return False
+            raise RuntimeError('Automation failed')

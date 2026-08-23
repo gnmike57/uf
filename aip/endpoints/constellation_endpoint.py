@@ -1,15 +1,10 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Constellation Client Endpoint
 
 Wraps the existing Galaxy constellation client with AIP protocol abstractions.
 """
-
 import logging
 from typing import Any, Dict, Optional
-
 from ufo.aip.endpoints.base import AIPEndpoint
 from ufo.aip.protocol import AIPProtocol, RegistrationProtocol
 from ufo.aip.resilience import ReconnectionStrategy
@@ -22,58 +17,36 @@ class ConstellationEndpoint(AIPEndpoint):
     Wraps the existing WebSocketConnectionManager to provide AIP protocol support.
     """
 
-    def __init__(
-        self,
-        task_name: str,
-        message_processor: Any = None,  # MessageProcessor
-    ):
+    def __init__(self, task_name: str, message_processor: Any=None):
         """
         Initialize constellation endpoint.
 
         :param task_name: Task name for this constellation
         :param message_processor: Optional message processor
         """
-        # Create transport and protocol
-        transport = WebSocketTransport(
-            ping_interval=30, ping_timeout=30, max_size=100 * 1024 * 1024
-        )
+        transport = WebSocketTransport(ping_interval=30, ping_timeout=30, max_size=100 * 1024 * 1024)
         protocol = AIPProtocol(transport)
-
-        # Create registration protocol
         registration_protocol = RegistrationProtocol(transport)
-
-        # Create reconnection strategy
-        reconnection_strategy = ReconnectionStrategy(
-            max_retries=5, initial_backoff=1.0, max_backoff=60.0
-        )
-
+        reconnection_strategy = ReconnectionStrategy(max_retries=5, initial_backoff=1.0, max_backoff=60.0)
         super().__init__(protocol=protocol, reconnection_strategy=reconnection_strategy)
-
         self.task_name = task_name
         self.message_processor = message_processor
         self.registration_protocol = registration_protocol
-
-        # Import here to avoid circular dependency
-        from ufo.galaxy.client.components.connection_manager import (            WebSocketConnectionManager,
-        )
-
+        from ufo.galaxy.client.components.connection_manager import WebSocketConnectionManager
         self.connection_manager = WebSocketConnectionManager(task_name)
-
-        self.logger = logging.getLogger(f"{__name__}.ConstellationEndpoint")
+        self.logger = logging.getLogger(f'{__name__}.ConstellationEndpoint')
 
     async def start(self) -> None:
         """Start the endpoint."""
-        self.logger.info(f"Constellation endpoint started for {self.task_name}")
+        self.logger.info(f'Constellation endpoint started for {self.task_name}')
 
     async def stop(self) -> None:
         """Stop the endpoint and disconnect all devices."""
-        self.logger.info("Stopping constellation endpoint")
+        self.logger.info('Stopping constellation endpoint')
         await self.connection_manager.disconnect_all()
         await self.protocol.close()
 
-    async def connect_to_device(
-        self, device_info: Any, message_processor: Any = None
-    ) -> Any:
+    async def connect_to_device(self, device_info: Any, message_processor: Any=None) -> Any:
         """
         Connect to a device.
 
@@ -92,9 +65,7 @@ class ConstellationEndpoint(AIPEndpoint):
         :param task_request: Task request details
         :return: Execution result
         """
-        return await self.connection_manager.send_task_to_device(
-            device_id, task_request
-        )
+        return await self.connection_manager.send_task_to_device(device_id, task_request)
 
     async def request_device_info(self, device_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -128,7 +99,6 @@ class ConstellationEndpoint(AIPEndpoint):
 
         :param msg: Message to handle
         """
-        # Messages handled by message processor
         if self.message_processor:
             await self.message_processor.process_message(msg)
 
@@ -140,13 +110,12 @@ class ConstellationEndpoint(AIPEndpoint):
         :return: True if successful
         """
         try:
-            # Get device info from somewhere
-            # This would need to be implemented based on available device registry
-            self.logger.warning(f"Reconnection for {device_id} not fully implemented")
+            self.logger.warning(f'Reconnection for {device_id} not fully implemented')
             return False
         except Exception as e:
-            self.logger.error(f"Reconnection failed for {device_id}: {e}")
+            self.logger.error(f'Reconnection failed for {device_id}: {e}')
             return False
+            raise RuntimeError('Automation failed') from e
 
     async def cancel_device_tasks(self, device_id: str, reason: str) -> None:
         """
@@ -155,9 +124,8 @@ class ConstellationEndpoint(AIPEndpoint):
         :param device_id: Device ID
         :param reason: Cancellation reason
         """
-        # Cancel pending tasks managed by connection manager
         self.connection_manager._cancel_pending_tasks_for_device(device_id)
-        self.logger.info(f"Cancelled tasks for {device_id}: {reason}")
+        self.logger.info(f'Cancelled tasks for {device_id}: {reason}')
 
     async def on_device_disconnected(self, device_id: str) -> None:
         """
@@ -165,5 +133,5 @@ class ConstellationEndpoint(AIPEndpoint):
 
         :param device_id: Device ID
         """
-        self.logger.warning(f"Device {device_id} disconnected from constellation")
-        await self.cancel_device_tasks(device_id, "device_disconnected")
+        self.logger.warning(f'Device {device_id} disconnected from constellation')
+        await self.cancel_device_tasks(device_id, 'device_disconnected')

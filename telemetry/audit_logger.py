@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Immutable Audit Logger — Cryptographically chained, WORM execution logs.
 
@@ -40,7 +37,6 @@ Usage:
     # Verify the chain hasn't been tampered with:
     assert audit.verify_chain()
 """
-
 import hashlib
 import json
 import logging
@@ -51,39 +47,20 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
 
 def _load_audit_config() -> Dict[str, Any]:
     """Load audit logger config from system.yaml."""
-    defaults = {
-        "ENABLED": True,
-        "SINK_URL": "",
-        "SINK_TOKEN": "",
-        "SINK_TYPE": "generic",
-        "LOCAL_LOG_DIR": "logs/audit",
-        "CHAIN_ALGORITHM": "sha256",
-    }
+    defaults = {'ENABLED': True, 'SINK_URL': '', 'SINK_TOKEN': '', 'SINK_TYPE': 'generic', 'LOCAL_LOG_DIR': 'logs/audit', 'CHAIN_ALGORITHM': 'sha256'}
     try:
-        
         from ufo.config.config_loader import get_ufo_config
         cfg = get_ufo_config()
-        audit_cfg = getattr(cfg.system, "audit_logger", None)
+        audit_cfg = getattr(cfg.system, 'audit_logger', None)
         if audit_cfg and isinstance(audit_cfg, dict):
             defaults.update({k: v for k, v in audit_cfg.items() if v is not None})
     except Exception:
-        pass
+        raise RuntimeError('Automation failed')
     return defaults
-
-
-# ---------------------------------------------------------------------------
-# Immutable Audit Logger
-# ---------------------------------------------------------------------------
 
 class ImmutableAuditLogger:
     """
@@ -95,49 +72,24 @@ class ImmutableAuditLogger:
 
     Thread-safe via threading.Lock — safe for concurrent DAG execution.
     """
+    GENESIS_HASH = '0' * 64
 
-    # Genesis hash — the "block 0" of the chain
-    GENESIS_HASH = "0" * 64
-
-    def __init__(
-        self,
-        sink_url: Optional[str] = None,
-        sink_token: Optional[str] = None,
-        local_log_dir: Optional[str] = None,
-    ) -> None:
+    def __init__(self, sink_url: Optional[str]=None, sink_token: Optional[str]=None, local_log_dir: Optional[str]=None) -> None:
         self._config = _load_audit_config()
-        self._enabled = self._config.get("ENABLED", True)
-        self._sink_url = sink_url or self._config.get("SINK_URL", "")
-        self._sink_token = sink_token or self._config.get("SINK_TOKEN", "")
-        self._sink_type = self._config.get("SINK_TYPE", "generic")
-        self._algorithm = self._config.get("CHAIN_ALGORITHM", "sha256")
-        self._local_log_dir = local_log_dir or self._config.get(
-            "LOCAL_LOG_DIR", "logs/audit"
-        )
-
+        self._enabled = self._config.get('ENABLED', True)
+        self._sink_url = sink_url or self._config.get('SINK_URL', '')
+        self._sink_token = sink_token or self._config.get('SINK_TOKEN', '')
+        self._sink_type = self._config.get('SINK_TYPE', 'generic')
+        self._algorithm = self._config.get('CHAIN_ALGORITHM', 'sha256')
+        self._local_log_dir = local_log_dir or self._config.get('LOCAL_LOG_DIR', 'logs/audit')
         self._lock = threading.Lock()
         self._last_hash: str = self.GENESIS_HASH
         self._local_records: List[Dict[str, Any]] = []
         self._record_count: int = 0
-
-        # Initialize local log file
         self._log_file_path = self._init_local_log()
-
-        # Recover chain state from existing log file
         self._recover_chain_state()
 
-    # -----------------------------------------------------------------------
-    # Public API
-    # -----------------------------------------------------------------------
-
-    def log_dag_execution(
-        self,
-        workflow_id: str,
-        node_id: str,
-        action_payload: Dict[str, Any],
-        status: str,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Optional[str]:
+    def log_dag_execution(self, workflow_id: str, node_id: str, action_payload: Dict[str, Any], status: str, metadata: Optional[Dict[str, Any]]=None) -> Optional[str]:
         """
         Record an execution event with cryptographic hash chaining.
 
@@ -150,51 +102,23 @@ class ImmutableAuditLogger:
         """
         if not self._enabled:
             return None
-
         with self._lock:
             timestamp = time.time()
-
-            # Build the record (deterministic field ordering for hashing)
-            audit_record = {
-                "sequence": self._record_count,
-                "timestamp": timestamp,
-                "timestamp_iso": time.strftime(
-                    "%Y-%m-%dT%H:%M:%S%z", time.localtime(timestamp)
-                ),
-                "workflow_id": workflow_id,
-                "node_id": node_id,
-                "action": action_payload,
-                "status": status,
-                "previous_hash": self._last_hash,
-                "hostname": os.environ.get("COMPUTERNAME", "unknown"),
-                "pid": os.getpid(),
-            }
+            audit_record = {'sequence': self._record_count, 'timestamp': timestamp, 'timestamp_iso': time.strftime('%Y-%m-%dT%H:%M:%S%z', time.localtime(timestamp)), 'workflow_id': workflow_id, 'node_id': node_id, 'action': action_payload, 'status': status, 'previous_hash': self._last_hash, 'hostname': os.environ.get('COMPUTERNAME', 'unknown'), 'pid': os.getpid()}
             if metadata:
-                audit_record["metadata"] = metadata
-
-            # Compute hash over the canonical JSON representation
+                audit_record['metadata'] = metadata
             current_hash = self._compute_hash(audit_record)
-            audit_record["event_hash"] = current_hash
-
-            # Update chain state
+            audit_record['event_hash'] = current_hash
             self._last_hash = current_hash
             self._record_count += 1
             self._local_records.append(audit_record)
-
-            # Dual-write: local file + external sink
             self._append_to_local_log(audit_record)
             if self._sink_url:
                 self._dispatch_to_secure_sink(audit_record)
-
-            logger.info(
-                f"[Audit] #{audit_record['sequence']} "
-                f"{current_hash[:12]} ← {audit_record['previous_hash'][:12]} "
-                f"| {workflow_id}/{node_id} → {status}"
-            )
-
+            logger.info(f"[Audit] #{audit_record['sequence']} {current_hash[:12]} ← {audit_record['previous_hash'][:12]} | {workflow_id}/{node_id} → {status}")
             return current_hash
 
-    def verify_chain(self, records: Optional[List[Dict[str, Any]]] = None) -> bool:
+    def verify_chain(self, records: Optional[List[Dict[str, Any]]]=None) -> bool:
         """
         Verify the integrity of the entire hash chain.
 
@@ -207,37 +131,21 @@ class ImmutableAuditLogger:
         chain = records or self._local_records
         if not chain:
             return True
-
         expected_prev = self.GENESIS_HASH
-
         for i, record in enumerate(chain):
-            # Verify previous_hash linkage
-            if record.get("previous_hash") != expected_prev:
-                logger.error(
-                    f"[Audit] Chain broken at record #{i}: "
-                    f"expected previous_hash={expected_prev[:12]}, "
-                    f"got {record.get('previous_hash', 'MISSING')[:12]}"
-                )
+            if record.get('previous_hash') != expected_prev:
+                logger.error(f"[Audit] Chain broken at record #{i}: expected previous_hash={expected_prev[:12]}, got {record.get('previous_hash', 'MISSING')[:12]}")
                 return False
-
-            # Recompute hash (strip event_hash before hashing)
-            record_copy = {k: v for k, v in record.items() if k != "event_hash"}
+            record_copy = {k: v for k, v in record.items() if k != 'event_hash'}
             computed = self._compute_hash(record_copy)
-
-            if computed != record.get("event_hash"):
-                logger.error(
-                    f"[Audit] Hash mismatch at record #{i}: "
-                    f"computed={computed[:12]}, "
-                    f"stored={record.get('event_hash', 'MISSING')[:12]}"
-                )
+            if computed != record.get('event_hash'):
+                logger.error(f"[Audit] Hash mismatch at record #{i}: computed={computed[:12]}, stored={record.get('event_hash', 'MISSING')[:12]}")
                 return False
-
             expected_prev = computed
-
-        logger.info(f"[Audit] Chain verified: {len(chain)} records, integrity OK.")
+        logger.info(f'[Audit] Chain verified: {len(chain)} records, integrity OK.')
         return True
 
-    def verify_chain_from_file(self, filepath: Optional[str] = None) -> bool:
+    def verify_chain_from_file(self, filepath: Optional[str]=None) -> bool:
         """
         Verify chain integrity from the local WORM log file.
 
@@ -246,11 +154,10 @@ class ImmutableAuditLogger:
         """
         path = filepath or self._log_file_path
         if not path or not Path(path).exists():
-            logger.warning("[Audit] No log file to verify.")
+            logger.warning('[Audit] No log file to verify.')
             return True
-
         records = []
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line:
@@ -258,24 +165,11 @@ class ImmutableAuditLogger:
                         records.append(json.loads(line))
                     except json.JSONDecodeError:
                         continue
-
         return self.verify_chain(records)
 
     def get_chain_summary(self) -> Dict[str, Any]:
         """Get summary stats about the audit chain."""
-        return {
-            "record_count": self._record_count,
-            "last_hash": self._last_hash,
-            "genesis_hash": self.GENESIS_HASH,
-            "algorithm": self._algorithm,
-            "log_file": self._log_file_path,
-            "sink_configured": bool(self._sink_url),
-            "enabled": self._enabled,
-        }
-
-    # -----------------------------------------------------------------------
-    # Internal — Hashing
-    # -----------------------------------------------------------------------
+        return {'record_count': self._record_count, 'last_hash': self._last_hash, 'genesis_hash': self.GENESIS_HASH, 'algorithm': self._algorithm, 'log_file': self._log_file_path, 'sink_configured': bool(self._sink_url), 'enabled': self._enabled}
 
     def _compute_hash(self, record: Dict[str, Any]) -> str:
         """
@@ -285,45 +179,37 @@ class ImmutableAuditLogger:
         JSON serialization, ensuring identical inputs always produce
         identical hashes regardless of dict insertion order.
         """
-        canonical = json.dumps(
-            record, sort_keys=True, separators=(",", ":"), default=str
-        ).encode("utf-8")
-
-        if self._algorithm == "sha256":
+        canonical = json.dumps(record, sort_keys=True, separators=(',', ':'), default=str).encode('utf-8')
+        if self._algorithm == 'sha256':
             return hashlib.sha256(canonical).hexdigest()
-        elif self._algorithm == "sha512":
+        elif self._algorithm == 'sha512':
             return hashlib.sha512(canonical).hexdigest()
         else:
             return hashlib.sha256(canonical).hexdigest()
-
-    # -----------------------------------------------------------------------
-    # Internal — Local WORM File
-    # -----------------------------------------------------------------------
 
     def _init_local_log(self) -> Optional[str]:
         """Initialize the local WORM log file."""
         try:
             log_dir = Path(self._local_log_dir)
             log_dir.mkdir(parents=True, exist_ok=True)
-
-            # One file per day for rotation
-            date_str = time.strftime("%Y-%m-%d")
-            filepath = log_dir / f"audit_chain_{date_str}.jsonl"
-
+            date_str = time.strftime('%Y-%m-%d')
+            filepath = log_dir / f'audit_chain_{date_str}.jsonl'
             return str(filepath)
         except Exception as e:
-            logger.warning(f"[Audit] Failed to init local log: {e}")
+            logger.warning(f'[Audit] Failed to init local log: {e}')
             return None
+            raise RuntimeError('Automation failed') from e
 
     def _append_to_local_log(self, record: Dict[str, Any]) -> None:
         """Append a record to the local WORM JSONL file."""
         if not self._log_file_path:
             return
         try:
-            with open(self._log_file_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps(record, sort_keys=True, default=str) + "\n")
+            with open(self._log_file_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(record, sort_keys=True, default=str) + '\n')
         except Exception as e:
-            logger.error(f"[Audit] Local log write failed: {e}")
+            logger.error(f'[Audit] Local log write failed: {e}')
+            raise RuntimeError('Automation failed') from e
 
     def _recover_chain_state(self) -> None:
         """Recover the last hash from existing log file on startup."""
@@ -332,7 +218,7 @@ class ImmutableAuditLogger:
         try:
             last_record = None
             count = 0
-            with open(self._log_file_path, "r", encoding="utf-8") as f:
+            with open(self._log_file_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     line = line.strip()
                     if line:
@@ -341,20 +227,13 @@ class ImmutableAuditLogger:
                             count += 1
                         except json.JSONDecodeError:
                             continue
-
-            if last_record and "event_hash" in last_record:
-                self._last_hash = last_record["event_hash"]
+            if last_record and 'event_hash' in last_record:
+                self._last_hash = last_record['event_hash']
                 self._record_count = count
-                logger.info(
-                    f"[Audit] Recovered chain state: {count} records, "
-                    f"last_hash={self._last_hash[:12]}"
-                )
+                logger.info(f'[Audit] Recovered chain state: {count} records, last_hash={self._last_hash[:12]}')
         except Exception as e:
-            logger.warning(f"[Audit] Chain recovery failed: {e}")
-
-    # -----------------------------------------------------------------------
-    # Internal — External SIEM Sink
-    # -----------------------------------------------------------------------
+            logger.warning(f'[Audit] Chain recovery failed: {e}')
+            raise RuntimeError('Automation failed') from e
 
     def _dispatch_to_secure_sink(self, record: Dict[str, Any]) -> None:
         """
@@ -366,60 +245,27 @@ class ImmutableAuditLogger:
           - Generic HTTP JSON endpoint
         """
         try:
-            if self._sink_type == "splunk_hec":
-                payload = json.dumps({"event": record}).encode("utf-8")
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Splunk {self._sink_token}",
-                }
-            elif self._sink_type == "datadog":
-                payload = json.dumps([{
-                    "ddsource": "ufo-agent",
-                    "ddtags": f"workflow:{record.get('workflow_id', '')}",
-                    "hostname": record.get("hostname", "unknown"),
-                    "message": json.dumps(record, default=str),
-                    "service": "ufo-fleet",
-                }]).encode("utf-8")
-                headers = {
-                    "Content-Type": "application/json",
-                    "DD-API-KEY": self._sink_token,
-                }
+            if self._sink_type == 'splunk_hec':
+                payload = json.dumps({'event': record}).encode('utf-8')
+                headers = {'Content-Type': 'application/json', 'Authorization': f'Splunk {self._sink_token}'}
+            elif self._sink_type == 'datadog':
+                payload = json.dumps([{'ddsource': 'ufo-agent', 'ddtags': f"workflow:{record.get('workflow_id', '')}", 'hostname': record.get('hostname', 'unknown'), 'message': json.dumps(record, default=str), 'service': 'ufo-fleet'}]).encode('utf-8')
+                headers = {'Content-Type': 'application/json', 'DD-API-KEY': self._sink_token}
             else:
-                # Generic JSON POST
-                payload = json.dumps(record, default=str).encode("utf-8")
-                headers = {"Content-Type": "application/json"}
+                payload = json.dumps(record, default=str).encode('utf-8')
+                headers = {'Content-Type': 'application/json'}
                 if self._sink_token:
-                    headers["Authorization"] = f"Bearer {self._sink_token}"
-
-            req = urllib.request.Request(
-                self._sink_url,
-                data=payload,
-                headers=headers,
-                method="POST",
-            )
-
+                    headers['Authorization'] = f'Bearer {self._sink_token}'
+            req = urllib.request.Request(self._sink_url, data=payload, headers=headers, method='POST')
             with urllib.request.urlopen(req, timeout=10) as resp:
                 if resp.status >= 400:
-                    logger.warning(
-                        f"[Audit] Sink returned {resp.status} for "
-                        f"record #{record.get('sequence', '?')}"
-                    )
-
+                    logger.warning(f"[Audit] Sink returned {resp.status} for record #{record.get('sequence', '?')}")
         except urllib.error.URLError as e:
-            logger.warning(
-                f"[Audit] Sink dispatch failed for "
-                f"record #{record.get('sequence', '?')}: {e}"
-            )
+            logger.warning(f"[Audit] Sink dispatch failed for record #{record.get('sequence', '?')}: {e}")
         except Exception as e:
-            logger.warning(f"[Audit] Sink dispatch error: {e}")
-
-
-# ---------------------------------------------------------------------------
-# Module-level singleton
-# ---------------------------------------------------------------------------
-
+            logger.warning(f'[Audit] Sink dispatch error: {e}')
+            raise RuntimeError('Automation failed') from e
 _default_audit: Optional[ImmutableAuditLogger] = None
-
 
 def get_audit_logger() -> ImmutableAuditLogger:
     """Get or create the default audit logger singleton."""
@@ -428,24 +274,11 @@ def get_audit_logger() -> ImmutableAuditLogger:
         _default_audit = ImmutableAuditLogger()
     return _default_audit
 
-
-def audit_dag_event(
-    workflow_id: str,
-    node_id: str,
-    action_payload: Dict[str, Any],
-    status: str,
-    metadata: Optional[Dict[str, Any]] = None,
-) -> Optional[str]:
+def audit_dag_event(workflow_id: str, node_id: str, action_payload: Dict[str, Any], status: str, metadata: Optional[Dict[str, Any]]=None) -> Optional[str]:
     """
     Module-level convenience function for audit logging.
 
     Matches the interface expected by dag_engine.py and constellation
     task execution paths.
     """
-    return get_audit_logger().log_dag_execution(
-        workflow_id=workflow_id,
-        node_id=node_id,
-        action_payload=action_payload,
-        status=status,
-        metadata=metadata,
-    )
+    return get_audit_logger().log_dag_execution(workflow_id=workflow_id, node_id=node_id, action_payload=action_payload, status=status, metadata=metadata)

@@ -1,19 +1,11 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Command Invoker
 
 Handles command execution with history management and validation.
 """
-
 from typing import Any, List, Optional
-
-
 from .command_history import CommandHistory
-
 from .command_interface import CommandExecutionError, ICommand, IUndoableCommand
-
 
 class CommandInvoker:
     """
@@ -23,7 +15,7 @@ class CommandInvoker:
     undo/redo operations and command validation.
     """
 
-    def __init__(self, enable_history: bool = True, max_history_size: int = 100):
+    def __init__(self, enable_history: bool=True, max_history_size: int=100):
         """
         Initialize command invoker.
 
@@ -44,25 +36,13 @@ class CommandInvoker:
         """
         if not command.can_execute():
             reason = command.get_cannot_execute_reason()
-            raise CommandExecutionError(
-                command,
-                f"Command cannot be executed: {command.description}. Reason: {reason}",
-            )
-
+            raise CommandExecutionError(command, f'Command cannot be executed: {command.description}. Reason: {reason}')
         try:
             result = command.execute()
             self._execution_count += 1
-
-            # Add to history if it's an undoable command and history is enabled
-            if (
-                self._enable_history
-                and self._history is not None
-                and isinstance(command, IUndoableCommand)
-            ):
+            if self._enable_history and self._history is not None and isinstance(command, IUndoableCommand):
                 self._history.add_command(command)
-
             return result
-
         except Exception as e:
             raise CommandExecutionError(command, str(e), e)
 
@@ -74,7 +54,6 @@ class CommandInvoker:
         """
         if not self._enable_history or not self._history:
             return None
-
         return self._history.undo()
 
     def redo(self) -> Optional[IUndoableCommand]:
@@ -85,7 +64,6 @@ class CommandInvoker:
         """
         if not self._enable_history or not self._history:
             return None
-
         return self._history.redo()
 
     def can_undo(self) -> bool:
@@ -94,11 +72,7 @@ class CommandInvoker:
 
         :return: True if undo is possible, False otherwise
         """
-        return (
-            self._enable_history
-            and self._history is not None
-            and self._history.can_undo()
-        )
+        return self._enable_history and self._history is not None and self._history.can_undo()
 
     def can_redo(self) -> bool:
         """
@@ -106,11 +80,7 @@ class CommandInvoker:
 
         :return: True if redo is possible, False otherwise
         """
-        return (
-            self._enable_history
-            and self._history is not None
-            and self._history.can_redo()
-        )
+        return self._enable_history and self._history is not None and self._history.can_redo()
 
     def clear_history(self) -> None:
         """Clear the command history."""
@@ -162,14 +132,14 @@ class CommandInvoker:
         """Get the number of commands in history."""
         return len(self._history) if self._history else 0
 
-    def enable_history(self, enable: bool = True, max_history_size: int = 100) -> None:
+    def enable_history(self, enable: bool=True, max_history_size: int=100) -> None:
         """
         Enable or disable command history.
 
         :param enable: Whether to enable history
         :param max_history_size: Maximum history size if enabling
         """
-        if enable and not self._enable_history:
+        if enable and (not self._enable_history):
             self._history = CommandHistory(max_history_size)
             self._enable_history = True
         elif not enable and self._enable_history:
@@ -178,8 +148,4 @@ class CommandInvoker:
 
     def __str__(self) -> str:
         """String representation of command invoker."""
-        return (
-            f"CommandInvoker(executions={self._execution_count}, "
-            f"history_enabled={self._enable_history}, "
-            f"history_size={self.history_size})"
-        )
+        return f'CommandInvoker(executions={self._execution_count}, history_enabled={self._enable_history}, history_size={self.history_size})'

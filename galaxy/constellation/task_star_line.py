@@ -1,20 +1,14 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 TaskStarLine - Dependency relationship representation in Constellation V2.
 
 This module defines the TaskStarLine class, representing directed dependency
 relationships between tasks with conditional logic support.
 """
-
 import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
-
 from ..core.interfaces import IDependency
 from .enums import DependencyType
-
 if TYPE_CHECKING:
     from ufo.galaxy.agents.schema import TaskStarLineSchema
 
@@ -31,16 +25,7 @@ class TaskStarLine(IDependency):
     Implements IDependency interface for consistent dependency operations.
     """
 
-    def __init__(
-        self,
-        from_task_id: str,
-        to_task_id: str,
-        dependency_type: DependencyType = DependencyType.UNCONDITIONAL,
-        condition_description: Optional[str] = None,
-        condition_evaluator: Optional[Callable[[Any], bool]] = None,
-        line_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    def __init__(self, from_task_id: str, to_task_id: str, dependency_type: DependencyType=DependencyType.UNCONDITIONAL, condition_description: Optional[str]=None, condition_evaluator: Optional[Callable[[Any], bool]]=None, line_id: Optional[str]=None, metadata: Optional[Dict[str, Any]]=None) -> None:
         """
         Initialize a TaskStarLine.
 
@@ -57,11 +42,9 @@ class TaskStarLine(IDependency):
         self._from_task_id: str = from_task_id
         self._to_task_id: str = to_task_id
         self._dependency_type: DependencyType = dependency_type
-        self._condition_description: str = condition_description or ""
+        self._condition_description: str = condition_description or ''
         self._condition_evaluator: Optional[Callable[[Any], bool]] = condition_evaluator
         self._metadata: Dict[str, Any] = metadata or {}
-
-        # Tracking
         self._created_at: datetime = datetime.now(timezone.utc)
         self._updated_at: datetime = self._created_at
         self._is_satisfied: bool = False
@@ -103,7 +86,6 @@ class TaskStarLine(IDependency):
         """Set the dependency type."""
         self._dependency_type = value
         self._updated_at = datetime.now(timezone.utc)
-        # Reset satisfaction status when type changes
         self._is_satisfied = False
         self._last_evaluation_result = None
 
@@ -118,7 +100,7 @@ class TaskStarLine(IDependency):
         self._condition_description = value
         self._updated_at = datetime.now(timezone.utc)
 
-    def is_satisfied(self, completed_tasks: Optional[List[str]] = None) -> bool:
+    def is_satisfied(self, completed_tasks: Optional[List[str]]=None) -> bool:
         """
         Check if the dependency is satisfied.
 
@@ -126,7 +108,6 @@ class TaskStarLine(IDependency):
         :return: True if dependency is satisfied
         """
         if completed_tasks is not None:
-            # Interface-compliant check: dependency is satisfied if source task is completed
             return self._from_task_id in completed_tasks
         return self._is_satisfied
 
@@ -174,7 +155,6 @@ class TaskStarLine(IDependency):
         """
         self._condition_evaluator = evaluator
         self._updated_at = datetime.now(timezone.utc)
-        # Reset satisfaction status when evaluator changes
         self._is_satisfied = False
         self._last_evaluation_result = None
 
@@ -186,35 +166,28 @@ class TaskStarLine(IDependency):
         :return: True if condition is satisfied, False otherwise
         """
         self._last_evaluation_time = datetime.now(timezone.utc)
-
         try:
             if self._dependency_type == DependencyType.UNCONDITIONAL:
                 result = True
             elif self._dependency_type == DependencyType.SUCCESS_ONLY:
-                # Only satisfied if prerequisite completed successfully
                 result = not isinstance(prerequisite_result, Exception)
             elif self._dependency_type == DependencyType.COMPLETION_ONLY:
-                # Satisfied regardless of success/failure
                 result = True
             elif self._dependency_type == DependencyType.CONDITIONAL:
                 if self._condition_evaluator:
                     result = self._condition_evaluator(prerequisite_result)
                 else:
-                    # If no evaluator, default to success-only behavior
                     result = not isinstance(prerequisite_result, Exception)
             else:
                 result = False
-
             self._last_evaluation_result = result
             self._is_satisfied = result
-
             return result
-
         except Exception as e:
-            # Log the error but don't propagate it
             self._last_evaluation_result = False
             self._is_satisfied = False
             return False
+            raise RuntimeError('Automation failed') from e
 
     def mark_satisfied(self) -> None:
         """Mark the dependency as satisfied (for manual override)."""
@@ -236,23 +209,7 @@ class TaskStarLine(IDependency):
 
         :return: Dictionary representation of the TaskStarLine
         """
-        return {
-            "line_id": self._line_id,
-            "from_task_id": self._from_task_id,
-            "to_task_id": self._to_task_id,
-            "dependency_type": self._dependency_type.value,
-            "condition_description": self._condition_description,
-            "metadata": self._metadata,
-            "is_satisfied": self._is_satisfied,
-            "last_evaluation_result": self._last_evaluation_result,
-            "last_evaluation_time": (
-                self._last_evaluation_time.isoformat()
-                if self._last_evaluation_time
-                else None
-            ),
-            "created_at": self._created_at.isoformat(),
-            "updated_at": self._updated_at.isoformat(),
-        }
+        return {'line_id': self._line_id, 'from_task_id': self._from_task_id, 'to_task_id': self._to_task_id, 'dependency_type': self._dependency_type.value, 'condition_description': self._condition_description, 'metadata': self._metadata, 'is_satisfied': self._is_satisfied, 'last_evaluation_result': self._last_evaluation_result, 'last_evaluation_time': self._last_evaluation_time.isoformat() if self._last_evaluation_time else None, 'created_at': self._created_at.isoformat(), 'updated_at': self._updated_at.isoformat()}
 
     @staticmethod
     def _parse_dependency_type(dep_type_value: Any) -> DependencyType:
@@ -265,56 +222,32 @@ class TaskStarLine(IDependency):
         if isinstance(dep_type_value, DependencyType):
             return dep_type_value
         elif isinstance(dep_type_value, str):
-            # Map string names to DependencyType
-            dep_type_map = {
-                "UNCONDITIONAL": DependencyType.UNCONDITIONAL,
-                "CONDITIONAL": DependencyType.CONDITIONAL,
-                "SUCCESS_ONLY": DependencyType.SUCCESS_ONLY,
-                "COMPLETION_ONLY": DependencyType.COMPLETION_ONLY,
-            }
-            return dep_type_map.get(
-                dep_type_value.upper(), DependencyType.UNCONDITIONAL
-            )
+            dep_type_map = {'UNCONDITIONAL': DependencyType.UNCONDITIONAL, 'CONDITIONAL': DependencyType.CONDITIONAL, 'SUCCESS_ONLY': DependencyType.SUCCESS_ONLY, 'COMPLETION_ONLY': DependencyType.COMPLETION_ONLY}
+            return dep_type_map.get(dep_type_value.upper(), DependencyType.UNCONDITIONAL)
         else:
             return DependencyType.UNCONDITIONAL
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "TaskStarLine":
+    def from_dict(cls, data: Dict[str, Any]) -> 'TaskStarLine':
         """
         Create a TaskStarLine from a dictionary representation.
 
         :param data: Dictionary representation
         :return: TaskStarLine instance
         """
-        line = cls(
-            from_task_id=data["from_task_id"],
-            to_task_id=data["to_task_id"],
-            dependency_type=cls._parse_dependency_type(
-                data.get("dependency_type", DependencyType.UNCONDITIONAL.value)
-            ),
-            condition_description=data.get("condition_description"),
-            line_id=data.get("line_id"),
-            metadata=data.get("metadata", {}),
-        )
-
-        # Restore state
-        line._is_satisfied = data.get("is_satisfied", False)
-        line._last_evaluation_result = data.get("last_evaluation_result")
-
-        # Restore timestamps
-        if data.get("created_at"):
-            line._created_at = datetime.fromisoformat(data["created_at"])
-        if data.get("updated_at"):
-            line._updated_at = datetime.fromisoformat(data["updated_at"])
-        if data.get("last_evaluation_time"):
-            line._last_evaluation_time = datetime.fromisoformat(
-                data["last_evaluation_time"]
-            )
-
+        line = cls(from_task_id=data['from_task_id'], to_task_id=data['to_task_id'], dependency_type=cls._parse_dependency_type(data.get('dependency_type', DependencyType.UNCONDITIONAL.value)), condition_description=data.get('condition_description'), line_id=data.get('line_id'), metadata=data.get('metadata', {}))
+        line._is_satisfied = data.get('is_satisfied', False)
+        line._last_evaluation_result = data.get('last_evaluation_result')
+        if data.get('created_at'):
+            line._created_at = datetime.fromisoformat(data['created_at'])
+        if data.get('updated_at'):
+            line._updated_at = datetime.fromisoformat(data['updated_at'])
+        if data.get('last_evaluation_time'):
+            line._last_evaluation_time = datetime.fromisoformat(data['last_evaluation_time'])
         return line
 
     @classmethod
-    def from_basemodel(cls, schema: "TaskStarLineSchema") -> "TaskStarLine":
+    def from_basemodel(cls, schema: 'TaskStarLineSchema') -> 'TaskStarLine':
         """
         Create a TaskStarLine from a Pydantic BaseModel schema.
 
@@ -323,24 +256,21 @@ class TaskStarLine(IDependency):
         """
         from ufo.galaxy.agents.schema import TaskStarLineSchema
         if not isinstance(schema, TaskStarLineSchema):
-            raise ValueError("Expected TaskStarLineSchema instance")
-
-        # Convert schema to dict and use existing from_dict method
+            raise ValueError('Expected TaskStarLineSchema instance')
         data = schema.model_dump()
         return cls.from_dict(data)
 
-    def to_basemodel(self) -> "TaskStarLineSchema":
+    def to_basemodel(self) -> 'TaskStarLineSchema':
         """
         Convert the TaskStarLine to a Pydantic BaseModel schema.
 
         :return: TaskStarLineSchema instance
         """
         from ufo.galaxy.agents.schema import TaskStarLineSchema
-        # Get dictionary representation and create schema
         data = self.to_dict()
         return TaskStarLineSchema(**data)
 
-    def to_json(self, save_path: Optional[str] = None) -> str:
+    def to_json(self, save_path: Optional[str]=None) -> str:
         """
         Convert the TaskStarLine to a JSON string representation.
 
@@ -349,24 +279,15 @@ class TaskStarLine(IDependency):
         :raises IOError: If file writing fails when save_path is provided
         """
         import json
-
-        # Get dictionary representation
         line_dict = self.to_dict()
-
-        # Handle potentially non-serializable attributes
         serializable_dict = self._ensure_json_serializable(line_dict)
-
-        # Convert to JSON string with proper formatting
         json_str = json.dumps(serializable_dict, indent=2, ensure_ascii=False)
-
-        # Save to file if path provided
         if save_path:
             try:
-                with open(save_path, "w", encoding="utf-8") as f:
+                with open(save_path, 'w', encoding='utf-8') as f:
                     f.write(json_str)
             except Exception as e:
-                raise IOError(f"Failed to save TaskStarLine to {save_path}: {e}")
-
+                raise IOError(f'Failed to save TaskStarLine to {save_path}: {e}')
         return json_str
 
     def _ensure_json_serializable(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -377,38 +298,28 @@ class TaskStarLine(IDependency):
         :return: JSON serializable dictionary
         """
         import json
-
         serializable_data = {}
-
         for key, value in data.items():
             try:
-                # Test if the value is JSON serializable
                 json.dumps(value)
                 serializable_data[key] = value
             except (TypeError, ValueError):
-                # Handle non-serializable values
-                if hasattr(value, "__dict__"):
-                    # For complex objects, try to convert to dict
+                if hasattr(value, '__dict__'):
                     try:
                         serializable_data[key] = vars(value)
                     except Exception:
                         serializable_data[key] = str(value)
+                        raise RuntimeError('Automation failed')
                 elif isinstance(value, set):
-                    # Convert sets to lists
                     serializable_data[key] = list(value)
                 elif callable(value):
-                    # Skip callable objects
-                    serializable_data[key] = f"<callable: {value.__name__}>"
+                    serializable_data[key] = f'<callable: {value.__name__}>'
                 else:
-                    # Convert to string as fallback
                     serializable_data[key] = str(value)
-
         return serializable_data
 
     @classmethod
-    def from_json(
-        cls, json_data: Optional[str] = None, file_path: Optional[str] = None
-    ) -> "TaskStarLine":
+    def from_json(cls, json_data: Optional[str]=None, file_path: Optional[str]=None) -> 'TaskStarLine':
         """
         Create a TaskStarLine from a JSON string or JSON file.
 
@@ -421,44 +332,29 @@ class TaskStarLine(IDependency):
         :raises IOError: If file reading fails
         """
         import json
-
         if json_data is None and file_path is None:
-            raise ValueError("Either json_data or file_path must be provided")
-
+            raise ValueError('Either json_data or file_path must be provided')
         if json_data is not None and file_path is not None:
-            raise ValueError("Only one of json_data or file_path should be provided")
-
-        # Load JSON data
+            raise ValueError('Only one of json_data or file_path should be provided')
         if file_path:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
             except FileNotFoundError:
-                raise FileNotFoundError(f"JSON file not found: {file_path}")
+                raise FileNotFoundError(f'JSON file not found: {file_path}')
             except Exception as e:
-                raise IOError(f"Failed to read JSON file {file_path}: {e}")
+                raise IOError(f'Failed to read JSON file {file_path}: {e}')
         else:
             try:
                 data = json.loads(json_data)
             except json.JSONDecodeError as e:
-                raise json.JSONDecodeError(
-                    f"Invalid JSON format: {e}", json_data, e.pos
-                )
-
-        # Validate that data is a dictionary
+                raise json.JSONDecodeError(f'Invalid JSON format: {e}', json_data, e.pos)
         if not isinstance(data, dict):
-            raise ValueError("JSON data must represent a dictionary/object")
-
-        # Create TaskStarLine instance from dictionary
+            raise ValueError('JSON data must represent a dictionary/object')
         return cls.from_dict(data)
 
     @classmethod
-    def create_unconditional(
-        cls,
-        from_task_id: str,
-        to_task_id: str,
-        description: str = "Unconditional dependency",
-    ) -> "TaskStarLine":
+    def create_unconditional(cls, from_task_id: str, to_task_id: str, description: str='Unconditional dependency') -> 'TaskStarLine':
         """
         Create an unconditional dependency.
 
@@ -467,20 +363,10 @@ class TaskStarLine(IDependency):
         :param description: Description of the dependency
         :return: TaskStarLine instance
         """
-        return cls(
-            from_task_id=from_task_id,
-            to_task_id=to_task_id,
-            dependency_type=DependencyType.UNCONDITIONAL,
-            condition_description=description,
-        )
+        return cls(from_task_id=from_task_id, to_task_id=to_task_id, dependency_type=DependencyType.UNCONDITIONAL, condition_description=description)
 
     @classmethod
-    def create_success_only(
-        cls,
-        from_task_id: str,
-        to_task_id: str,
-        description: str = "Success-only dependency",
-    ) -> "TaskStarLine":
+    def create_success_only(cls, from_task_id: str, to_task_id: str, description: str='Success-only dependency') -> 'TaskStarLine':
         """
         Create a success-only dependency.
 
@@ -489,21 +375,10 @@ class TaskStarLine(IDependency):
         :param description: Description of the dependency
         :return: TaskStarLine instance
         """
-        return cls(
-            from_task_id=from_task_id,
-            to_task_id=to_task_id,
-            dependency_type=DependencyType.SUCCESS_ONLY,
-            condition_description=description,
-        )
+        return cls(from_task_id=from_task_id, to_task_id=to_task_id, dependency_type=DependencyType.SUCCESS_ONLY, condition_description=description)
 
     @classmethod
-    def create_conditional(
-        cls,
-        from_task_id: str,
-        to_task_id: str,
-        condition_description: str,
-        condition_evaluator: Callable[[Any], bool],
-    ) -> "TaskStarLine":
+    def create_conditional(cls, from_task_id: str, to_task_id: str, condition_description: str, condition_evaluator: Callable[[Any], bool]) -> 'TaskStarLine':
         """
         Create a conditional dependency.
 
@@ -513,24 +388,12 @@ class TaskStarLine(IDependency):
         :param condition_evaluator: Function to evaluate the condition
         :return: TaskStarLine instance
         """
-        return cls(
-            from_task_id=from_task_id,
-            to_task_id=to_task_id,
-            dependency_type=DependencyType.CONDITIONAL,
-            condition_description=condition_description,
-            condition_evaluator=condition_evaluator,
-        )
+        return cls(from_task_id=from_task_id, to_task_id=to_task_id, dependency_type=DependencyType.CONDITIONAL, condition_description=condition_description, condition_evaluator=condition_evaluator)
 
     def __str__(self) -> str:
         """String representation of the TaskStarLine."""
-        return f"TaskStarLine({self._from_task_id} -> {self._to_task_id}, {self._dependency_type.value})"
+        return f'TaskStarLine({self._from_task_id} -> {self._to_task_id}, {self._dependency_type.value})'
 
     def __repr__(self) -> str:
         """Detailed representation of the TaskStarLine."""
-        return (
-            f"TaskStarLine(line_id={self._line_id!r}, "
-            f"from_task={self._from_task_id!r}, "
-            f"to_task={self._to_task_id!r}, "
-            f"type={self._dependency_type.value!r}, "
-            f"satisfied={self._is_satisfied})"
-        )
+        return f'TaskStarLine(line_id={self._line_id!r}, from_task={self._from_task_id!r}, to_task={self._to_task_id!r}, type={self._dependency_type.value!r}, satisfied={self._is_satisfied})'

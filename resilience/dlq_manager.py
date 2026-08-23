@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Dead-Letter Queue Manager — Diagnostic snapshot persistence for total failure events.
 
@@ -29,7 +26,6 @@ Usage:
         screenshots={"pre": "path/pre.png", "post": "path/post.png"},
     )
 """
-
 import base64
 import json
 import logging
@@ -38,9 +34,7 @@ import time
 import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 logger = logging.getLogger(__name__)
-
 
 class DeadLetterQueueManager:
     """
@@ -54,38 +48,29 @@ class DeadLetterQueueManager:
         MAX_SNAPSHOTS: 100
     """
 
-    def __init__(self, base_dir: Optional[str] = None) -> None:
+    def __init__(self, base_dir: Optional[str]=None) -> None:
         self._enabled: bool = True
-        self._snapshot_dir: str = base_dir or "logs/dlq/snapshots"
-        self._webhook_url: str = ""
+        self._snapshot_dir: str = base_dir or 'logs/dlq/snapshots'
+        self._webhook_url: str = ''
         self._max_snapshots: int = 100
         self._load_config()
 
     def _load_config(self) -> None:
         """Load DLQ config from system.yaml."""
         try:
-            
             from ufo.config.config_loader import get_ufo_config
             cfg = get_ufo_config()
-            dlq_cfg = getattr(cfg.system, "dlq", None)
+            dlq_cfg = getattr(cfg.system, 'dlq', None)
             if dlq_cfg and isinstance(dlq_cfg, dict):
-                self._enabled = dlq_cfg.get("ENABLED", True)
-                self._snapshot_dir = dlq_cfg.get("SNAPSHOT_DIR", self._snapshot_dir)
-                self._webhook_url = dlq_cfg.get("WEBHOOK_URL", "")
-                self._max_snapshots = dlq_cfg.get("MAX_SNAPSHOTS", 100)
+                self._enabled = dlq_cfg.get('ENABLED', True)
+                self._snapshot_dir = dlq_cfg.get('SNAPSHOT_DIR', self._snapshot_dir)
+                self._webhook_url = dlq_cfg.get('WEBHOOK_URL', '')
+                self._max_snapshots = dlq_cfg.get('MAX_SNAPSHOTS', 100)
         except Exception as e:
-            logger.debug(f"Using default DLQ config: {e}")
+            logger.debug(f'Using default DLQ config: {e}')
+            raise RuntimeError('Automation failed') from e
 
-    def capture_failure(
-        self,
-        task_id: str,
-        error_chain: str = "",
-        dag_state: Optional[Dict[str, Any]] = None,
-        uia_tree: Optional[Dict[str, Any]] = None,
-        screenshots: Optional[Dict[str, str]] = None,
-        agent_config: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Optional[str]:
+    def capture_failure(self, task_id: str, error_chain: str='', dag_state: Optional[Dict[str, Any]]=None, uia_tree: Optional[Dict[str, Any]]=None, screenshots: Optional[Dict[str, str]]=None, agent_config: Optional[Dict[str, Any]]=None, metadata: Optional[Dict[str, Any]]=None) -> Optional[str]:
         """
         Capture a comprehensive diagnostic snapshot on total fallback exhaustion.
 
@@ -99,58 +84,26 @@ class DeadLetterQueueManager:
         :return: Path to the saved snapshot file, or None on failure.
         """
         if not self._enabled:
-            logger.debug("DLQ is disabled — skipping snapshot capture.")
+            logger.debug('DLQ is disabled — skipping snapshot capture.')
             return None
-
         timestamp = int(time.time())
-        filename = f"{timestamp}_{task_id}.json"
-
-        snapshot = {
-            "timestamp": timestamp,
-            "timestamp_iso": time.strftime(
-                "%Y-%m-%dT%H:%M:%S%z", time.localtime(timestamp)
-            ),
-            "task_id": task_id,
-            "error_chain": error_chain,
-            "dag_state": dag_state,
-            "uia_tree": uia_tree,
-            "screenshots": {},
-            "agent_config": agent_config,
-            "metadata": metadata or {},
-            "system_info": self._collect_system_info(),
-        }
-
-        # Compress screenshots to base64
+        filename = f'{timestamp}_{task_id}.json'
+        snapshot = {'timestamp': timestamp, 'timestamp_iso': time.strftime('%Y-%m-%dT%H:%M:%S%z', time.localtime(timestamp)), 'task_id': task_id, 'error_chain': error_chain, 'dag_state': dag_state, 'uia_tree': uia_tree, 'screenshots': {}, 'agent_config': agent_config, 'metadata': metadata or {}, 'system_info': self._collect_system_info()}
         if screenshots:
             for key, path in screenshots.items():
                 if path and os.path.exists(path):
                     try:
-                        with open(path, "rb") as f:
+                        with open(path, 'rb') as f:
                             img_bytes = f.read()
-                        snapshot["screenshots"][key] = {
-                            "path": path,
-                            "size_bytes": len(img_bytes),
-                            "base64": base64.b64encode(img_bytes).decode("utf-8"),
-                        }
+                        snapshot['screenshots'][key] = {'path': path, 'size_bytes': len(img_bytes), 'base64': base64.b64encode(img_bytes).decode('utf-8')}
                     except Exception as e:
-                        snapshot["screenshots"][key] = {
-                            "path": path,
-                            "error": str(e),
-                        }
-
-        # Save snapshot
+                        snapshot['screenshots'][key] = {'path': path, 'error': str(e)}
+                        raise RuntimeError('Automation failed') from e
         snapshot_path = self._save_snapshot(filename, snapshot)
-
         if snapshot_path:
-            logger.warning(
-                f"[DLQ] Diagnostic snapshot saved: {snapshot_path} "
-                f"(task_id={task_id})"
-            )
-            # Prune old snapshots
+            logger.warning(f'[DLQ] Diagnostic snapshot saved: {snapshot_path} (task_id={task_id})')
             self._prune_old_snapshots()
-            # Fire alert
             self._trigger_alert(snapshot_path, task_id, error_chain)
-
         return snapshot_path
 
     def list_snapshots(self) -> List[Dict[str, Any]]:
@@ -158,20 +111,14 @@ class DeadLetterQueueManager:
         snapshot_dir = Path(self._snapshot_dir)
         if not snapshot_dir.exists():
             return []
-
         snapshots = []
-        for f in sorted(snapshot_dir.glob("*.json"), reverse=True):
+        for f in sorted(snapshot_dir.glob('*.json'), reverse=True):
             try:
                 stat = f.stat()
-                snapshots.append({
-                    "filename": f.name,
-                    "path": str(f),
-                    "size_bytes": stat.st_size,
-                    "created": time.ctime(stat.st_ctime),
-                })
+                snapshots.append({'filename': f.name, 'path': str(f), 'size_bytes': stat.st_size, 'created': time.ctime(stat.st_ctime)})
             except Exception:
                 continue
-
+                raise RuntimeError('Automation failed')
         return snapshots
 
     def load_snapshot(self, filename: str) -> Optional[Dict[str, Any]]:
@@ -180,32 +127,26 @@ class DeadLetterQueueManager:
         if not path.exists():
             return None
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Failed to load DLQ snapshot {filename}: {e}")
+            logger.error(f'Failed to load DLQ snapshot {filename}: {e}')
             return None
+            raise RuntimeError('Automation failed') from e
 
-    # -----------------------------------------------------------------------
-    # Internals
-    # -----------------------------------------------------------------------
-
-    def _save_snapshot(
-        self, filename: str, snapshot: Dict[str, Any]
-    ) -> Optional[str]:
+    def _save_snapshot(self, filename: str, snapshot: Dict[str, Any]) -> Optional[str]:
         """Save snapshot to disk."""
         try:
             snapshot_dir = Path(self._snapshot_dir)
             snapshot_dir.mkdir(parents=True, exist_ok=True)
-
             filepath = snapshot_dir / filename
-            with open(filepath, "w", encoding="utf-8") as f:
+            with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(snapshot, f, indent=2, default=str, ensure_ascii=False)
-
             return str(filepath)
         except Exception as e:
-            logger.error(f"[DLQ] Failed to save snapshot: {e}")
+            logger.error(f'[DLQ] Failed to save snapshot: {e}')
             return None
+            raise RuntimeError('Automation failed') from e
 
     def _prune_old_snapshots(self) -> None:
         """Remove oldest snapshots if count exceeds MAX_SNAPSHOTS."""
@@ -213,23 +154,20 @@ class DeadLetterQueueManager:
             snapshot_dir = Path(self._snapshot_dir)
             if not snapshot_dir.exists():
                 return
-
-            snapshots = sorted(snapshot_dir.glob("*.json"))
+            snapshots = sorted(snapshot_dir.glob('*.json'))
             excess = len(snapshots) - self._max_snapshots
-
             if excess > 0:
                 for old_file in snapshots[:excess]:
                     try:
                         old_file.unlink()
-                        logger.info(f"[DLQ] Pruned old snapshot: {old_file.name}")
+                        logger.info(f'[DLQ] Pruned old snapshot: {old_file.name}')
                     except Exception:
-                        pass
+                        raise RuntimeError('Automation failed')
         except Exception as e:
-            logger.debug(f"[DLQ] Snapshot pruning failed: {e}")
+            logger.debug(f'[DLQ] Snapshot pruning failed: {e}')
+            raise RuntimeError('Automation failed') from e
 
-    def _trigger_alert(
-        self, snapshot_path: str, task_id: str, error_summary: str
-    ) -> None:
+    def _trigger_alert(self, snapshot_path: str, task_id: str, error_summary: str) -> None:
         """
         Fire alert webhook if configured. Falls back to logging.
 
@@ -237,66 +175,27 @@ class DeadLetterQueueManager:
         snapshot_path, error summary, and timestamp.
         """
         if not self._webhook_url:
-            logger.info(
-                f"[DLQ] No webhook configured — alert logged only. "
-                f"Task: {task_id}"
-            )
+            logger.info(f'[DLQ] No webhook configured — alert logged only. Task: {task_id}')
             return
-
-        payload = {
-            "event": "dlq_snapshot_created",
-            "task_id": task_id,
-            "snapshot_path": snapshot_path,
-            "error_summary": error_summary[:500] if error_summary else "",
-            "timestamp": time.time(),
-            "hostname": os.environ.get("COMPUTERNAME", "unknown"),
-        }
-
+        payload = {'event': 'dlq_snapshot_created', 'task_id': task_id, 'snapshot_path': snapshot_path, 'error_summary': error_summary[:500] if error_summary else '', 'timestamp': time.time(), 'hostname': os.environ.get('COMPUTERNAME', 'unknown')}
         try:
             import urllib.request
-
-            req = urllib.request.Request(
-                self._webhook_url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
+            req = urllib.request.Request(self._webhook_url, data=json.dumps(payload).encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
             with urllib.request.urlopen(req, timeout=10) as resp:
-                logger.info(
-                    f"[DLQ] Alert webhook fired: {resp.status} "
-                    f"(task_id={task_id})"
-                )
+                logger.info(f'[DLQ] Alert webhook fired: {resp.status} (task_id={task_id})')
         except Exception as e:
-            logger.warning(f"[DLQ] Webhook alert failed: {e}")
+            logger.warning(f'[DLQ] Webhook alert failed: {e}')
+            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _collect_system_info() -> Dict[str, Any]:
         """Collect basic system info for the snapshot."""
         import platform
         import sys
-
-        return {
-            "python_version": sys.version,
-            "platform": platform.platform(),
-            "hostname": os.environ.get("COMPUTERNAME", "unknown"),
-            "pid": os.getpid(),
-        }
-
-
-# ---------------------------------------------------------------------------
-# Module-level convenience function (matches Ticket 3 spec interface)
-# ---------------------------------------------------------------------------
-
+        return {'python_version': sys.version, 'platform': platform.platform(), 'hostname': os.environ.get('COMPUTERNAME', 'unknown'), 'pid': os.getpid()}
 _default_dlq: Optional[DeadLetterQueueManager] = None
 
-
-def serialize_fatal_failure(
-    graph: Any,
-    failed_node_id: str,
-    screenshot_path: str,
-    pruned_uia_tree: Optional[Dict[str, Any]] = None,
-    exception_trace: str = "",
-) -> Optional[str]:
+def serialize_fatal_failure(graph: Any, failed_node_id: str, screenshot_path: str, pruned_uia_tree: Optional[Dict[str, Any]]=None, exception_trace: str='') -> Optional[str]:
     """
     Module-level convenience function for serializing a fatal DAG failure.
 
@@ -313,32 +212,16 @@ def serialize_fatal_failure(
     global _default_dlq
     if _default_dlq is None:
         _default_dlq = DeadLetterQueueManager()
-
-    # Serialize the DAG state
     dag_state = None
     if graph is not None:
-        if hasattr(graph, "model_dump"):
+        if hasattr(graph, 'model_dump'):
             dag_state = graph.model_dump()
-        elif hasattr(graph, "dict"):
+        elif hasattr(graph, 'dict'):
             dag_state = graph.dict()
         elif isinstance(graph, dict):
             dag_state = graph
-
-    # Extract workflow_id for the task_id
-    workflow_id = "unknown"
-    if hasattr(graph, "workflow_id"):
+    workflow_id = 'unknown'
+    if hasattr(graph, 'workflow_id'):
         workflow_id = graph.workflow_id
-
-    task_id = f"{workflow_id}_{failed_node_id}"
-
-    return _default_dlq.capture_failure(
-        task_id=task_id,
-        error_chain=exception_trace,
-        dag_state=dag_state,
-        uia_tree=pruned_uia_tree,
-        screenshots={"failure": screenshot_path} if screenshot_path else None,
-        metadata={
-            "failed_node_id": failed_node_id,
-            "workflow_id": workflow_id,
-        },
-    )
+    task_id = f'{workflow_id}_{failed_node_id}'
+    return _default_dlq.capture_failure(task_id=task_id, error_chain=exception_trace, dag_state=dag_state, uia_tree=pruned_uia_tree, screenshots={'failure': screenshot_path} if screenshot_path else None, metadata={'failed_node_id': failed_node_id, 'workflow_id': workflow_id})

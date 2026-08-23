@@ -4,12 +4,8 @@ Command registry for constellation editor commands.
 This module provides a registry system for registering and managing
 command classes using decorators.
 """
-
 from typing import Any, Callable, Dict, Optional, Type
-
-
 from .command_interface import ICommand, IUndoableCommand
-
 
 class CommandRegistry:
     """Registry for managing command classes."""
@@ -19,13 +15,7 @@ class CommandRegistry:
         self._commands: Dict[str, Type[ICommand]] = {}
         self._command_metadata: Dict[str, Dict[str, Any]] = {}
 
-    def register(
-        self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        category: str = "general",
-        **metadata,
-    ) -> Callable:
+    def register(self, name: Optional[str]=None, description: Optional[str]=None, category: str='general', **metadata) -> Callable:
         """
         Decorator to register a command class.
 
@@ -38,25 +28,11 @@ class CommandRegistry:
 
         def decorator(command_class: Type[ICommand]) -> Type[ICommand]:
             command_name = name or command_class.__name__
-
-            # Validate command class
             if not issubclass(command_class, ICommand):
-                raise ValueError(
-                    f"Command {command_name} must implement ICommand interface"
-                )
-
-            # Register the command
+                raise ValueError(f'Command {command_name} must implement ICommand interface')
             self._commands[command_name] = command_class
-            self._command_metadata[command_name] = {
-                "description": description or command_class.__doc__ or "",
-                "category": category,
-                "is_undoable": issubclass(command_class, IUndoableCommand),
-                "class_name": command_class.__name__,
-                **metadata,
-            }
-
+            self._command_metadata[command_name] = {'description': description or command_class.__doc__ or '', 'category': category, 'is_undoable': issubclass(command_class, IUndoableCommand), 'class_name': command_class.__name__, **metadata}
             return command_class
-
         return decorator
 
     def get_command(self, name: str) -> Optional[Type[ICommand]]:
@@ -68,9 +44,7 @@ class CommandRegistry:
         """
         return self._commands.get(name)
 
-    def list_commands(
-        self, category: Optional[str] = None
-    ) -> Dict[str, Dict[str, Any]]:
+    def list_commands(self, category: Optional[str]=None) -> Dict[str, Dict[str, Any]]:
         """
         List all registered commands.
 
@@ -79,12 +53,7 @@ class CommandRegistry:
         """
         if category is None:
             return self._command_metadata.copy()
-
-        return {
-            name: metadata
-            for name, metadata in self._command_metadata.items()
-            if metadata.get("category") == category
-        }
+        return {name: metadata for name, metadata in self._command_metadata.items() if metadata.get('category') == category}
 
     def get_command_metadata(self, name: str) -> Optional[Dict[str, Any]]:
         """
@@ -134,11 +103,10 @@ class CommandRegistry:
         command_class = self.get_command(name)
         if command_class is None:
             return None
-
         try:
             return command_class(*args, **kwargs)
         except Exception as e:
-            raise ValueError(f"Failed to create command {name}: {e}")
+            raise ValueError(f'Failed to create command {name}: {e}')
 
     def get_categories(self) -> list[str]:
         """
@@ -148,20 +116,11 @@ class CommandRegistry:
         """
         categories = set()
         for metadata in self._command_metadata.values():
-            categories.add(metadata.get("category", "general"))
+            categories.add(metadata.get('category', 'general'))
         return sorted(list(categories))
-
-
-# Global command registry instance
 command_registry = CommandRegistry()
 
-
-def register_command(
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    category: str = "general",
-    **metadata,
-) -> Callable:
+def register_command(name: Optional[str]=None, description: Optional[str]=None, category: str='general', **metadata) -> Callable:
     """
     Decorator to register a command with the global registry.
 

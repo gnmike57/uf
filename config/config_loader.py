@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Modern Configuration Loader for UFO³ and Galaxy
 
@@ -42,18 +39,14 @@ Usage Examples:
     # Backward compatible
     old_style = config["MAX_STEP"]  # Still works!
 """
-
 import logging
 import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
 import yaml
-
 from ufo.config.config_schemas import UFOConfig, GalaxyConfig
 logger = logging.getLogger(__name__)
-
 
 class DynamicConfig:
     """
@@ -72,7 +65,7 @@ class DynamicConfig:
         value = config.HOST_AGENT.API_MODEL
     """
 
-    def __init__(self, data: Dict[str, Any], name: str = "config"):
+    def __init__(self, data: Dict[str, Any], name: str='config'):
         """
         Initialize DynamicConfig.
 
@@ -82,31 +75,23 @@ class DynamicConfig:
         self._data = data
         self._name = name
         self._nested_configs = {}
-
-        # Pre-create nested configs for dict values
         for key, value in data.items():
             if isinstance(value, dict):
                 self._nested_configs[key] = DynamicConfig(value, name=key)
 
     def __getattr__(self, name: str) -> Any:
         """Attribute-style access: config.MAX_STEP"""
-        if name.startswith("_"):
+        if name.startswith('_'):
             return object.__getattribute__(self, name)
-
-        # Check if we have a pre-created nested config
         if name in self._nested_configs:
             return self._nested_configs[name]
-
-        # Return value from data
         if name in self._data:
             value = self._data[name]
             if isinstance(value, dict):
-                # Create nested config on-the-fly
                 nested = DynamicConfig(value, name=name)
                 self._nested_configs[name] = nested
                 return nested
             return value
-
         raise AttributeError(f"'{self._name}' configuration has no attribute '{name}'")
 
     def __getitem__(self, key: str) -> Any:
@@ -119,7 +104,7 @@ class DynamicConfig:
         """Support 'in' operator"""
         return key in self._data
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any=None) -> Any:
         """Dict-style get with default"""
         if key in self._nested_configs:
             return self._nested_configs[key]
@@ -142,11 +127,10 @@ class DynamicConfig:
         return self._data.copy()
 
     def __repr__(self) -> str:
-        return f"DynamicConfig({self._name})"
+        return f'DynamicConfig({self._name})'
 
     def __str__(self) -> str:
-        return f"DynamicConfig({self._name}): {len(self._data)} keys"
-
+        return f'DynamicConfig({self._name}): {len(self._data)} keys'
 
 class ConfigLoader:
     """
@@ -169,22 +153,21 @@ class ConfigLoader:
     - Legacy values fill in missing keys
     - Clear warning shown to user
     """
+    _instance: Optional['ConfigLoader'] = None
 
-    _instance: Optional["ConfigLoader"] = None
-
-    def __init__(self, base_path: Optional[str] = None):
+    def __init__(self, base_path: Optional[str]=None):
         """
         Initialize ConfigLoader.
 
         :param base_path: Base path to configuration directory (default: UFO_ROOT/config)
         """
         ufo_root = Path(__file__).resolve().parent.parent
-        self.base_path = Path(base_path) if base_path else ufo_root / "config"
+        self.base_path = Path(base_path) if base_path else ufo_root / 'config'
         self._cache: Dict[str, Any] = {}
-        self._env = os.getenv("UFO_ENV", "production")
+        self._env = os.getenv('UFO_ENV', 'production')
 
     @classmethod
-    def get_instance(cls, base_path: Optional[str] = None) -> "ConfigLoader":
+    def get_instance(cls, base_path: Optional[str]=None) -> 'ConfigLoader':
         """
         Get or create ConfigLoader singleton.
 
@@ -207,24 +190,21 @@ class ConfigLoader:
         :param path: Path to YAML file
         :return: Parsed YAML data or None if file doesn't exist
         """
-        # Check cache first
         cache_key = str(path)
         if cache_key in self._cache:
             return self._cache[cache_key]
-
-        # Load from file
         if not path.exists():
             return None
-
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 data = yaml.safe_load(f) or {}
             data = self._expand_env_vars(data)
             self._cache[cache_key] = data
             return data
         except Exception as e:
-            logger.warning(f"Error loading {path}: {e}")
+            logger.warning(f'Error loading {path}: {e}')
             return None
+            raise RuntimeError('Automation failed') from e
 
     def _deep_merge(self, target: Dict[str, Any], source: Dict[str, Any]) -> None:
         """
@@ -237,11 +217,7 @@ class ConfigLoader:
         :param source: Source dictionary
         """
         for key, value in source.items():
-            if (
-                key in target
-                and isinstance(target[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in target and isinstance(target[key], dict) and isinstance(value, dict):
                 self._deep_merge(target[key], value)
             else:
                 target[key] = value
@@ -258,15 +234,14 @@ class ConfigLoader:
         if isinstance(value, list):
             return [self._expand_env_vars(v) for v in value]
         if isinstance(value, str):
-            # Expand ${VAR} and $VAR while leaving unknown variables intact.
+
             def replacer(match: re.Match[str]) -> str:
                 var_name = match.group(1) or match.group(2)
                 if not var_name:
                     return match.group(0)
                 env_val = os.getenv(var_name)
                 return env_val if env_val is not None else match.group(0)
-
-            return re.sub(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)", replacer, value)
+            return re.sub('\\$\\{([A-Za-z_][A-Za-z0-9_]*)\\}|\\$([A-Za-z_][A-Za-z0-9_]*)', replacer, value)
         return value
 
     def _discover_yaml_files(self, directory: Path) -> List[Path]:
@@ -281,20 +256,13 @@ class ConfigLoader:
         """
         if not directory.exists():
             return []
-
         yaml_files = []
-        for file in directory.glob("*.yaml"):
-            # Skip environment-specific files (loaded separately)
-            if not any(
-                file.stem.endswith(suffix) for suffix in ["_dev", "_test", "_prod"]
-            ):
+        for file in directory.glob('*.yaml'):
+            if not any((file.stem.endswith(suffix) for suffix in ['_dev', '_test', '_prod'])):
                 yaml_files.append(file)
+        return sorted(yaml_files)
 
-        return sorted(yaml_files)  # Consistent loading order
-
-    def _load_module_configs(
-        self, module_dir: Path, env: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def _load_module_configs(self, module_dir: Path, env: Optional[str]=None) -> Dict[str, Any]:
         """
         Load all configuration files from a module directory and merge them.
 
@@ -307,31 +275,22 @@ class ConfigLoader:
         :return: Merged configuration dictionary
         """
         merged_config = {}
-
-        # Load all base YAML files
         yaml_files = self._discover_yaml_files(module_dir)
         for yaml_file in yaml_files:
             config_data = self._load_yaml(yaml_file)
             if config_data:
-                # Special handling for mcp.yaml and agent_mcp.yaml: nest under 'mcp' key
-                if yaml_file.stem in ["mcp", "agent_mcp"]:
-                    config_data = {"mcp": config_data}
+                if yaml_file.stem in ['mcp', 'agent_mcp']:
+                    config_data = {'mcp': config_data}
                 self._deep_merge(merged_config, config_data)
-
-        # Load environment-specific overrides
-        if env and env != "production":
+        if env and env != 'production':
             for yaml_file in yaml_files:
-                # Look for <name>_<env>.yaml files
-                env_file = yaml_file.parent / f"{yaml_file.stem}_{env}.yaml"
+                env_file = yaml_file.parent / f'{yaml_file.stem}_{env}.yaml'
                 env_data = self._load_yaml(env_file)
                 if env_data:
                     self._deep_merge(merged_config, env_data)
-
         return merged_config
 
-    def _load_with_fallback(
-        self, module: str, env: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def _load_with_fallback(self, module: str, env: Optional[str]=None) -> Dict[str, Any]:
         """
         Load configuration for a module (e.g. 'ufo' or 'galaxy').
 
@@ -342,18 +301,10 @@ class ConfigLoader:
         module_path = self.base_path / module
         config = self._load_module_configs(module_path, env)
         if not config:
-            raise FileNotFoundError(
-                f"No configuration found for '{module}'.\n"
-                f"Expected at: {module_path}/\n"
-            )
+            raise FileNotFoundError(f"No configuration found for '{module}'.\nExpected at: {module_path}/\n")
         return config
 
-    def _apply_env_overrides(
-        self,
-        config_data: Dict[str, Any],
-        prefix: str = "UFO_",
-        reserved_suffixes: Optional[tuple] = ("ENV", "ROOT", "DIR"),
-    ) -> None:
+    def _apply_env_overrides(self, config_data: Dict[str, Any], prefix: str='UFO_', reserved_suffixes: Optional[tuple]=('ENV', 'ROOT', 'DIR')) -> None:
         """
         Apply explicit environment variable overrides starting with the specified prefix.
         Does NOT bulk-copy os.environ and ignores environment variables matching reserved suffixes (e.g. UFO_ENV).
@@ -368,18 +319,16 @@ class ConfigLoader:
         for env_k, env_v in os.environ.items():
             if not env_k.startswith(prefix):
                 continue
-
             suffix = env_k[len(prefix):]
             if not suffix or suffix in reserved:
                 continue
-
             try:
                 parsed_val = yaml.safe_load(env_v)
             except Exception:
                 parsed_val = env_v
-
-            if "__" in suffix:
-                parts = suffix.split("__")
+                raise RuntimeError('Automation failed')
+            if '__' in suffix:
+                parts = suffix.split('__')
                 target = config_data
                 for part in parts[:-1]:
                     matched_key = None
@@ -393,7 +342,6 @@ class ConfigLoader:
                     elif not isinstance(target[matched_key], dict):
                         target[matched_key] = {}
                     target = target[matched_key]
-
                 last_part = parts[-1]
                 matched_last = None
                 for k in target.keys():
@@ -415,7 +363,7 @@ class ConfigLoader:
                 else:
                     config_data[suffix.upper()] = parsed_val
 
-    def load_ufo_config(self, env: Optional[str] = None) -> UFOConfig:
+    def load_ufo_config(self, env: Optional[str]=None) -> UFOConfig:
         """
         Load UFO configuration.
 
@@ -428,23 +376,13 @@ class ConfigLoader:
         :return: UFOConfig with typed + dynamic access
         """
         env = env or self._env
-
-        # Suppress TensorFlow warnings
-        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-        # Load YAML configs from config/ufo
-        config_data = self._load_with_fallback("ufo", env)
-
-        # Apply explicit UFO_* environment variable overrides only
-        self._apply_env_overrides(config_data, prefix="UFO_", reserved_suffixes=("ENV", "ROOT", "DIR"))
-
-        # Apply legacy API base transformations
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+        config_data = self._load_with_fallback('ufo', env)
+        self._apply_env_overrides(config_data, prefix='UFO_', reserved_suffixes=('ENV', 'ROOT', 'DIR'))
         self._apply_legacy_transforms(config_data)
-
-        # Create typed config with dynamic fields
         return UFOConfig.from_dict(config_data)
 
-    def load_galaxy_config(self, env: Optional[str] = None) -> GalaxyConfig:
+    def load_galaxy_config(self, env: Optional[str]=None) -> GalaxyConfig:
         """
         Load Galaxy configuration.
 
@@ -453,17 +391,9 @@ class ConfigLoader:
         :return: GalaxyConfig with typed + dynamic access
         """
         env = env or self._env
-
-        # Load configuration
-        config_data = self._load_with_fallback("galaxy", env)
-
-        # Apply explicit GALAXY_* environment variable overrides only
-        self._apply_env_overrides(config_data, prefix="GALAXY_", reserved_suffixes=("ENV",))
-
-        # Apply legacy API base transformations
+        config_data = self._load_with_fallback('galaxy', env)
+        self._apply_env_overrides(config_data, prefix='GALAXY_', reserved_suffixes=('ENV',))
         self._apply_legacy_transforms(config_data)
-
-        # Create typed config with dynamic fields
         return GalaxyConfig.from_dict(config_data)
 
     def _apply_legacy_transforms(self, config: Dict[str, Any]) -> None:
@@ -472,20 +402,11 @@ class ConfigLoader:
 
         :param config: Configuration dictionary to transform
         """
-        # Update API base for various agents
-        for agent_key in [
-            "HOST_AGENT",
-            "APP_AGENT",
-            "BACKUP_AGENT",
-            "EVALUATION_AGENT",
-            "CONSTELLATION_AGENT",
-        ]:
+        for agent_key in ['HOST_AGENT', 'APP_AGENT', 'BACKUP_AGENT', 'EVALUATION_AGENT', 'CONSTELLATION_AGENT']:
             if agent_key in config:
                 self._update_api_base(config, agent_key)
-
-        # Ensure CONTROL_BACKEND is a list
-        if "CONTROL_BACKEND" in config and isinstance(config["CONTROL_BACKEND"], str):
-            config["CONTROL_BACKEND"] = [config["CONTROL_BACKEND"]]
+        if 'CONTROL_BACKEND' in config and isinstance(config['CONTROL_BACKEND'], str):
+            config['CONTROL_BACKEND'] = [config['CONTROL_BACKEND']]
 
     @staticmethod
     def _update_api_base(config: Dict[str, Any], agent_key: str) -> None:
@@ -497,40 +418,26 @@ class ConfigLoader:
         """
         if agent_key not in config:
             return
-
         agent_config = config[agent_key]
         if not isinstance(agent_config, dict):
             return
-
-        api_type = agent_config.get("API_TYPE", "").lower()
-        use_responses = bool(agent_config.get("USE_RESPONSES", False))
-
-        if api_type == "aoai":
-            # Azure OpenAI - construct deployment URL
-            api_base = agent_config.get("API_BASE", "")
-            if api_base and "deployments" not in api_base and not use_responses:
-                deployment_id = agent_config.get("API_DEPLOYMENT_ID", "")
-                api_version = agent_config.get("API_VERSION", "")
+        api_type = agent_config.get('API_TYPE', '').lower()
+        use_responses = bool(agent_config.get('USE_RESPONSES', False))
+        if api_type == 'aoai':
+            api_base = agent_config.get('API_BASE', '')
+            if api_base and 'deployments' not in api_base and (not use_responses):
+                deployment_id = agent_config.get('API_DEPLOYMENT_ID', '')
+                api_version = agent_config.get('API_VERSION', '')
                 if deployment_id:
-                    agent_config["API_BASE"] = (
-                        f"{api_base.rstrip('/')}/openai/deployments/"
-                        f"{deployment_id}/chat/completions?api-version={api_version}"
-                    )
-                    agent_config["API_MODEL"] = deployment_id
-
-        elif api_type == "openai":
-            # OpenAI - standard API base
-            if not agent_config.get("API_BASE"):
-                agent_config["API_BASE"] = "https://api.openai.com/v1/chat/completions"
-
-
-# Global convenience functions with caching
-
+                    agent_config['API_BASE'] = f"{api_base.rstrip('/')}/openai/deployments/{deployment_id}/chat/completions?api-version={api_version}"
+                    agent_config['API_MODEL'] = deployment_id
+        elif api_type == 'openai':
+            if not agent_config.get('API_BASE'):
+                agent_config['API_BASE'] = 'https://api.openai.com/v1/chat/completions'
 _global_ufo_config: Optional[UFOConfig] = None
 _global_galaxy_config: Optional[GalaxyConfig] = None
 
-
-def get_ufo_config(reload: bool = False) -> UFOConfig:
+def get_ufo_config(reload: bool=False) -> UFOConfig:
     """
     Get UFO configuration (cached).
 
@@ -562,15 +469,12 @@ def get_ufo_config(reload: bool = False) -> UFOConfig:
     :return: UFOConfig instance
     """
     global _global_ufo_config
-
     if _global_ufo_config is None or reload:
         loader = ConfigLoader.get_instance()
         _global_ufo_config = loader.load_ufo_config()
-
     return _global_ufo_config
 
-
-def get_galaxy_config(reload: bool = False) -> GalaxyConfig:
+def get_galaxy_config(reload: bool=False) -> GalaxyConfig:
     """
     Get Galaxy configuration (cached).
 
@@ -602,13 +506,10 @@ def get_galaxy_config(reload: bool = False) -> GalaxyConfig:
     :return: GalaxyConfig instance
     """
     global _global_galaxy_config
-
     if _global_galaxy_config is None or reload:
         loader = ConfigLoader.get_instance()
         _global_galaxy_config = loader.load_galaxy_config()
-
     return _global_galaxy_config
-
 
 def clear_config_cache():
     """Clear configuration cache. Useful for testing or hot-reloading."""
@@ -616,7 +517,6 @@ def clear_config_cache():
     _global_ufo_config = None
     _global_galaxy_config = None
     ConfigLoader.reset()
-
 
 class LazyUFOConfig:
     """
@@ -635,7 +535,7 @@ class LazyUFOConfig:
     def __contains__(self, key: Any) -> bool:
         return key in get_ufo_config()
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any=None) -> Any:
         return get_ufo_config().get(key, default)
 
     def keys(self):
@@ -653,7 +553,6 @@ class LazyUFOConfig:
     def __repr__(self) -> str:
         return repr(get_ufo_config())
 
-
 class LazyGalaxyConfig:
     """
     Lazy proxy for GalaxyConfig that defers loading until attribute or item access.
@@ -669,7 +568,7 @@ class LazyGalaxyConfig:
     def __contains__(self, key: Any) -> bool:
         return key in get_galaxy_config()
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: Any=None) -> Any:
         return get_galaxy_config().get(key, default)
 
     def keys(self):

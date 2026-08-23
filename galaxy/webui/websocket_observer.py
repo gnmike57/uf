@@ -1,28 +1,15 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 WebSocket Observer for Galaxy Web UI.
 
 This observer subscribes to all Galaxy events and pushes them to connected WebSocket clients.
 Provides efficient event serialization and broadcasting capabilities.
 """
-
 import logging
 from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional, Set, Type
-
 from fastapi import WebSocket
-
-from ufo.galaxy.core.events import (    AgentEvent,
-    ConstellationEvent,
-    DeviceEvent,
-    Event,
-    IEventObserver,
-    TaskEvent,
-)
-
+from ufo.galaxy.core.events import AgentEvent, ConstellationEvent, DeviceEvent, Event, IEventObserver, TaskEvent
 
 class EventSerializer:
     """
@@ -35,12 +22,8 @@ class EventSerializer:
     def __init__(self) -> None:
         """Initialize the event serializer with cached imports and type handlers."""
         self.logger: logging.Logger = logging.getLogger(__name__)
-
-        # Cache imports to avoid repeated import attempts
         self._cached_types: Dict[str, Optional[Type]] = {}
         self._initialize_type_cache()
-
-        # Register serialization handlers for specific types
         self._type_handlers: Dict[Type, Callable[[Any], Any]] = {}
         self._register_handlers()
 
@@ -51,21 +34,18 @@ class EventSerializer:
         Pre-loads types that will be frequently serialized to avoid
         repeated import attempts and try-except blocks.
         """
-        # Try to import TaskStarLine
         try:
             from ufo.galaxy.constellation.task_star_line import TaskStarLine
-            self._cached_types["TaskStarLine"] = TaskStarLine
+            self._cached_types['TaskStarLine'] = TaskStarLine
         except ImportError:
-            self._cached_types["TaskStarLine"] = None
-            self.logger.debug("TaskStarLine not available for serialization")
-
-        # Try to import TaskConstellation
+            self._cached_types['TaskStarLine'] = None
+            self.logger.debug('TaskStarLine not available for serialization')
         try:
             from ufo.galaxy.constellation import TaskConstellation
-            self._cached_types["TaskConstellation"] = TaskConstellation
+            self._cached_types['TaskConstellation'] = TaskConstellation
         except ImportError:
-            self._cached_types["TaskConstellation"] = None
-            self.logger.debug("TaskConstellation not available for serialization")
+            self._cached_types['TaskConstellation'] = None
+            self.logger.debug('TaskConstellation not available for serialization')
 
     def _register_handlers(self) -> None:
         """
@@ -74,11 +54,10 @@ class EventSerializer:
         Maps Python types to their corresponding serialization functions
         for efficient lookup during serialization.
         """
-        task_star_line_type = self._cached_types.get("TaskStarLine")
+        task_star_line_type = self._cached_types.get('TaskStarLine')
         if task_star_line_type:
             self._type_handlers[task_star_line_type] = self._serialize_task_star_line
-
-        task_constellation_type = self._cached_types.get("TaskConstellation")
+        task_constellation_type = self._cached_types.get('TaskConstellation')
         if task_constellation_type:
             self._type_handlers[task_constellation_type] = self._serialize_constellation
 
@@ -89,15 +68,7 @@ class EventSerializer:
         :param event: The event to convert
         :return: Dictionary representation of the event
         """
-        # Build base dictionary with common fields
-        base_dict = {
-            "event_type": event.event_type.value,
-            "source_id": event.source_id,
-            "timestamp": event.timestamp,
-            "data": self.serialize_value(event.data),
-        }
-
-        # Add type-specific fields using polymorphism
+        base_dict = {'event_type': event.event_type.value, 'source_id': event.source_id, 'timestamp': event.timestamp, 'data': self.serialize_value(event.data)}
         if isinstance(event, TaskEvent):
             base_dict.update(self._serialize_task_event_fields(event))
         elif isinstance(event, ConstellationEvent):
@@ -106,7 +77,6 @@ class EventSerializer:
             base_dict.update(self._serialize_agent_event_fields(event))
         elif isinstance(event, DeviceEvent):
             base_dict.update(self._serialize_device_event_fields(event))
-
         return base_dict
 
     def _serialize_task_event_fields(self, event: TaskEvent) -> Dict[str, Any]:
@@ -116,27 +86,16 @@ class EventSerializer:
         :param event: The task event to serialize
         :return: Dictionary of task-specific fields
         """
-        return {
-            "task_id": event.task_id,
-            "status": event.status,
-            "result": self.serialize_value(event.result),
-            "error": str(event.error) if event.error else None,
-        }
+        return {'task_id': event.task_id, 'status': event.status, 'result': self.serialize_value(event.result), 'error': str(event.error) if event.error else None}
 
-    def _serialize_constellation_event_fields(
-        self, event: ConstellationEvent
-    ) -> Dict[str, Any]:
+    def _serialize_constellation_event_fields(self, event: ConstellationEvent) -> Dict[str, Any]:
         """
         Extract constellation-specific fields from a ConstellationEvent.
 
         :param event: The constellation event to serialize
         :return: Dictionary of constellation-specific fields
         """
-        return {
-            "constellation_id": event.constellation_id,
-            "constellation_state": event.constellation_state,
-            "new_ready_tasks": event.new_ready_tasks or [],
-        }
+        return {'constellation_id': event.constellation_id, 'constellation_state': event.constellation_state, 'new_ready_tasks': event.new_ready_tasks or []}
 
     def _serialize_agent_event_fields(self, event: AgentEvent) -> Dict[str, Any]:
         """
@@ -145,12 +104,7 @@ class EventSerializer:
         :param event: The agent event to serialize
         :return: Dictionary of agent-specific fields
         """
-        return {
-            "agent_name": event.agent_name,
-            "agent_type": event.agent_type,
-            "output_type": event.output_type,
-            "output_data": self.serialize_value(event.output_data),
-        }
+        return {'agent_name': event.agent_name, 'agent_type': event.agent_type, 'output_type': event.output_type, 'output_data': self.serialize_value(event.output_data)}
 
     def _serialize_device_event_fields(self, event: DeviceEvent) -> Dict[str, Any]:
         """
@@ -159,12 +113,7 @@ class EventSerializer:
         :param event: The device event to serialize
         :return: Dictionary of device-specific fields
         """
-        return {
-            "device_id": event.device_id,
-            "device_status": event.device_status,
-            "device_info": self.serialize_value(event.device_info),
-            "all_devices": self.serialize_value(event.all_devices),
-        }
+        return {'device_id': event.device_id, 'device_status': event.device_status, 'device_info': self.serialize_value(event.device_info), 'all_devices': self.serialize_value(event.all_devices)}
 
     def serialize_value(self, value: Any) -> Any:
         """
@@ -176,52 +125,36 @@ class EventSerializer:
         :param value: The value to serialize
         :return: JSON-serializable value
         """
-        # Handle None early
         if value is None:
             return None
-
-        # Handle primitive types
         if isinstance(value, (str, int, float, bool)):
             return value
-
-        # Handle datetime objects
         if isinstance(value, datetime):
             return value.isoformat()
-
-        # Handle collections - recursively serialize
         if isinstance(value, dict):
             return {k: self.serialize_value(v) for k, v in value.items()}
-
         if isinstance(value, (list, tuple)):
             return [self.serialize_value(item) for item in value]
-
-        # Check registered type handlers first
         value_type = type(value)
         if value_type in self._type_handlers:
             return self._type_handlers[value_type](value)
-
-        # Try dataclass serialization
-        if is_dataclass(value) and not isinstance(value, type):
+        if is_dataclass(value) and (not isinstance(value, type)):
             try:
                 return self.serialize_value(asdict(value))
             except (TypeError, ValueError) as e:
-                self.logger.debug(f"Failed to serialize dataclass: {e}")
-
-        # Try Pydantic model serialization
-        if hasattr(value, "model_dump"):
+                self.logger.debug(f'Failed to serialize dataclass: {e}')
+        if hasattr(value, 'model_dump'):
             try:
                 return self.serialize_value(value.model_dump())
             except Exception as e:
-                self.logger.debug(f"Failed to serialize Pydantic model: {e}")
-
-        # Try generic to_dict method
-        if hasattr(value, "to_dict") and callable(value.to_dict):
+                self.logger.debug(f'Failed to serialize Pydantic model: {e}')
+                raise RuntimeError('Automation failed') from e
+        if hasattr(value, 'to_dict') and callable(value.to_dict):
             try:
                 return self.serialize_value(value.to_dict())
             except Exception as e:
-                self.logger.debug(f"Failed to serialize using to_dict: {e}")
-
-        # Fallback to string representation
+                self.logger.debug(f'Failed to serialize using to_dict: {e}')
+                raise RuntimeError('Automation failed') from e
         return str(value)
 
     def _serialize_task_star_line(self, value: Any) -> Dict[str, Any]:
@@ -234,8 +167,9 @@ class EventSerializer:
         try:
             return value.to_dict()
         except Exception as e:
-            self.logger.warning(f"Failed to serialize TaskStarLine: {e}")
+            self.logger.warning(f'Failed to serialize TaskStarLine: {e}')
             return str(value)
+            raise RuntimeError('Automation failed') from e
 
     def _serialize_constellation(self, value: Any) -> Dict[str, Any]:
         """
@@ -245,35 +179,20 @@ class EventSerializer:
         :return: Serialized dictionary with constellation details
         """
         try:
-            constellation_dict = {
-                "constellation_id": value.constellation_id,
-                "name": value.name,
-                "state": self._extract_enum_value(value.state),
-                "tasks": self._serialize_constellation_tasks(value.tasks),
-                "dependencies": self._serialize_dependencies(
-                    getattr(value, "dependencies", {})
-                ),
-                "metadata": self.serialize_value(getattr(value, "metadata", {})),
-                "created_at": self._serialize_datetime(
-                    getattr(value, "created_at", None)
-                ),
-            }
-
-            # Add statistics if available
-            if hasattr(value, "get_statistics") and callable(value.get_statistics):
+            constellation_dict = {'constellation_id': value.constellation_id, 'name': value.name, 'state': self._extract_enum_value(value.state), 'tasks': self._serialize_constellation_tasks(value.tasks), 'dependencies': self._serialize_dependencies(getattr(value, 'dependencies', {})), 'metadata': self.serialize_value(getattr(value, 'metadata', {})), 'created_at': self._serialize_datetime(getattr(value, 'created_at', None))}
+            if hasattr(value, 'get_statistics') and callable(value.get_statistics):
                 try:
-                    constellation_dict["statistics"] = value.get_statistics()
+                    constellation_dict['statistics'] = value.get_statistics()
                 except Exception as e:
-                    self.logger.warning(f"Failed to get constellation statistics: {e}")
-
+                    self.logger.warning(f'Failed to get constellation statistics: {e}')
+                    raise RuntimeError('Automation failed') from e
             return constellation_dict
         except Exception as e:
-            self.logger.warning(f"Failed to serialize TaskConstellation: {e}")
+            self.logger.warning(f'Failed to serialize TaskConstellation: {e}')
             return str(value)
+            raise RuntimeError('Automation failed') from e
 
-    def _serialize_constellation_tasks(
-        self, tasks: Dict[str, Any]
-    ) -> Dict[str, Dict[str, Any]]:
+    def _serialize_constellation_tasks(self, tasks: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """
         Serialize all tasks in a constellation.
 
@@ -283,38 +202,15 @@ class EventSerializer:
         serialized_tasks = {}
         for task_id, task in tasks.items():
             try:
-                # Get tips directly from property
-                task_tips = task.tips if hasattr(task, "tips") else None
-
-                serialized_tasks[task_id] = {
-                    "task_id": task.task_id,
-                    "name": task.name,
-                    "description": task.description,
-                    "target_device_id": task.target_device_id,
-                    "status": self._extract_enum_value(task.status),
-                    "result": self.serialize_value(task.result),
-                    "error": str(task.error) if task.error else None,
-                    "input": self.serialize_value(getattr(task, "input", None)),
-                    "output": self.serialize_value(getattr(task, "output", None)),
-                    "tips": (
-                        task_tips if task_tips else []
-                    ),  # Always send array, never null
-                    "started_at": self._serialize_datetime(
-                        getattr(task, "execution_start_time", None)
-                    ),
-                    "completed_at": self._serialize_datetime(
-                        getattr(task, "execution_end_time", None)
-                    ),
-                }
+                task_tips = task.tips if hasattr(task, 'tips') else None
+                serialized_tasks[task_id] = {'task_id': task.task_id, 'name': task.name, 'description': task.description, 'target_device_id': task.target_device_id, 'status': self._extract_enum_value(task.status), 'result': self.serialize_value(task.result), 'error': str(task.error) if task.error else None, 'input': self.serialize_value(getattr(task, 'input', None)), 'output': self.serialize_value(getattr(task, 'output', None)), 'tips': task_tips if task_tips else [], 'started_at': self._serialize_datetime(getattr(task, 'execution_start_time', None)), 'completed_at': self._serialize_datetime(getattr(task, 'execution_end_time', None))}
             except Exception as e:
-                self.logger.warning(f"Failed to serialize task {task_id}: {e}")
-                serialized_tasks[task_id] = {"task_id": task_id, "error": str(e)}
-
+                self.logger.warning(f'Failed to serialize task {task_id}: {e}')
+                serialized_tasks[task_id] = {'task_id': task_id, 'error': str(e)}
+                raise RuntimeError('Automation failed') from e
         return serialized_tasks
 
-    def _serialize_dependencies(
-        self, dependencies: Dict[str, Any]
-    ) -> Dict[str, List[str]]:
+    def _serialize_dependencies(self, dependencies: Dict[str, Any]) -> Dict[str, List[str]]:
         """
         Convert TaskStarLine dependencies to frontend format.
 
@@ -327,17 +223,14 @@ class EventSerializer:
         result: Dict[str, List[str]] = {}
         for dep in dependencies.values():
             try:
-                # Each TaskStarLine has from_task_id (parent) and to_task_id (child)
                 child_id = dep.to_task_id
                 parent_id = dep.from_task_id
-
                 if child_id not in result:
                     result[child_id] = []
                 result[child_id].append(parent_id)
             except AttributeError as e:
-                self.logger.debug(f"Failed to extract dependency IDs: {e}")
+                self.logger.debug(f'Failed to extract dependency IDs: {e}')
                 continue
-
         return result
 
     @staticmethod
@@ -348,7 +241,7 @@ class EventSerializer:
         :param value: Potential enum value
         :return: Enum value or string representation
         """
-        return value.value if hasattr(value, "value") else str(value)
+        return value.value if hasattr(value, 'value') else str(value)
 
     @staticmethod
     def _serialize_datetime(dt: Optional[datetime]) -> Optional[str]:
@@ -359,7 +252,6 @@ class EventSerializer:
         :return: ISO format string or None
         """
         return dt.isoformat() if dt is not None else None
-
 
 class WebSocketObserver(IEventObserver):
     """
@@ -384,31 +276,21 @@ class WebSocketObserver(IEventObserver):
         """
         try:
             self._event_count += 1
-
-            # Convert event to JSON-serializable format using the serializer
             event_data: Dict[str, Any] = self._serializer.serialize_event(event)
-
-            self.logger.debug(
-                f"Broadcasting event #{self._event_count}: {event.event_type.value} to {len(self._connections)} clients"
-            )
-
-            # Broadcast to all connected clients
+            self.logger.debug(f'Broadcasting event #{self._event_count}: {event.event_type.value} to {len(self._connections)} clients')
             disconnected: Set[WebSocket] = set()
             for connection in self._connections:
                 try:
                     await connection.send_json(event_data)
-                    self.logger.debug(f"Successfully sent event to client")
+                    self.logger.debug(f'Successfully sent event to client')
                 except Exception as e:
-                    self.logger.warning(
-                        f"Failed to send event to client: {e}, marking for removal"
-                    )
+                    self.logger.warning(f'Failed to send event to client: {e}, marking for removal')
                     disconnected.add(connection)
-
-            # Remove disconnected clients
+                    raise RuntimeError('Automation failed') from e
             self._connections -= disconnected
-
         except Exception as e:
-            self.logger.error(f"Error broadcasting event: {e}")
+            self.logger.error(f'Error broadcasting event: {e}')
+            raise RuntimeError('Automation failed') from e
 
     def add_connection(self, websocket: WebSocket) -> None:
         """
@@ -417,9 +299,7 @@ class WebSocketObserver(IEventObserver):
         :param websocket: The WebSocket connection to add
         """
         self._connections.add(websocket)
-        self.logger.info(
-            f"WebSocket client connected. Total connections: {len(self._connections)}"
-        )
+        self.logger.info(f'WebSocket client connected. Total connections: {len(self._connections)}')
 
     def remove_connection(self, websocket: WebSocket) -> None:
         """
@@ -428,9 +308,7 @@ class WebSocketObserver(IEventObserver):
         :param websocket: The WebSocket connection to remove
         """
         self._connections.discard(websocket)
-        self.logger.info(
-            f"WebSocket client disconnected. Total connections: {len(self._connections)}"
-        )
+        self.logger.info(f'WebSocket client disconnected. Total connections: {len(self._connections)}')
 
     @property
     def connection_count(self) -> int:

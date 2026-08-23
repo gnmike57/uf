@@ -1,37 +1,19 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 TaskConstellation Editor
 
 Main editor class providing high-level interface for constellation manipulation
 using the command pattern.
 """
-
 import logging
 from typing import Any, Dict, List, Optional, Union
-
 logger = logging.getLogger(__name__)
-
 from ufo.galaxy.agents.schema import TaskConstellationSchema
 from ..task_constellation import TaskConstellation
 from ..task_star import TaskStar
 from ..task_star_line import TaskStarLine
 from .command_invoker import CommandInvoker
 from .command_registry import command_registry
-from .commands import (
-    AddDependencyCommand,
-    AddTaskCommand,
-    BuildConstellationCommand,
-    ClearConstellationCommand,
-    LoadConstellationCommand,
-    RemoveDependencyCommand,
-    RemoveTaskCommand,
-    SaveConstellationCommand,
-    UpdateDependencyCommand,
-    UpdateTaskCommand,
-)
-
+from .commands import AddDependencyCommand, AddTaskCommand, BuildConstellationCommand, ClearConstellationCommand, LoadConstellationCommand, RemoveDependencyCommand, RemoveTaskCommand, SaveConstellationCommand, UpdateDependencyCommand, UpdateTaskCommand
 
 class ConstellationEditor:
     """
@@ -41,12 +23,7 @@ class ConstellationEditor:
     constellation editing operations with undo/redo support.
     """
 
-    def __init__(
-        self,
-        constellation: Optional[TaskConstellation] = None,
-        enable_history: bool = True,
-        max_history_size: int = 100,
-    ):
+    def __init__(self, constellation: Optional[TaskConstellation]=None, enable_history: bool=True, max_history_size: int=100):
         """
         Initialize constellation editor.
 
@@ -92,13 +69,8 @@ class ConstellationEditor:
             try:
                 observer(self, command, result)
             except Exception as e:
-                logger.warning(
-                    f"Observer {observer!r} raised an error on command "
-                    f"'{command}': {e}",
-                    exc_info=True,
-                )
-
-    # Task Management Operations
+                logger.warning(f"Observer {observer!r} raised an error on command '{command}': {e}", exc_info=True)
+                raise RuntimeError('Automation failed') from e
 
     def add_task(self, task: Union[TaskStar, Dict[str, Any]]) -> TaskStar:
         """
@@ -112,15 +84,12 @@ class ConstellationEditor:
             task_data = task.to_dict()
         else:
             task_data = task
-
         command = AddTaskCommand(self._constellation, task_data)
         result = self._invoker.execute(command)
-        self._notify_observers("add_task", result)
+        self._notify_observers('add_task', result)
         return result
 
-    def create_and_add_task(
-        self, task_id: str, description: str, name: str = "", **kwargs
-    ) -> TaskStar:
+    def create_and_add_task(self, task_id: str, description: str, name: str='', **kwargs) -> TaskStar:
         """
         Create and add a new task to the constellation.
 
@@ -143,7 +112,7 @@ class ConstellationEditor:
         """
         command = RemoveTaskCommand(self._constellation, task_id)
         result = self._invoker.execute(command)
-        self._notify_observers("remove_task", result)
+        self._notify_observers('remove_task', result)
         return result
 
     def update_task(self, task_id: str, **updates) -> TaskStar:
@@ -157,7 +126,7 @@ class ConstellationEditor:
         """
         command = UpdateTaskCommand(self._constellation, task_id, updates)
         result = self._invoker.execute(command)
-        self._notify_observers("update_task", result)
+        self._notify_observers('update_task', result)
         return result
 
     def get_task(self, task_id: str) -> Optional[TaskStar]:
@@ -177,11 +146,7 @@ class ConstellationEditor:
         """
         return self._constellation.get_all_tasks()
 
-    # Dependency Management Operations
-
-    def add_dependency(
-        self, dependency: Union[TaskStarLine, Dict[str, Any]]
-    ) -> TaskStarLine:
+    def add_dependency(self, dependency: Union[TaskStarLine, Dict[str, Any]]) -> TaskStarLine:
         """
         Add a dependency to the constellation.
 
@@ -193,19 +158,12 @@ class ConstellationEditor:
             dependency_data = dependency.to_dict()
         else:
             dependency_data = dependency
-
         command = AddDependencyCommand(self._constellation, dependency_data)
         result = self._invoker.execute(command)
-        self._notify_observers("add_dependency", result)
+        self._notify_observers('add_dependency', result)
         return result
 
-    def create_and_add_dependency(
-        self,
-        from_task_id: str,
-        to_task_id: str,
-        dependency_type: str = "UNCONDITIONAL",
-        **kwargs,
-    ) -> TaskStarLine:
+    def create_and_add_dependency(self, from_task_id: str, to_task_id: str, dependency_type: str='UNCONDITIONAL', **kwargs) -> TaskStarLine:
         """
         Create and add a new dependency to the constellation.
 
@@ -216,17 +174,9 @@ class ConstellationEditor:
         :return: The created and added dependency
         """
         from ..enums import DependencyType
-
-        # Convert string to enum if needed
         if isinstance(dependency_type, str):
             dependency_type = DependencyType[dependency_type.upper()]
-
-        dependency = TaskStarLine(
-            from_task_id=from_task_id,
-            to_task_id=to_task_id,
-            dependency_type=dependency_type,
-            **kwargs,
-        )
+        dependency = TaskStarLine(from_task_id=from_task_id, to_task_id=to_task_id, dependency_type=dependency_type, **kwargs)
         return self.add_dependency(dependency)
 
     def remove_dependency(self, dependency_id: str) -> str:
@@ -239,7 +189,7 @@ class ConstellationEditor:
         """
         command = RemoveDependencyCommand(self._constellation, dependency_id)
         result = self._invoker.execute(command)
-        self._notify_observers("remove_dependency", result)
+        self._notify_observers('remove_dependency', result)
         return result
 
     def update_dependency(self, dependency_id: str, **updates) -> TaskStarLine:
@@ -253,7 +203,7 @@ class ConstellationEditor:
         """
         command = UpdateDependencyCommand(self._constellation, dependency_id, updates)
         result = self._invoker.execute(command)
-        self._notify_observers("update_dependency", result)
+        self._notify_observers('update_dependency', result)
         return result
 
     def get_dependency(self, dependency_id: str) -> Optional[TaskStarLine]:
@@ -282,11 +232,7 @@ class ConstellationEditor:
         """
         return self._constellation.get_task_dependencies(task_id)
 
-    # Bulk Operations
-
-    def build_constellation(
-        self, config: TaskConstellationSchema, clear_existing: bool = True
-    ) -> TaskConstellation:
+    def build_constellation(self, config: TaskConstellationSchema, clear_existing: bool=True) -> TaskConstellation:
         """
         Build constellation from configuration.
 
@@ -299,17 +245,11 @@ class ConstellationEditor:
             config = TaskConstellationSchema.model_validate(config)
         command = BuildConstellationCommand(self._constellation, config, clear_existing)
         result = self._invoker.execute(command)
-        self._notify_observers("build_constellation", result)
-        self._constellation = result  # Update reference in case of new instance
+        self._notify_observers('build_constellation', result)
+        self._constellation = result
         return result
 
-    def build_from_tasks_and_dependencies(
-        self,
-        tasks: List[Dict[str, Any]],
-        dependencies: List[Dict[str, Any]],
-        clear_existing: bool = True,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> TaskConstellation:
+    def build_from_tasks_and_dependencies(self, tasks: List[Dict[str, Any]], dependencies: List[Dict[str, Any]], clear_existing: bool=True, metadata: Optional[Dict[str, Any]]=None) -> TaskConstellation:
         """
         Build constellation from task and dependency lists.
 
@@ -319,10 +259,9 @@ class ConstellationEditor:
         :param metadata: Optional metadata to set
         :return: The built constellation
         """
-        config = {"tasks": tasks, "dependencies": dependencies}
+        config = {'tasks': tasks, 'dependencies': dependencies}
         if metadata:
-            config["metadata"] = metadata
-
+            config['metadata'] = metadata
         return self.build_constellation(config, clear_existing)
 
     def clear_constellation(self) -> TaskConstellation:
@@ -334,10 +273,8 @@ class ConstellationEditor:
         """
         command = ClearConstellationCommand(self._constellation)
         result = self._invoker.execute(command)
-        self._notify_observers("clear_constellation", result)
+        self._notify_observers('clear_constellation', result)
         return result
-
-    # File Operations
 
     def load_constellation(self, file_path: str) -> TaskConstellation:
         """
@@ -349,7 +286,7 @@ class ConstellationEditor:
         """
         command = LoadConstellationCommand(self._constellation, file_path)
         result = self._invoker.execute(command)
-        self._notify_observers("load_constellation", result)
+        self._notify_observers('load_constellation', result)
         return result
 
     def save_constellation(self, file_path: str) -> str:
@@ -362,7 +299,7 @@ class ConstellationEditor:
         """
         command = SaveConstellationCommand(self._constellation, file_path)
         result = self._invoker.execute(command)
-        self._notify_observers("save_constellation", result)
+        self._notify_observers('save_constellation', result)
         return result
 
     def load_from_dict(self, data: Dict[str, Any]) -> TaskConstellation:
@@ -372,10 +309,7 @@ class ConstellationEditor:
         :param data: Dictionary representation of constellation
         :return: The loaded constellation
         """
-        # Create temporary constellation and copy state
         temp_constellation = TaskConstellation.from_dict(data)
-
-        # Use build command to apply the state
         config = temp_constellation.to_dict()
         return self.build_constellation(config, clear_existing=True)
 
@@ -390,8 +324,6 @@ class ConstellationEditor:
         config = temp_constellation.to_dict()
         return self.build_constellation(config, clear_existing=True)
 
-    # History Operations
-
     def undo(self) -> bool:
         """
         Undo the last command.
@@ -400,7 +332,7 @@ class ConstellationEditor:
         """
         if self._invoker.can_undo():
             command = self._invoker.undo()
-            self._notify_observers("undo", command)
+            self._notify_observers('undo', command)
             return True
         return False
 
@@ -412,7 +344,7 @@ class ConstellationEditor:
         """
         if self._invoker.can_redo():
             command = self._invoker.redo()
-            self._notify_observers("redo", command)
+            self._notify_observers('redo', command)
             return True
         return False
 
@@ -435,7 +367,7 @@ class ConstellationEditor:
     def clear_history(self) -> None:
         """Clear the command history."""
         self._invoker.clear_history()
-        self._notify_observers("clear_history", None)
+        self._notify_observers('clear_history', None)
 
     def get_history(self) -> List[str]:
         """
@@ -444,8 +376,6 @@ class ConstellationEditor:
         :return: List of command descriptions
         """
         return [cmd.description for cmd in self._invoker.get_history()]
-
-    # Validation and Analysis
 
     def validate_constellation(self) -> tuple[bool, List[str]]:
         """
@@ -475,17 +405,8 @@ class ConstellationEditor:
     def get_statistics(self) -> Dict[str, Any]:
         """Get constellation statistics."""
         stats = self._constellation.get_statistics()
-        stats.update(
-            {
-                "editor_execution_count": self._invoker.execution_count,
-                "editor_history_size": self._invoker.history_size,
-                "editor_can_undo": self.can_undo(),
-                "editor_can_redo": self.can_redo(),
-            }
-        )
+        stats.update({'editor_execution_count': self._invoker.execution_count, 'editor_history_size': self._invoker.history_size, 'editor_can_undo': self.can_undo(), 'editor_can_redo': self.can_redo()})
         return stats
-
-    # Advanced Operations
 
     def batch_operations(self, operations: List[callable]) -> List[Any]:
         """
@@ -501,81 +422,56 @@ class ConstellationEditor:
                 results.append(result)
             except Exception as e:
                 results.append(e)
+                raise RuntimeError('Automation failed') from e
         return results
 
-    def create_subgraph(self, task_ids: List[str]) -> "ConstellationEditor":
+    def create_subgraph(self, task_ids: List[str]) -> 'ConstellationEditor':
         """
         Create a new editor with a subgraph containing specified tasks.
 
         :param task_ids: List of task IDs to include in subgraph
         :return: New ConstellationEditor with subgraph
         """
-        subgraph_constellation = TaskConstellation(
-            name=f"{self._constellation.name}_subgraph"
-        )
+        subgraph_constellation = TaskConstellation(name=f'{self._constellation.name}_subgraph')
         subgraph_editor = ConstellationEditor(subgraph_constellation)
-
-        # Add specified tasks
         for task_id in task_ids:
             task = self.get_task(task_id)
             if task:
-                # Create a copy of the task for the subgraph
                 task_dict = task.to_dict()
                 new_task = TaskStar.from_dict(task_dict)
                 subgraph_editor.add_task(new_task)
-
-        # Add dependencies between included tasks
         for dependency in self.list_dependencies():
-            if (
-                dependency.from_task_id in task_ids
-                and dependency.to_task_id in task_ids
-            ):
-                # Create a copy of the dependency for the subgraph
+            if dependency.from_task_id in task_ids and dependency.to_task_id in task_ids:
                 dep_dict = dependency.to_dict()
                 new_dependency = TaskStarLine.from_dict(dep_dict)
                 subgraph_editor.add_dependency(new_dependency)
-
         return subgraph_editor
 
-    def merge_constellation(
-        self, other_editor: "ConstellationEditor", prefix: str = ""
-    ) -> None:
+    def merge_constellation(self, other_editor: 'ConstellationEditor', prefix: str='') -> None:
         """
         Merge another constellation into this one.
 
         :param other_editor: ConstellationEditor to merge from
         :param prefix: Prefix to add to task IDs to avoid conflicts
         """
-        # Create mapping for task ID changes
         id_mapping = {}
-
-        # Add tasks with prefix
         for task in other_editor.list_tasks():
             original_id = task.task_id
-            new_id = f"{prefix}{original_id}" if prefix else original_id
+            new_id = f'{prefix}{original_id}' if prefix else original_id
             id_mapping[original_id] = new_id
-
-            # Create new task with updated ID
             task_dict = task.to_dict()
-            task_dict["task_id"] = new_id
+            task_dict['task_id'] = new_id
             new_task = TaskStar.from_dict(task_dict)
             self.add_task(new_task)
-
-        # Add dependencies with updated IDs
         for dependency in other_editor.list_dependencies():
             dep_dict = dependency.to_dict()
-            dep_dict["from_task_id"] = id_mapping[dependency.from_task_id]
-            dep_dict["to_task_id"] = id_mapping[dependency.to_task_id]
-            dep_dict["line_id"] = (
-                f"{prefix}{dependency.line_id}" if prefix else dependency.line_id
-            )
-
+            dep_dict['from_task_id'] = id_mapping[dependency.from_task_id]
+            dep_dict['to_task_id'] = id_mapping[dependency.to_task_id]
+            dep_dict['line_id'] = f'{prefix}{dependency.line_id}' if prefix else dependency.line_id
             new_dependency = TaskStarLine.from_dict(dep_dict)
             self.add_dependency(new_dependency)
 
-    # Display and Debug
-
-    def display_constellation(self, mode: str = "overview") -> None:
+    def display_constellation(self, mode: str='overview') -> None:
         """
         Display the constellation using visualization.
 
@@ -583,10 +479,7 @@ class ConstellationEditor:
         """
         self._constellation.display_dag(mode)
 
-    # Command Registry Methods
-    def list_available_commands(
-        self, category: Optional[str] = None
-    ) -> Dict[str, Dict[str, Any]]:
+    def list_available_commands(self, category: Optional[str]=None) -> Dict[str, Dict[str, Any]]:
         """
         List all available commands from the registry.
 
@@ -613,12 +506,9 @@ class ConstellationEditor:
         :param kwargs: Keyword arguments for the command
         :return: Result of command execution
         """
-        command = command_registry.create_command(
-            command_name, self._constellation, *args, **kwargs
-        )
+        command = command_registry.create_command(command_name, self._constellation, *args, **kwargs)
         if command is None:
             raise ValueError(f"Command '{command_name}' not found in registry")
-
         return self._invoker.execute(command)
 
     def get_command_categories(self) -> List[str]:
@@ -631,22 +521,8 @@ class ConstellationEditor:
 
     def __str__(self) -> str:
         """String representation of the editor."""
-        return (
-            f"ConstellationEditor("
-            f"constellation={self._constellation.constellation_id}, "
-            f"tasks={len(self._constellation.tasks)}, "
-            f"dependencies={len(self._constellation.dependencies)}, "
-            f"history={self._invoker.history_size})"
-        )
+        return f'ConstellationEditor(constellation={self._constellation.constellation_id}, tasks={len(self._constellation.tasks)}, dependencies={len(self._constellation.dependencies)}, history={self._invoker.history_size})'
 
     def __repr__(self) -> str:
         """Detailed representation of the editor."""
-        return (
-            f"ConstellationEditor("
-            f"constellation_id={self._constellation.constellation_id!r}, "
-            f"tasks={len(self._constellation.tasks)}, "
-            f"dependencies={len(self._constellation.dependencies)}, "
-            f"execution_count={self._invoker.execution_count}, "
-            f"can_undo={self.can_undo()}, "
-            f"can_redo={self.can_redo()})"
-        )
+        return f'ConstellationEditor(constellation_id={self._constellation.constellation_id!r}, tasks={len(self._constellation.tasks)}, dependencies={len(self._constellation.dependencies)}, execution_count={self._invoker.execution_count}, can_undo={self.can_undo()}, can_redo={self.can_redo()})'

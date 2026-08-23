@@ -1,19 +1,13 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Main DAG visualization observer with delegated handlers.
 """
-
 import logging
 from typing import Dict, Optional
-
 from ufo.galaxy.visualization.dag_visualizer import DAGVisualizer
 from ...constellation import TaskConstellation
 from ...core.events import ConstellationEvent, Event, IEventObserver, TaskEvent
 from .constellation_visualization_handler import ConstellationVisualizationHandler
 from .task_visualization_handler import TaskVisualizationHandler
-
 
 class DAGVisualizationObserver(IEventObserver):
     """
@@ -24,7 +18,7 @@ class DAGVisualizationObserver(IEventObserver):
     specific visualization tasks to appropriate handlers.
     """
 
-    def __init__(self, enable_visualization: bool = True, console=None):
+    def __init__(self, enable_visualization: bool=True, console=None):
         """
         Initialize the DAG visualization observer.
 
@@ -35,15 +29,9 @@ class DAGVisualizationObserver(IEventObserver):
         self.logger = logging.getLogger(__name__)
         self._visualizer = None
         self._console = console
-
-        # Track constellations for visualization
         self._constellations: Dict[str, TaskConstellation] = {}
-
-        # Initialize specialized handlers
         self._task_handler = None
         self._constellation_handler = None
-
-        # Initialize visualizer if enabled
         if self.enable_visualization:
             self._init_visualizer()
 
@@ -55,17 +43,11 @@ class DAGVisualizationObserver(IEventObserver):
         disables visualization if import fails.
         """
         try:
-
             self._visualizer = DAGVisualizer(console=self._console)
-
-            # Initialize specialized handlers
             self._task_handler = TaskVisualizationHandler(self._visualizer, self.logger)
-            self._constellation_handler = ConstellationVisualizationHandler(
-                self._visualizer, self.logger
-            )
-
+            self._constellation_handler = ConstellationVisualizationHandler(self._visualizer, self.logger)
         except ImportError as e:
-            self.logger.warning(f"Failed to import DAGVisualizer: {e}")
+            self.logger.warning(f'Failed to import DAGVisualizer: {e}')
             self.enable_visualization = False
 
     async def on_event(self, event: Event) -> None:
@@ -76,14 +58,14 @@ class DAGVisualizationObserver(IEventObserver):
         """
         if not self.enable_visualization or not self._visualizer:
             return
-
         try:
             if isinstance(event, ConstellationEvent):
                 await self._handle_constellation_event(event)
             elif isinstance(event, TaskEvent):
                 await self._handle_task_event(event)
         except Exception as e:
-            self.logger.debug(f"Visualization error: {e}")
+            self.logger.debug(f'Visualization error: {e}')
+            raise RuntimeError('Automation failed') from e
 
     async def _handle_constellation_event(self, event: ConstellationEvent) -> None:
         """
@@ -92,19 +74,11 @@ class DAGVisualizationObserver(IEventObserver):
         :param event: ConstellationEvent instance for visualization updates
         """
         constellation_id = event.constellation_id
-
-        # Get constellation from event data if available
         constellation = self._extract_constellation_from_event(event)
-
-        # Store constellation reference for future use
         if constellation:
             self._constellations[constellation_id] = constellation
-
-        # Delegate to constellation handler
         if self._constellation_handler:
-            await self._constellation_handler.handle_constellation_event(
-                event, constellation
-            )
+            await self._constellation_handler.handle_constellation_event(event, constellation)
 
     async def _handle_task_event(self, event: TaskEvent) -> None:
         """
@@ -112,22 +86,16 @@ class DAGVisualizationObserver(IEventObserver):
 
         :param event: TaskEvent instance for task visualization updates
         """
-        constellation_id = event.data.get("constellation_id") if event.data else None
+        constellation_id = event.data.get('constellation_id') if event.data else None
         if not constellation_id:
             return
-
-        # Get constellation for this task
         constellation = self._constellations.get(constellation_id)
         if not constellation:
             return
-
-        # Delegate to task handler
         if self._task_handler:
             await self._task_handler.handle_task_event(event, constellation)
 
-    def _extract_constellation_from_event(
-        self, event: ConstellationEvent
-    ) -> Optional[TaskConstellation]:
+    def _extract_constellation_from_event(self, event: ConstellationEvent) -> Optional[TaskConstellation]:
         """
         Extract constellation from event data.
 
@@ -136,12 +104,11 @@ class DAGVisualizationObserver(IEventObserver):
         """
         constellation = None
         if isinstance(event.data, dict):
-            constellation = event.data.get("constellation")
-            if not constellation and "updated_constellation" in event.data:
-                constellation = event.data["updated_constellation"]
-            if not constellation and "new_constellation" in event.data:
-                constellation = event.data["new_constellation"]
-
+            constellation = event.data.get('constellation')
+            if not constellation and 'updated_constellation' in event.data:
+                constellation = event.data['updated_constellation']
+            if not constellation and 'new_constellation' in event.data:
+                constellation = event.data['new_constellation']
         return constellation
 
     def set_visualization_enabled(self, enabled: bool) -> None:
@@ -151,7 +118,7 @@ class DAGVisualizationObserver(IEventObserver):
         :param enabled: Whether to enable visualization
         """
         self.enable_visualization = enabled
-        if enabled and not self._visualizer:
+        if enabled and (not self._visualizer):
             self._init_visualizer()
 
     def get_constellation(self, constellation_id: str) -> Optional[TaskConstellation]:
@@ -163,9 +130,7 @@ class DAGVisualizationObserver(IEventObserver):
         """
         return self._constellations.get(constellation_id)
 
-    def register_constellation(
-        self, constellation_id: str, constellation: TaskConstellation
-    ) -> None:
+    def register_constellation(self, constellation_id: str, constellation: TaskConstellation) -> None:
         """
         Manually register a constellation for visualization.
 

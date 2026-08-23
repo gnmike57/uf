@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Constellation Modification Synchronizer Observer
 
@@ -23,27 +20,13 @@ Example:
     >>> await synchronizer.wait_for_pending_modifications()
     >>> ready_tasks = constellation.get_ready_tasks()
 """
-
 import asyncio
-
 import logging
-
 from typing import TYPE_CHECKING, Dict, Optional
-
-
 from ufo.galaxy.constellation.task_constellation import TaskConstellation
-
-from ...core.events import (
-    ConstellationEvent,
-    Event,
-    EventType,
-    IEventObserver,
-    TaskEvent,
-)
-
+from ...core.events import ConstellationEvent, Event, EventType, IEventObserver, TaskEvent
 if TYPE_CHECKING:
     from ...constellation.orchestrator.orchestrator import TaskConstellationOrchestrator
-
 
 class ConstellationModificationSynchronizer(IEventObserver):
     """
@@ -58,11 +41,7 @@ class ConstellationModificationSynchronizer(IEventObserver):
     before executing newly ready tasks.
     """
 
-    def __init__(
-        self,
-        orchestrator: "TaskConstellationOrchestrator",
-        logger: Optional[logging.Logger] = None,
-    ):
+    def __init__(self, orchestrator: 'TaskConstellationOrchestrator', logger: Optional[logging.Logger]=None):
         """
         Initialize ConstellationModificationSynchronizer.
 
@@ -71,23 +50,11 @@ class ConstellationModificationSynchronizer(IEventObserver):
         """
         self.orchestrator = orchestrator
         self.logger = logger or logging.getLogger(__name__)
-
-        # Track pending modifications: task_id -> Future
         self._pending_modifications: Dict[str, asyncio.Future] = {}
-
-        # Track constellation being modified
         self._current_constellation_id: Optional[str] = None
-        self._current_constellation: Optional["TaskConstellation"] = None
-
-        # Timeout for modifications (safety measure)
-        self._modification_timeout = 600.0  # 600 seconds
-
-        # Statistics for monitoring
-        self._stats = {
-            "total_modifications": 0,
-            "completed_modifications": 0,
-            "timeout_modifications": 0,
-        }
+        self._current_constellation: Optional['TaskConstellation'] = None
+        self._modification_timeout = 600.0
+        self._stats = {'total_modifications': 0, 'completed_modifications': 0, 'timeout_modifications': 0}
 
     async def on_event(self, event: Event) -> None:
         """
@@ -107,50 +74,26 @@ class ConstellationModificationSynchronizer(IEventObserver):
         :param event: TaskEvent instance containing task status updates
         """
         try:
-            # Only care about task completion/failure events
-            if event.event_type not in [
-                EventType.TASK_COMPLETED,
-                EventType.TASK_FAILED,
-            ]:
+            if event.event_type not in [EventType.TASK_COMPLETED, EventType.TASK_FAILED]:
                 return
-
-            constellation_id = event.data.get("constellation_id")
+            constellation_id = event.data.get('constellation_id')
             if not constellation_id:
-                self.logger.debug(
-                    f"Task event {event.task_id} missing constellation_id, skipping"
-                )
+                self.logger.debug(f'Task event {event.task_id} missing constellation_id, skipping')
                 return
-
             self._current_constellation_id = constellation_id
-
-            # Register this task as having a pending modification
             if event.task_id not in self._pending_modifications:
                 modification_future = asyncio.Future()
                 self._pending_modifications[event.task_id] = modification_future
-                self._stats["total_modifications"] += 1
-
-                self.logger.info(
-                    f"🔒 Registered pending modification for task '{event.task_id}' "
-                    f"(constellation: {constellation_id})"
-                )
-
-                # Set timeout to auto-complete if modification takes too long
-                asyncio.create_task(
-                    self._auto_complete_on_timeout(event.task_id, modification_future)
-                )
-
+                self._stats['total_modifications'] += 1
+                self.logger.info(f"🔒 Registered pending modification for task '{event.task_id}' (constellation: {constellation_id})")
+                asyncio.create_task(self._auto_complete_on_timeout(event.task_id, modification_future))
         except AttributeError as e:
-            self.logger.error(
-                f"Attribute error handling task event in synchronizer: {e}",
-                exc_info=True,
-            )
+            self.logger.error(f'Attribute error handling task event in synchronizer: {e}', exc_info=True)
         except KeyError as e:
-            self.logger.error(f"Missing key in task event: {e}", exc_info=True)
+            self.logger.error(f'Missing key in task event: {e}', exc_info=True)
         except Exception as e:
-            self.logger.error(
-                f"Unexpected error handling task event in synchronizer: {e}",
-                exc_info=True,
-            )
+            self.logger.error(f'Unexpected error handling task event in synchronizer: {e}', exc_info=True)
+            raise RuntimeError('Automation failed') from e
 
     async def _handle_constellation_event(self, event: ConstellationEvent) -> None:
         """
@@ -159,68 +102,39 @@ class ConstellationModificationSynchronizer(IEventObserver):
         :param event: ConstellationEvent instance containing constellation updates
         """
         try:
-            # Only care about constellation modified events
-            if event.event_type not in [
-                EventType.CONSTELLATION_MODIFIED,
-                EventType.CONSTELLATION_STARTED,
-            ]:
+            if event.event_type not in [EventType.CONSTELLATION_MODIFIED, EventType.CONSTELLATION_STARTED]:
                 return
-
             if event.event_type == EventType.CONSTELLATION_STARTED:
                 self._current_constellation_id = event.constellation_id
-                self._current_constellation = event.data.get("constellation")
+                self._current_constellation = event.data.get('constellation')
                 return
-
-            task_ids = event.data.get("on_task_id")
+            task_ids = event.data.get('on_task_id')
             if not task_ids:
-                self.logger.warning(
-                    "CONSTELLATION_MODIFIED event missing 'on_task_id' field"
-                )
+                self.logger.warning("CONSTELLATION_MODIFIED event missing 'on_task_id' field")
                 return
-
-            new_constellation = event.data.get("new_constellation")
-
+            new_constellation = event.data.get('new_constellation')
             if new_constellation:
                 self._current_constellation = new_constellation
-
-                self.logger.info(
-                    f"🔄 Updated constellation reference for '{event.constellation_id}'"
-                )
-
-            # Mark the modification as complete
+                self.logger.info(f"🔄 Updated constellation reference for '{event.constellation_id}'")
             for task_id in task_ids:
                 if task_id in self._pending_modifications:
                     future = self._pending_modifications[task_id]
                     if not future.done():
                         future.set_result(True)
-                        self._stats["completed_modifications"] += 1
-                        self.logger.info(
-                            f"✅ Completed modification for task '{task_id}' "
-                            f"(constellation: {event.constellation_id})"
-                        )
+                        self._stats['completed_modifications'] += 1
+                        self.logger.info(f"✅ Completed modification for task '{task_id}' (constellation: {event.constellation_id})")
                     del self._pending_modifications[task_id]
                 else:
-                    self.logger.debug(
-                        f"Received CONSTELLATION_MODIFIED for task '{task_id}' "
-                        f"but no pending modification was registered"
-                    )
-
+                    self.logger.debug(f"Received CONSTELLATION_MODIFIED for task '{task_id}' but no pending modification was registered")
         except AttributeError as e:
-            self.logger.error(
-                f"Attribute error handling constellation event in synchronizer: {e}",
-                exc_info=True,
-            )
+            self.logger.error(f'Attribute error handling constellation event in synchronizer: {e}', exc_info=True)
         except KeyError as e:
-            self.logger.error(f"Missing key in constellation event: {e}", exc_info=True)
+            self.logger.error(f'Missing key in constellation event: {e}', exc_info=True)
         except Exception as e:
-            self.logger.error(
-                f"Unexpected error handling constellation event in synchronizer: {e}",
-                exc_info=True,
-            )
+            self.logger.error(f'Unexpected error handling constellation event in synchronizer: {e}', exc_info=True)
+            raise RuntimeError('Automation failed') from e
 
-    async def _auto_complete_on_timeout(
-        self, task_id: str, future: asyncio.Future
-    ) -> None:
+    async def _auto_complete_on_timeout(self, task_id: str, future: asyncio.Future) -> None:
         """
         Auto-complete a pending modification if it times out.
 
@@ -229,13 +143,9 @@ class ConstellationModificationSynchronizer(IEventObserver):
         """
         try:
             await asyncio.sleep(self._modification_timeout)
-
             if not future.done():
-                self._stats["timeout_modifications"] += 1
-                self.logger.warning(
-                    f"⚠️ Modification for task '{task_id}' timed out after "
-                    f"{self._modification_timeout}s. Auto-completing to prevent deadlock."
-                )
+                self._stats['timeout_modifications'] += 1
+                self.logger.warning(f"⚠️ Modification for task '{task_id}' timed out after {self._modification_timeout}s. Auto-completing to prevent deadlock.")
                 future.set_result(False)
                 if task_id in self._pending_modifications:
                     del self._pending_modifications[task_id]
@@ -243,13 +153,10 @@ class ConstellationModificationSynchronizer(IEventObserver):
             self.logger.debug(f"Auto-complete timeout cancelled for task '{task_id}'")
             raise
         except Exception as e:
-            self.logger.error(
-                f"Unexpected error in auto-complete timeout handler: {e}", exc_info=True
-            )
+            self.logger.error(f'Unexpected error in auto-complete timeout handler: {e}', exc_info=True)
+            raise RuntimeError('Automation failed') from e
 
-    async def wait_for_pending_modifications(
-        self, timeout: Optional[float] = None
-    ) -> bool:
+    async def wait_for_pending_modifications(self, timeout: Optional[float]=None) -> bool:
         """
         Wait for all pending modifications to complete.
 
@@ -261,55 +168,27 @@ class ConstellationModificationSynchronizer(IEventObserver):
         """
         if not self._pending_modifications:
             return True
-
         timeout = timeout or self._modification_timeout
         start_time = asyncio.get_event_loop().time()
-
-        self.logger.info(
-            f"⏳ Starting wait for pending modifications (timeout: {timeout}s)"
-        )
-
+        self.logger.info(f'⏳ Starting wait for pending modifications (timeout: {timeout}s)')
         try:
             while self._pending_modifications:
-                # Get current pending tasks (snapshot)
                 pending_tasks = list(self._pending_modifications.keys())
                 pending_futures = list(self._pending_modifications.values())
-
-                self.logger.info(
-                    f"⏳ Waiting for {len(pending_tasks)} pending modification(s): {pending_tasks}"
-                )
-
-                # Calculate remaining timeout
+                self.logger.info(f'⏳ Waiting for {len(pending_tasks)} pending modification(s): {pending_tasks}')
                 elapsed = asyncio.get_event_loop().time() - start_time
                 remaining_timeout = timeout - elapsed
-
                 if remaining_timeout <= 0:
                     raise asyncio.TimeoutError()
-
-                # Wait for all current pending modifications
-                await asyncio.wait_for(
-                    asyncio.gather(*pending_futures, return_exceptions=True),
-                    timeout=remaining_timeout,
-                )
-
-                # Check if new modifications were added during the wait
-                # If yes, loop again; if no, we're done
+                await asyncio.wait_for(asyncio.gather(*pending_futures, return_exceptions=True), timeout=remaining_timeout)
                 if not self._pending_modifications:
                     break
-
-                # Yield control to allow new registrations to settle
                 await asyncio.sleep(0)
-
-            self.logger.info("✅ All pending modifications completed")
+            self.logger.info('✅ All pending modifications completed')
             return True
-
         except asyncio.TimeoutError:
             pending = list(self._pending_modifications.keys())
-            self.logger.warning(
-                f"⚠️ Timeout waiting for modifications after {timeout}s. "
-                f"Proceeding anyway. Pending: {pending}"
-            )
-            # Clear all pending modifications to prevent permanent deadlock
+            self.logger.warning(f'⚠️ Timeout waiting for modifications after {timeout}s. Proceeding anyway. Pending: {pending}')
             self._pending_modifications.clear()
             return False
 
@@ -319,7 +198,6 @@ class ConstellationModificationSynchronizer(IEventObserver):
 
         :return: Constellation or None if not set
         """
-
         return self._current_constellation
 
     def has_pending_modifications(self) -> bool:
@@ -362,15 +240,10 @@ class ConstellationModificationSynchronizer(IEventObserver):
         """
         count = len(self._pending_modifications)
         if count > 0:
-            self.logger.warning(
-                f"⚠️ Forcefully clearing {count} pending modification(s)"
-            )
-
-            # Complete all pending futures
+            self.logger.warning(f'⚠️ Forcefully clearing {count} pending modification(s)')
             for task_id, future in self._pending_modifications.items():
                 if not future.done():
                     future.set_result(False)
-
             self._pending_modifications.clear()
 
     def set_modification_timeout(self, timeout: float) -> None:
@@ -380,14 +253,11 @@ class ConstellationModificationSynchronizer(IEventObserver):
         :param timeout: Timeout in seconds
         """
         if timeout <= 0:
-            raise ValueError("Timeout must be positive")
+            raise ValueError('Timeout must be positive')
         self._modification_timeout = timeout
-        self.logger.info(f"Modification timeout set to {timeout}s")
+        self.logger.info(f'Modification timeout set to {timeout}s')
 
-    def merge_and_sync_constellation_states(
-        self,
-        orchestrator_constellation: TaskConstellation,
-    ) -> TaskConstellation:
+    def merge_and_sync_constellation_states(self, orchestrator_constellation: TaskConstellation) -> TaskConstellation:
         """
         Merge constellation states: structural changes from agent + execution state from orchestrator.
 
@@ -403,54 +273,26 @@ class ConstellationModificationSynchronizer(IEventObserver):
         """
         if not self._current_constellation:
             if self.logger:
-                self.logger.warning(
-                    "⚠️ No agent constellation available, returning orchestrator constellation"
-                )
+                self.logger.warning('⚠️ No agent constellation available, returning orchestrator constellation')
             return orchestrator_constellation
-
         if self.logger:
-            self.logger.info("🔄 Merging constellation states...")
-
-        # Use agent's constellation as base (has structural modifications)
+            self.logger.info('🔄 Merging constellation states...')
         merged = self._current_constellation
-
-        # Preserve execution state from orchestrator for existing tasks
         for task_id, orchestrator_task in orchestrator_constellation.tasks.items():
             if task_id in merged.tasks:
                 agent_task = merged.tasks[task_id]
-
-                # ✅ Key: If orchestrator's task state is more advanced, preserve it
-                # State priority: COMPLETED/FAILED > RUNNING > WAITING_DEPENDENCY > PENDING
-                if self._is_state_more_advanced(
-                    orchestrator_task.status, agent_task.status
-                ):
+                if self._is_state_more_advanced(orchestrator_task.status, agent_task.status):
                     if self.logger:
-                        self.logger.debug(
-                            f"  📌 Preserving advanced state for task '{task_id}': "
-                            f"{orchestrator_task.status} (orchestrator) vs "
-                            f"{agent_task.status} (agent)"
-                        )
-
-                    # Preserve orchestrator's state and results
+                        self.logger.debug(f"  📌 Preserving advanced state for task '{task_id}': {orchestrator_task.status} (orchestrator) vs {agent_task.status} (agent)")
                     agent_task._status = orchestrator_task.status
                     agent_task._result = orchestrator_task.result
                     agent_task._error = orchestrator_task.error
-                    agent_task._execution_start_time = (
-                        orchestrator_task.execution_start_time
-                    )
-                    agent_task._execution_end_time = (
-                        orchestrator_task.execution_end_time
-                    )
-
-        # Update constellation state
+                    agent_task._execution_start_time = orchestrator_task.execution_start_time
+                    agent_task._execution_end_time = orchestrator_task.execution_end_time
         merged.update_state()
-
-        # Sync the current constellation reference
         self._current_constellation = merged
-
         if self.logger:
-            self.logger.info("✅ Constellation states merged successfully")
-
+            self.logger.info('✅ Constellation states merged successfully')
         return merged
 
     def _is_state_more_advanced(self, state1, state2) -> bool:
@@ -464,18 +306,7 @@ class ConstellationModificationSynchronizer(IEventObserver):
         :return: True if state1 is more advanced
         """
         from ...constellation.enums import TaskStatus
-
-        # Define state advancement levels
-        state_levels = {
-            TaskStatus.PENDING: 0,
-            TaskStatus.WAITING_DEPENDENCY: 1,
-            TaskStatus.RUNNING: 2,
-            TaskStatus.COMPLETED: 3,
-            TaskStatus.FAILED: 3,  # Terminal states are equally advanced
-            TaskStatus.CANCELLED: 3,
-        }
-
+        state_levels = {TaskStatus.PENDING: 0, TaskStatus.WAITING_DEPENDENCY: 1, TaskStatus.RUNNING: 2, TaskStatus.COMPLETED: 3, TaskStatus.FAILED: 3, TaskStatus.CANCELLED: 3}
         level1 = state_levels.get(state1, 0)
         level2 = state_levels.get(state2, 0)
-
         return level1 > level2

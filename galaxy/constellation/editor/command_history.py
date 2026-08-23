@@ -1,17 +1,10 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Command History Management
 
 Manages command execution history with undo/redo capabilities.
 """
-
 from typing import List, Optional
-
-
 from .command_interface import CommandUndoError, IUndoableCommand
-
 
 class CommandHistory:
     """
@@ -21,7 +14,7 @@ class CommandHistory:
     with support for undo/redo operations.
     """
 
-    def __init__(self, max_history_size: int = 100):
+    def __init__(self, max_history_size: int=100):
         """
         Initialize command history.
 
@@ -37,15 +30,10 @@ class CommandHistory:
 
         :param command: Command to add to history
         """
-        # Remove any commands after current index (redo stack)
         if self._current_index < len(self._history) - 1:
-            self._history = self._history[: self._current_index + 1]
-
-        # Add the new command
+            self._history = self._history[:self._current_index + 1]
         self._history.append(command)
         self._current_index += 1
-
-        # Maintain max history size
         if len(self._history) > self._max_history_size:
             self._history.pop(0)
             self._current_index -= 1
@@ -56,11 +44,7 @@ class CommandHistory:
 
         :return: True if undo is possible, False otherwise
         """
-        return (
-            self._current_index >= 0
-            and self._current_index < len(self._history)
-            and self._history[self._current_index].can_undo()
-        )
+        return self._current_index >= 0 and self._current_index < len(self._history) and self._history[self._current_index].can_undo()
 
     def can_redo(self) -> bool:
         """
@@ -69,9 +53,7 @@ class CommandHistory:
         :return: True if redo is possible, False otherwise
         """
         next_index = self._current_index + 1
-        return (
-            next_index < len(self._history) and self._history[next_index].can_execute()
-        )
+        return next_index < len(self._history) and self._history[next_index].can_execute()
 
     def undo(self) -> Optional[IUndoableCommand]:
         """
@@ -82,7 +64,6 @@ class CommandHistory:
         """
         if not self.can_undo():
             return None
-
         command = self._history[self._current_index]
         try:
             command.undo()
@@ -100,16 +81,14 @@ class CommandHistory:
         """
         if not self.can_redo():
             return None
-
         self._current_index += 1
         command = self._history[self._current_index]
         try:
             command.execute()
             return command
         except Exception as e:
-            self._current_index -= 1  # Revert index on failure
+            self._current_index -= 1
             from .command_interface import CommandExecutionError
-
             raise CommandExecutionError(command, str(e), e)
 
     def clear(self) -> None:
@@ -142,7 +121,7 @@ class CommandHistory:
         :return: Description of undoable command, or None if no undo available
         """
         if self.can_undo():
-            return f"Undo: {self._history[self._current_index].description}"
+            return f'Undo: {self._history[self._current_index].description}'
         return None
 
     def get_redo_description(self) -> Optional[str]:
@@ -153,7 +132,7 @@ class CommandHistory:
         """
         if self.can_redo():
             next_index = self._current_index + 1
-            return f"Redo: {self._history[next_index].description}"
+            return f'Redo: {self._history[next_index].description}'
         return None
 
     @property
@@ -172,4 +151,4 @@ class CommandHistory:
 
     def __str__(self) -> str:
         """String representation of command history."""
-        return f"CommandHistory(size={len(self._history)}, current_index={self._current_index})"
+        return f'CommandHistory(size={len(self._history)}, current_index={self._current_index})'

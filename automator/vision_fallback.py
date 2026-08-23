@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Dual-Stage Vision Grounding Fallback — OmniParser V2 → Cloud VLM cascade.
 
@@ -26,31 +23,22 @@ from ufo.automator.vision_fallback import VisionFallbackManager
     if result:
         pyautogui.click(result.center_x, result.center_y)
 """
-
 import json
 import logging
 import os
 import tempfile
 from typing import Any, Dict, List, Optional
-
 from pydantic import BaseModel, Field
-
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Data Models
-# ---------------------------------------------------------------------------
 
 class BoundingBox(BaseModel):
     """Resolved screen coordinates for a UI element."""
-    center_x: int = Field(..., description="Absolute X center coordinate")
-    center_y: int = Field(..., description="Absolute Y center coordinate")
-    width: int = Field(default=0, description="Element width in pixels")
-    height: int = Field(default=0, description="Element height in pixels")
-    confidence: float = Field(default=0.0, description="Grounding confidence 0.0-1.0")
-    source: str = Field(default="unknown", description="Which stage resolved: 'omniparser' or 'cloud_vlm'")
-
+    center_x: int = Field(..., description='Absolute X center coordinate')
+    center_y: int = Field(..., description='Absolute Y center coordinate')
+    width: int = Field(default=0, description='Element width in pixels')
+    height: int = Field(default=0, description='Element height in pixels')
+    confidence: float = Field(default=0.0, description='Grounding confidence 0.0-1.0')
+    source: str = Field(default='unknown', description="Which stage resolved: 'omniparser' or 'cloud_vlm'")
 
 class VisionFallbackResult(BaseModel):
     """Full result from the vision fallback pipeline."""
@@ -60,11 +48,6 @@ class VisionFallbackResult(BaseModel):
     stage_1_confidence: float = 0.0
     stage_2_attempted: bool = False
     error: Optional[str] = None
-
-
-# ---------------------------------------------------------------------------
-# Vision Fallback Manager
-# ---------------------------------------------------------------------------
 
 class VisionFallbackManager:
     """
@@ -79,7 +62,7 @@ class VisionFallbackManager:
 
     def __init__(self) -> None:
         self._confidence_threshold = 0.85
-        self._cloud_vlm_agent = "BACKUP_AGENT"
+        self._cloud_vlm_agent = 'BACKUP_AGENT'
         self._enabled = True
         self._load_config()
 
@@ -88,25 +71,16 @@ class VisionFallbackManager:
         try:
             from ufo.config.config_loader import get_ufo_config
             cfg = get_ufo_config()
-            vf_cfg = getattr(cfg.system, "vision_fallback", None)
+            vf_cfg = getattr(cfg.system, 'vision_fallback', None)
             if vf_cfg and isinstance(vf_cfg, dict):
-                self._enabled = vf_cfg.get("ENABLED", True)
-                self._confidence_threshold = float(
-                    vf_cfg.get("CONFIDENCE_THRESHOLD", 0.85)
-                )
-                self._cloud_vlm_agent = vf_cfg.get(
-                    "CLOUD_VLM_AGENT", "BACKUP_AGENT"
-                )
+                self._enabled = vf_cfg.get('ENABLED', True)
+                self._confidence_threshold = float(vf_cfg.get('CONFIDENCE_THRESHOLD', 0.85))
+                self._cloud_vlm_agent = vf_cfg.get('CLOUD_VLM_AGENT', 'BACKUP_AGENT')
         except Exception as e:
-            logger.debug(f"Using default vision fallback config: {e}")
+            logger.debug(f'Using default vision fallback config: {e}')
+            raise RuntimeError('Automation failed') from e
 
-    async def resolve_element(
-        self,
-        target_description: str,
-        screenshot_path: Optional[str] = None,
-        application_window: Any = None,
-        uia_tree: Optional[Dict[str, Any]] = None,
-    ) -> Optional[BoundingBox]:
+    async def resolve_element(self, target_description: str, screenshot_path: Optional[str]=None, application_window: Any=None, uia_tree: Optional[Dict[str, Any]]=None) -> Optional[BoundingBox]:
         """
         Attempt to resolve a UI element's screen coordinates via vision asynchronously.
 
@@ -120,193 +94,106 @@ class VisionFallbackManager:
         :return: BoundingBox with resolved coordinates, or None on total failure.
         """
         if not self._enabled:
-            logger.info("Vision fallback is disabled in config.")
+            logger.info('Vision fallback is disabled in config.')
             return None
-
         logger.info(f"Vision fallback engaged for: '{target_description}'")
-
-        # Ensure we have a screenshot
         if screenshot_path is None or not os.path.exists(screenshot_path):
             screenshot_path = self._capture_screenshot(application_window)
             if screenshot_path is None:
-                logger.error("Failed to capture screenshot for vision fallback.")
+                logger.error('Failed to capture screenshot for vision fallback.')
                 return None
-
-        # --- Stage 1: Local OmniParser ---
-        stage1_result = self._stage1_omniparser(
-            screenshot_path, target_description, application_window
-        )
-
+        stage1_result = self._stage1_omniparser(screenshot_path, target_description, application_window)
         if stage1_result and stage1_result.confidence >= self._confidence_threshold:
-            logger.info(
-                f"Stage 1 (OmniParser) succeeded: confidence={stage1_result.confidence:.2f}"
-            )
+            logger.info(f'Stage 1 (OmniParser) succeeded: confidence={stage1_result.confidence:.2f}')
             return stage1_result
-
         stage1_conf = stage1_result.confidence if stage1_result else 0.0
-        logger.warning(
-            f"Stage 1 confidence={stage1_conf:.2f} < threshold={self._confidence_threshold}. "
-            f"Cascading to Stage 2 (Cloud VLM)."
-        )
-
-        # --- Stage 2: Cloud VLM ---
-        stage2_result = await self._stage2_cloud_vlm(
-            screenshot_path, target_description, uia_tree
-        )
-
+        logger.warning(f'Stage 1 confidence={stage1_conf:.2f} < threshold={self._confidence_threshold}. Cascading to Stage 2 (Cloud VLM).')
+        stage2_result = await self._stage2_cloud_vlm(screenshot_path, target_description, uia_tree)
         if stage2_result:
-            logger.info(
-                f"Stage 2 (Cloud VLM) succeeded: confidence={stage2_result.confidence:.2f}"
-            )
+            logger.info(f'Stage 2 (Cloud VLM) succeeded: confidence={stage2_result.confidence:.2f}')
             return stage2_result
-
-        logger.error("All vision grounding stages failed.")
+        logger.error('All vision grounding stages failed.')
         return None
 
-    async def resolve_element_full(
-        self,
-        target_description: str,
-        screenshot_path: Optional[str] = None,
-        application_window: Any = None,
-        uia_tree: Optional[Dict[str, Any]] = None,
-    ) -> VisionFallbackResult:
+    async def resolve_element_full(self, target_description: str, screenshot_path: Optional[str]=None, application_window: Any=None, uia_tree: Optional[Dict[str, Any]]=None) -> VisionFallbackResult:
         """
         Same as resolve_element but returns full diagnostic result.
         """
         result = VisionFallbackResult()
-
         if not self._enabled:
-            result.error = "Vision fallback disabled in config"
+            result.error = 'Vision fallback disabled in config'
             return result
-
         if screenshot_path is None or not os.path.exists(screenshot_path):
             screenshot_path = self._capture_screenshot(application_window)
             if screenshot_path is None:
-                result.error = "Screenshot capture failed"
+                result.error = 'Screenshot capture failed'
                 return result
-
-        # Stage 1
         result.stage_1_attempted = True
-        stage1_box = self._stage1_omniparser(
-            screenshot_path, target_description, application_window
-        )
+        stage1_box = self._stage1_omniparser(screenshot_path, target_description, application_window)
         if stage1_box:
             result.stage_1_confidence = stage1_box.confidence
             if stage1_box.confidence >= self._confidence_threshold:
                 result.resolved = True
                 result.bounding_box = stage1_box
                 return result
-
-        # Stage 2
         result.stage_2_attempted = True
         stage2_box = await self._stage2_cloud_vlm(screenshot_path, target_description, uia_tree)
         if stage2_box:
             result.resolved = True
             result.bounding_box = stage2_box
         else:
-            result.error = "Both stages failed to resolve element"
-
+            result.error = 'Both stages failed to resolve element'
         return result
 
-    # -----------------------------------------------------------------------
-    # Stage 1: Local OmniParser
-    # -----------------------------------------------------------------------
-
-    def _stage1_omniparser(
-        self,
-        screenshot_path: str,
-        target_description: str,
-        application_window: Any = None,
-    ) -> Optional[BoundingBox]:
+    def _stage1_omniparser(self, screenshot_path: str, target_description: str, application_window: Any=None) -> Optional[BoundingBox]:
         """Attempt element resolution via local OmniParser V2 service."""
         try:
             from ufo.config.config_loader import get_ufo_config
             ufo_config = get_ufo_config()
-
-            # Get OmniParser config — check both agents and system config
-            omniparser_cfg = getattr(ufo_config.agents, "omniparser", None)
+            omniparser_cfg = getattr(ufo_config.agents, 'omniparser', None)
             if not omniparser_cfg:
-                omniparser_cfg = getattr(ufo_config.system, "omniparser", None)
+                omniparser_cfg = getattr(ufo_config.system, 'omniparser', None)
             if not omniparser_cfg:
-                logger.debug("OmniParser not configured — skipping Stage 1")
+                logger.debug('OmniParser not configured — skipping Stage 1')
                 return None
-
-            endpoint = ""
+            endpoint = ''
             if isinstance(omniparser_cfg, dict):
-                endpoint = omniparser_cfg.get("ENDPOINT", "")
-            elif hasattr(omniparser_cfg, "ENDPOINT"):
-                endpoint = getattr(omniparser_cfg, "ENDPOINT", "")
-
-            if not endpoint or "xxx" in endpoint:
-                logger.debug("OmniParser endpoint not set — skipping Stage 1")
+                endpoint = omniparser_cfg.get('ENDPOINT', '')
+            elif hasattr(omniparser_cfg, 'ENDPOINT'):
+                endpoint = getattr(omniparser_cfg, 'ENDPOINT', '')
+            if not endpoint or 'xxx' in endpoint:
+                logger.debug('OmniParser endpoint not set — skipping Stage 1')
                 return None
-
-            # Use the real OmniParser service
             from ufo.llm.grounding_model.omniparser_service import OmniParser
             from ufo.automator.ui_control.grounding.omniparser import OmniparserGrounding
-
             service = OmniParser(endpoint=endpoint)
             grounding = OmniparserGrounding(service=service)
-
-            # Get detection config
             box_threshold = 0.05
             iou_threshold = 0.1
             imgsz = 640
             if isinstance(omniparser_cfg, dict):
-                box_threshold = omniparser_cfg.get("BOX_THRESHOLD", 0.05)
-                iou_threshold = omniparser_cfg.get("IOU_THRESHOLD", 0.1)
-                imgsz = omniparser_cfg.get("IMGSZ", 640)
-
-            raw_results = grounding.predict(
-                screenshot_path,
-                box_threshold=box_threshold,
-                iou_threshold=iou_threshold,
-                imgsz=imgsz,
-            )
-
+                box_threshold = omniparser_cfg.get('BOX_THRESHOLD', 0.05)
+                iou_threshold = omniparser_cfg.get('IOU_THRESHOLD', 0.1)
+                imgsz = omniparser_cfg.get('IMGSZ', 640)
+            raw_results = grounding.predict(screenshot_path, box_threshold=box_threshold, iou_threshold=iou_threshold, imgsz=imgsz)
             if not raw_results:
-                return BoundingBox(
-                    center_x=0, center_y=0, confidence=0.0, source="omniparser"
-                )
-
+                return BoundingBox(center_x=0, center_y=0, confidence=0.0, source='omniparser')
             parsed = grounding.parse_results(raw_results, application_window)
-
-            # Find best match for target description
             best_match = self._find_best_match(parsed, target_description)
             if best_match:
-                x0 = best_match.get("x0", 0)
-                y0 = best_match.get("y0", 0)
-                x1 = best_match.get("x1", 0)
-                y1 = best_match.get("y1", 0)
-                # Approximate confidence from match quality
-                confidence = best_match.get("confidence", 0.7)
-                return BoundingBox(
-                    center_x=(x0 + x1) // 2,
-                    center_y=(y0 + y1) // 2,
-                    width=x1 - x0,
-                    height=y1 - y0,
-                    confidence=confidence,
-                    source="omniparser",
-                )
-
-            return BoundingBox(
-                center_x=0, center_y=0, confidence=0.0, source="omniparser"
-            )
-
+                x0 = best_match.get('x0', 0)
+                y0 = best_match.get('y0', 0)
+                x1 = best_match.get('x1', 0)
+                y1 = best_match.get('y1', 0)
+                confidence = best_match.get('confidence', 0.7)
+                return BoundingBox(center_x=(x0 + x1) // 2, center_y=(y0 + y1) // 2, width=x1 - x0, height=y1 - y0, confidence=confidence, source='omniparser')
+            return BoundingBox(center_x=0, center_y=0, confidence=0.0, source='omniparser')
         except Exception as e:
-            logger.warning(f"Stage 1 (OmniParser) failed: {e}")
+            logger.warning(f'Stage 1 (OmniParser) failed: {e}')
             return None
+            raise RuntimeError('Automation failed') from e
 
-    # -----------------------------------------------------------------------
-    # Stage 2: Cloud VLM
-    # -----------------------------------------------------------------------
-
-    async def _stage2_cloud_vlm(
-        self,
-        screenshot_path: str,
-        target_description: str,
-        uia_tree: Optional[Dict[str, Any]] = None,
-    ) -> Optional[BoundingBox]:
+    async def _stage2_cloud_vlm(self, screenshot_path: str, target_description: str, uia_tree: Optional[Dict[str, Any]]=None) -> Optional[BoundingBox]:
         """
         Cascade to Cloud VLM for element grounding.
         Sends screenshot + targeted prompt to BACKUP_AGENT (Gemini/GPT).
@@ -316,7 +203,6 @@ class VisionFallbackManager:
             from ufo.llm import AgentType
             from ufo.security.pii_redactor import PIIRedactor
             import base64
-
             effective_screenshot_path = screenshot_path
             try:
                 redactor = PIIRedactor()
@@ -325,127 +211,67 @@ class VisionFallbackManager:
                     if redacted_path and os.path.exists(redacted_path):
                         effective_screenshot_path = redacted_path
             except Exception as e:
-                logger.warning(f"PII redaction on vision fallback screenshot failed: {e}")
-
-            # Read screenshot as base64
-            with open(effective_screenshot_path, "rb") as f:
-                img_b64 = base64.b64encode(f.read()).decode("utf-8")
-
-            # Determine file extension for MIME type
+                logger.warning(f'PII redaction on vision fallback screenshot failed: {e}')
+                raise RuntimeError('Automation failed') from e
+            with open(effective_screenshot_path, 'rb') as f:
+                img_b64 = base64.b64encode(f.read()).decode('utf-8')
             ext = os.path.splitext(effective_screenshot_path)[1].lower()
-            mime = "image/png" if ext == ".png" else "image/jpeg"
-
-            prompt = (
-                f"Analyze the provided screenshot. Locate the UI element described as: "
-                f"'{target_description}'.\n\n"
-                f"Return ONLY a JSON object with the absolute pixel coordinates for "
-                f"the center of the element and your confidence level:\n"
-                f'{{"center_x": <int>, "center_y": <int>, "width": <int>, '
-                f'"height": <int>, "confidence": <float 0.0-1.0>}}\n\n'
-                f"If the element cannot be found, return: "
-                f'{{"center_x": 0, "center_y": 0, "confidence": 0.0}}'
-            )
-
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime};base64,{img_b64}",
-                            },
-                        },
-                    ],
-                }
-            ]
-
-            # Use BACKUP_AGENT (cloud) for vision grounding
+            mime = 'image/png' if ext == '.png' else 'image/jpeg'
+            prompt = f"""Analyze the provided screenshot. Locate the UI element described as: '{target_description}'.\n\nReturn ONLY a JSON object with the absolute pixel coordinates for the center of the element and your confidence level:\n{{"center_x": <int>, "center_y": <int>, "width": <int>, "height": <int>, "confidence": <float 0.0-1.0>}}\n\nIf the element cannot be found, return: {{"center_x": 0, "center_y": 0, "confidence": 0.0}}"""
+            messages = [{'role': 'user', 'content': [{'type': 'text', 'text': prompt}, {'type': 'image_url', 'image_url': {'url': f'data:{mime};base64,{img_b64}'}}]}]
             agent_type = self._cloud_vlm_agent
-            if hasattr(AgentType, agent_type.replace("_AGENT", "")):
-                agent_type = getattr(
-                    AgentType, agent_type.replace("_AGENT", ""), AgentType.BACKUP
-                )
-
-            llm_result = await get_completion(
-                messages, agent=agent_type, use_backup_engine=False
-            )
-            response_text = llm_result.responses[0] if llm_result.responses else ""
-
-            # Parse the JSON response
+            if hasattr(AgentType, agent_type.replace('_AGENT', '')):
+                agent_type = getattr(AgentType, agent_type.replace('_AGENT', ''), AgentType.BACKUP)
+            llm_result = await get_completion(messages, agent=agent_type, use_backup_engine=False)
+            response_text = llm_result.responses[0] if llm_result.responses else ''
             parsed = self._parse_json_response(response_text)
-            if parsed and parsed.get("center_x", 0) > 0:
-                return BoundingBox(
-                    center_x=int(parsed["center_x"]),
-                    center_y=int(parsed["center_y"]),
-                    width=int(parsed.get("width", 0)),
-                    height=int(parsed.get("height", 0)),
-                    confidence=float(parsed.get("confidence", 0.9)),
-                    source="cloud_vlm",
-                )
-
+            if parsed and parsed.get('center_x', 0) > 0:
+                return BoundingBox(center_x=int(parsed['center_x']), center_y=int(parsed['center_y']), width=int(parsed.get('width', 0)), height=int(parsed.get('height', 0)), confidence=float(parsed.get('confidence', 0.9)), source='cloud_vlm')
             return None
-
         except Exception as e:
-            logger.warning(f"Stage 2 (Cloud VLM) failed: {e}")
+            logger.warning(f'Stage 2 (Cloud VLM) failed: {e}')
             return None
+            raise RuntimeError('Automation failed') from e
 
-    # -----------------------------------------------------------------------
-    # Helpers
-    # -----------------------------------------------------------------------
-
-    def _capture_screenshot(self, application_window: Any = None) -> Optional[str]:
+    def _capture_screenshot(self, application_window: Any=None) -> Optional[str]:
         """Capture a screenshot, either of the app window or full desktop."""
         try:
             import pyautogui
-            path = os.path.join(tempfile.gettempdir(), "ufo_vision_fallback.png")
-
+            path = os.path.join(tempfile.gettempdir(), 'ufo_vision_fallback.png')
             if application_window is not None:
                 try:
                     rect = application_window.rectangle()
-                    pyautogui.screenshot(
-                        path,
-                        region=(rect.left, rect.top, rect.width(), rect.height()),
-                    )
+                    pyautogui.screenshot(path, region=(rect.left, rect.top, rect.width(), rect.height()))
                 except Exception:
                     pyautogui.screenshot(path)
+                    raise RuntimeError('Automation failed')
             else:
                 pyautogui.screenshot(path)
-
             return path
         except Exception as e:
-            logger.error(f"Screenshot capture failed: {e}")
+            logger.error(f'Screenshot capture failed: {e}')
             return None
+            raise RuntimeError('Automation failed') from e
 
     @staticmethod
-    def _find_best_match(
-        parsed_boxes: List[Dict[str, Any]],
-        target_description: str,
-    ) -> Optional[Dict[str, Any]]:
+    def _find_best_match(parsed_boxes: List[Dict[str, Any]], target_description: str) -> Optional[Dict[str, Any]]:
         """Find the best matching box for the target description."""
         target_lower = target_description.lower().strip()
         best = None
         best_score = 0.0
-
         for box in parsed_boxes:
-            name = str(box.get("name", "")).lower().strip()
+            name = str(box.get('name', '')).lower().strip()
             if not name:
                 continue
-
-            # Exact match
             if name == target_lower:
-                box["confidence"] = 0.95
+                box['confidence'] = 0.95
                 return box
-
-            # Substring match
             if target_lower in name or name in target_lower:
                 score = len(name) / max(len(target_lower), 1)
                 if score > best_score:
                     best_score = score
-                    box["confidence"] = min(0.5 + score * 0.4, 0.9)
+                    box['confidence'] = min(0.5 + score * 0.4, 0.9)
                     best = box
-
         return best
 
     @staticmethod
@@ -453,21 +279,16 @@ class VisionFallbackManager:
         """Extract JSON from an LLM response that may contain markdown fences."""
         if not text:
             return None
-
-        # Strip markdown code fences
         cleaned = text.strip()
-        if cleaned.startswith("```"):
-            lines = cleaned.split("\n")
-            # Remove first and last lines (fences)
-            lines = [l for l in lines if not l.strip().startswith("```")]
-            cleaned = "\n".join(lines).strip()
-
+        if cleaned.startswith('```'):
+            lines = cleaned.split('\n')
+            lines = [l for l in lines if not l.strip().startswith('```')]
+            cleaned = '\n'.join(lines).strip()
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError:
-            # Try to find JSON object in the text
-            start = cleaned.find("{")
-            end = cleaned.rfind("}") + 1
+            start = cleaned.find('{')
+            end = cleaned.rfind('}') + 1
             if start >= 0 and end > start:
                 try:
                     return json.loads(cleaned[start:end])

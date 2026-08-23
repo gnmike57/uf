@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 UFO 24/7 Event Daemon — Event-driven background runner for headless operation.
 
@@ -38,7 +35,6 @@ Usage:
     })
     daemon.start()  # Blocks — runs until stop() is called
 """
-
 import logging
 import os
 import queue
@@ -46,33 +42,17 @@ import signal
 import threading
 import time
 from typing import Any, Callable, Dict, List, Optional
-
 from pydantic import BaseModel, Field
-
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Data Models
-# ---------------------------------------------------------------------------
 
 class DaemonEvent(BaseModel):
     """An event that triggers a HostAgent workflow."""
-    event_type: str = Field(
-        ..., description="Trigger type: file_drop, webhook, scheduled, manual"
-    )
-    instructions: str = Field(
-        ..., description="The user intent / task description"
-    )
-    is_irrevocable: bool = Field(
-        default=False, description="If true, force DAG mode"
-    )
-    source: str = Field(
-        default="unknown", description="Where the event came from"
-    )
+    event_type: str = Field(..., description='Trigger type: file_drop, webhook, scheduled, manual')
+    instructions: str = Field(..., description='The user intent / task description')
+    is_irrevocable: bool = Field(default=False, description='If true, force DAG mode')
+    source: str = Field(default='unknown', description='Where the event came from')
     metadata: Dict[str, Any] = Field(default_factory=dict)
     timestamp: float = Field(default_factory=time.time)
-
 
 class DaemonStats(BaseModel):
     """Daemon operational statistics."""
@@ -83,35 +63,18 @@ class DaemonStats(BaseModel):
     events_pending: int = 0
     current_workflow: Optional[str] = None
 
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
 def _load_daemon_config() -> Dict[str, Any]:
     """Load daemon config from system.yaml."""
-    defaults = {
-        "ENABLED": False,
-        "HEARTBEAT_INTERVAL_SECONDS": 60,
-        "MAX_CONCURRENT_WORKFLOWS": 1,
-        "WEBHOOK_PORT": 8765,
-        "ALLOWED_TRIGGER_TYPES": ["file_drop", "webhook", "scheduled", "manual"],
-    }
+    defaults = {'ENABLED': False, 'HEARTBEAT_INTERVAL_SECONDS': 60, 'MAX_CONCURRENT_WORKFLOWS': 1, 'WEBHOOK_PORT': 8765, 'ALLOWED_TRIGGER_TYPES': ['file_drop', 'webhook', 'scheduled', 'manual']}
     try:
-        
         from ufo.config.config_loader import get_ufo_config
         cfg = get_ufo_config()
-        fd_cfg = getattr(cfg.system, "fleet_daemon", None)
+        fd_cfg = getattr(cfg.system, 'fleet_daemon', None)
         if fd_cfg and isinstance(fd_cfg, dict):
             defaults.update({k: v for k, v in fd_cfg.items() if v is not None})
     except Exception:
-        pass
+        raise RuntimeError('Automation failed')
     return defaults
-
-
-# ---------------------------------------------------------------------------
-# Event Daemon
-# ---------------------------------------------------------------------------
 
 class UFOEventDaemon:
     """
@@ -142,11 +105,7 @@ class UFOEventDaemon:
     def is_running(self) -> bool:
         return self._is_running
 
-    # -----------------------------------------------------------------------
-    # Lifecycle
-    # -----------------------------------------------------------------------
-
-    def start(self, workflow_handler: Optional[Callable] = None) -> None:
+    def start(self, workflow_handler: Optional[Callable]=None) -> None:
         """
         Start the daemon. Blocks until stop() is called.
 
@@ -154,67 +113,43 @@ class UFOEventDaemon:
                                  If not provided, uses _default_handler.
         """
         if self._is_running:
-            logger.warning("[Daemon] Already running.")
+            logger.warning('[Daemon] Already running.')
             return
-
         self._is_running = True
         self._start_time = time.monotonic()
         self._stop_event.clear()
         self._workflow_handler = workflow_handler
-
-        # Register signal handlers for graceful shutdown
         try:
             signal.signal(signal.SIGINT, self._signal_handler)
             signal.signal(signal.SIGTERM, self._signal_handler)
         except (OSError, ValueError):
-            pass  # Not in main thread
-
-        # Start heartbeat
-        self._heartbeat_thread = threading.Thread(
-            target=self._heartbeat_loop, daemon=True, name="ufo-heartbeat"
-        )
+            pass
+        self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True, name='ufo-heartbeat')
         self._heartbeat_thread.start()
-
-        logger.info(
-            f"[Daemon] UFO 24/7 Event Daemon started. "
-            f"Waiting for events on queue. "
-            f"Heartbeat every {self._config['HEARTBEAT_INTERVAL_SECONDS']}s."
-        )
-
-        # Main event loop — blocks on queue.get() (zero CPU while idle)
+        logger.info(f"[Daemon] UFO 24/7 Event Daemon started. Waiting for events on queue. Heartbeat every {self._config['HEARTBEAT_INTERVAL_SECONDS']}s.")
         try:
             self._event_loop()
         finally:
             self._is_running = False
-            logger.info("[Daemon] Event loop terminated.")
+            logger.info('[Daemon] Event loop terminated.')
 
-    def start_background(self, workflow_handler: Optional[Callable] = None) -> threading.Thread:
+    def start_background(self, workflow_handler: Optional[Callable]=None) -> threading.Thread:
         """
         Start the daemon in a background thread (non-blocking).
 
         :param workflow_handler: Optional callback for processing events.
         :return: The daemon thread.
         """
-        thread = threading.Thread(
-            target=self.start,
-            args=(workflow_handler,),
-            daemon=True,
-            name="ufo-daemon",
-        )
+        thread = threading.Thread(target=self.start, args=(workflow_handler,), daemon=True, name='ufo-daemon')
         thread.start()
         return thread
 
     def stop(self) -> None:
         """Signal the daemon to stop gracefully."""
-        logger.info("[Daemon] Stop signal received.")
+        logger.info('[Daemon] Stop signal received.')
         self._is_running = False
         self._stop_event.set()
-        # Push a sentinel to unblock the queue
         self._event_queue.put(None)
-
-    # -----------------------------------------------------------------------
-    # Event Submission
-    # -----------------------------------------------------------------------
 
     def submit_event(self, event: Dict[str, Any]) -> bool:
         """
@@ -223,27 +158,20 @@ class UFOEventDaemon:
         :param event: Event dict with at least 'event_type' and 'instructions'.
         :return: True if accepted, False if rejected.
         """
-        event_type = event.get("event_type", "unknown")
-        allowed = self._config.get("ALLOWED_TRIGGER_TYPES", [])
-
+        event_type = event.get('event_type', 'unknown')
+        allowed = self._config.get('ALLOWED_TRIGGER_TYPES', [])
         if allowed and event_type not in allowed:
-            logger.warning(
-                f"[Daemon] Rejected event type '{event_type}'. "
-                f"Allowed: {allowed}"
-            )
+            logger.warning(f"[Daemon] Rejected event type '{event_type}'. Allowed: {allowed}")
             return False
-
         try:
             parsed = DaemonEvent(**event)
             self._event_queue.put(parsed)
-            logger.info(
-                f"[Daemon] Event queued: type={parsed.event_type}, "
-                f"instructions='{parsed.instructions[:60]}...'"
-            )
+            logger.info(f"[Daemon] Event queued: type={parsed.event_type}, instructions='{parsed.instructions[:60]}...'")
             return True
         except Exception as e:
-            logger.error(f"[Daemon] Failed to parse event: {e}")
+            logger.error(f'[Daemon] Failed to parse event: {e}')
             return False
+            raise RuntimeError('Automation failed') from e
 
     def webhook_trigger(self, payload: Dict[str, Any]) -> bool:
         """
@@ -252,94 +180,61 @@ class UFOEventDaemon:
         :param payload: Webhook payload with event details.
         :return: True if accepted.
         """
-        payload.setdefault("event_type", "webhook")
-        payload.setdefault("source", "external_webhook")
+        payload.setdefault('event_type', 'webhook')
+        payload.setdefault('source', 'external_webhook')
         return self.submit_event(payload)
-
-    # -----------------------------------------------------------------------
-    # Event Loop
-    # -----------------------------------------------------------------------
 
     def _event_loop(self) -> None:
         """Main event processing loop. Blocks on queue — zero CPU while idle."""
         while self._is_running:
             try:
-                # Block here — zero CPU usage until an event arrives
                 event = self._event_queue.get(block=True, timeout=1.0)
-
-                # Sentinel check (for clean shutdown)
                 if event is None:
                     continue
-
                 if not self._is_running:
                     break
-
                 if not isinstance(event, DaemonEvent):
-                    logger.warning(f"[Daemon] Invalid event type: {type(event)}")
+                    logger.warning(f'[Daemon] Invalid event type: {type(event)}')
                     continue
-
                 self._process_event(event)
-
             except queue.Empty:
-                # Timeout — check if we should stop
                 continue
             except Exception as e:
-                logger.error(f"[Daemon] Unhandled error in event loop: {e}")
+                logger.error(f'[Daemon] Unhandled error in event loop: {e}')
                 self._stats_failed += 1
+                raise RuntimeError('Automation failed') from e
 
     def _process_event(self, event: DaemonEvent) -> None:
         """Process a single event through the workflow pipeline."""
         with self._lock:
             self._current_workflow = event.instructions[:80]
-
-        logger.info(
-            f"[Daemon] Processing event: type={event.event_type}, "
-            f"instructions='{event.instructions[:80]}...'"
-        )
-
-        # Budget check before expensive workflow
+        logger.info(f"[Daemon] Processing event: type={event.event_type}, instructions='{event.instructions[:80]}...'")
         try:
-            
             from ufo.telemetry.cost_tracker import CostTracker
             tracker = CostTracker.get_instance()
             if tracker.is_budget_exceeded():
-                logger.critical(
-                    "[Daemon] Budget exceeded — skipping workflow. "
-                    "Event will not be retried."
-                )
+                logger.critical('[Daemon] Budget exceeded — skipping workflow. Event will not be retried.')
                 self._stats_failed += 1
                 return
         except ImportError:
-            pass  # Telemetry not available
-
+            pass
         try:
             if self._workflow_handler:
                 self._workflow_handler(event)
             else:
                 self._default_handler(event)
-
             self._stats_processed += 1
-            logger.info("[Daemon] Workflow complete. Returning to sleep.")
-
+            logger.info('[Daemon] Workflow complete. Returning to sleep.')
         except Exception as e:
             self._stats_failed += 1
-            logger.error(f"[Daemon] Workflow failed: {e}")
-
-            # Try DLQ capture
+            logger.error(f'[Daemon] Workflow failed: {e}')
             try:
-                
                 from ufo.resilience.dlq_manager import DeadLetterQueueManager
                 dlq = DeadLetterQueueManager()
-                dlq.capture_failure(
-                    task_id=f"daemon_{int(event.timestamp)}",
-                    error_chain=str(e),
-                    metadata={
-                        "event_type": event.event_type,
-                        "instructions": event.instructions,
-                    },
-                )
+                dlq.capture_failure(task_id=f'daemon_{int(event.timestamp)}', error_chain=str(e), metadata={'event_type': event.event_type, 'instructions': event.instructions})
             except Exception:
-                pass
+                raise RuntimeError('Automation failed')
+            raise RuntimeError('Automation failed') from e
         finally:
             with self._lock:
                 self._current_workflow = None
@@ -347,64 +242,31 @@ class UFOEventDaemon:
     def _default_handler(self, event: DaemonEvent) -> None:
         """Default event handler — routes through OrchestratorRouter."""
         try:
-            
             from ufo.agents.host_agent.orchestrator_router import OrchestratorRouter
-
             router = OrchestratorRouter()
-            result = router.execute_with_routing(
-                user_intent=event.instructions,
-                is_financial_routing=event.is_irrevocable,
-            )
+            result = router.execute_with_routing(user_intent=event.instructions, is_financial_routing=event.is_irrevocable)
             logger.info(f"[Daemon] Router result: mode={result.get('mode', 'unknown')}")
         except ImportError:
-            logger.warning(
-                "[Daemon] OrchestratorRouter not available. "
-                "Event logged but not processed."
-            )
-
-    # -----------------------------------------------------------------------
-    # Heartbeat
-    # -----------------------------------------------------------------------
+            logger.warning('[Daemon] OrchestratorRouter not available. Event logged but not processed.')
 
     def _heartbeat_loop(self) -> None:
         """Periodic heartbeat for health monitoring."""
-        interval = self._config.get("HEARTBEAT_INTERVAL_SECONDS", 60)
-
-        while self._is_running and not self._stop_event.is_set():
+        interval = self._config.get('HEARTBEAT_INTERVAL_SECONDS', 60)
+        while self._is_running and (not self._stop_event.is_set()):
             self._stop_event.wait(timeout=interval)
             if not self._is_running:
                 break
-
             uptime = time.monotonic() - self._start_time
             pending = self._event_queue.qsize()
-
-            logger.info(
-                f"[Daemon] Heartbeat — uptime={uptime:.0f}s, "
-                f"processed={self._stats_processed}, "
-                f"failed={self._stats_failed}, "
-                f"pending={pending}"
-            )
-
-    # -----------------------------------------------------------------------
-    # Stats & Diagnostics
-    # -----------------------------------------------------------------------
+            logger.info(f'[Daemon] Heartbeat — uptime={uptime:.0f}s, processed={self._stats_processed}, failed={self._stats_failed}, pending={pending}')
 
     def get_stats(self) -> DaemonStats:
         """Get current daemon statistics."""
         with self._lock:
-            return DaemonStats(
-                is_running=self._is_running,
-                uptime_seconds=(
-                    time.monotonic() - self._start_time if self._is_running else 0.0
-                ),
-                events_processed=self._stats_processed,
-                events_failed=self._stats_failed,
-                events_pending=self._event_queue.qsize(),
-                current_workflow=self._current_workflow,
-            )
+            return DaemonStats(is_running=self._is_running, uptime_seconds=time.monotonic() - self._start_time if self._is_running else 0.0, events_processed=self._stats_processed, events_failed=self._stats_failed, events_pending=self._event_queue.qsize(), current_workflow=self._current_workflow)
 
     def _signal_handler(self, signum: int, frame: Any) -> None:
         """Handle OS signals for graceful shutdown."""
         sig_name = signal.Signals(signum).name if hasattr(signal, 'Signals') else str(signum)
-        logger.info(f"[Daemon] Received signal {sig_name}. Initiating shutdown.")
+        logger.info(f'[Daemon] Received signal {sig_name}. Initiating shutdown.')
         self.stop()

@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 Plugin Manager — Application-specific API execution hooks for GUI bypass.
 
@@ -35,68 +32,26 @@ Usage:
             # Skip GUI automation
             ...
 """
-
 import logging
 from typing import Any, Dict, List, Optional
-
 from pydantic import BaseModel, Field
-
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# Data Models
-# ---------------------------------------------------------------------------
 
 class PluginExecutionResult(BaseModel):
     """Result of a plugin API execution attempt."""
     success: bool = Field(default=False)
-    plugin_used: str = Field(default="", description="Which MCP server handled it")
-    result_data: Optional[str] = Field(None, description="API return value if any")
-    error: Optional[str] = Field(None, description="Error message if failed")
+    plugin_used: str = Field(default='', description='Which MCP server handled it')
+    result_data: Optional[str] = Field(None, description='API return value if any')
+    error: Optional[str] = Field(None, description='Error message if failed')
     fell_back_to_gui: bool = Field(default=False)
-
 
 class PluginRegistration(BaseModel):
     """Registration entry mapping a process name to its MCP server."""
-    process_name: str = Field(..., description="Process name (e.g., WINWORD.EXE)")
-    mcp_namespace: str = Field(..., description="MCP server namespace from mcp.yaml")
-    supported_actions: List[str] = Field(
-        default_factory=lambda: ["type", "click", "hotkey", "read"],
-        description="Action types this plugin supports",
-    )
-    description: str = Field(default="")
-
-
-# ---------------------------------------------------------------------------
-# Built-in Plugin Registry
-# ---------------------------------------------------------------------------
-
-_BUILTIN_PLUGINS: List[PluginRegistration] = [
-    PluginRegistration(
-        process_name="WINWORD.EXE",
-        mcp_namespace="server_5_WordCOMExecutor",
-        supported_actions=["type", "read", "format", "save", "navigate"],
-        description="Microsoft Word COM automation via MCP",
-    ),
-    PluginRegistration(
-        process_name="EXCEL.EXE",
-        mcp_namespace="excel_wincom_mcp_server",
-        supported_actions=["type", "read", "formula", "save", "navigate"],
-        description="Microsoft Excel COM automation via MCP",
-    ),
-    PluginRegistration(
-        process_name="POWERPNT.EXE",
-        mcp_namespace="PowerPointCOMExecutor",
-        supported_actions=["type", "read", "add_slide", "save", "navigate"],
-        description="Microsoft PowerPoint COM automation via MCP",
-    ),
-]
-
-
-# ---------------------------------------------------------------------------
-# Plugin Manager
-# ---------------------------------------------------------------------------
+    process_name: str = Field(..., description='Process name (e.g., WINWORD.EXE)')
+    mcp_namespace: str = Field(..., description='MCP server namespace from mcp.yaml')
+    supported_actions: List[str] = Field(default_factory=lambda: ['type', 'click', 'hotkey', 'read'], description='Action types this plugin supports')
+    description: str = Field(default='')
+_BUILTIN_PLUGINS: List[PluginRegistration] = [PluginRegistration(process_name='WINWORD.EXE', mcp_namespace='server_5_WordCOMExecutor', supported_actions=['type', 'read', 'format', 'save', 'navigate'], description='Microsoft Word COM automation via MCP'), PluginRegistration(process_name='EXCEL.EXE', mcp_namespace='excel_wincom_mcp_server', supported_actions=['type', 'read', 'formula', 'save', 'navigate'], description='Microsoft Excel COM automation via MCP'), PluginRegistration(process_name='POWERPNT.EXE', mcp_namespace='PowerPointCOMExecutor', supported_actions=['type', 'read', 'add_slide', 'save', 'navigate'], description='Microsoft PowerPoint COM automation via MCP')]
 
 class PluginManager:
     """
@@ -115,14 +70,13 @@ class PluginManager:
     def _load_config(self) -> None:
         """Load plugin config from system.yaml."""
         try:
-            
             from ufo.config.config_loader import get_ufo_config
             cfg = get_ufo_config()
-            lf = getattr(cfg.system, "legacy_features", None)
+            lf = getattr(cfg.system, 'legacy_features', None)
             if lf and isinstance(lf, dict):
-                self._enabled = lf.get("ENABLE_API_PLUGINS", True)
+                self._enabled = lf.get('ENABLE_API_PLUGINS', True)
         except Exception:
-            pass
+            raise RuntimeError('Automation failed')
 
     def _register_builtins(self) -> None:
         """Register built-in plugins from the static registry."""
@@ -148,21 +102,13 @@ class PluginManager:
     def register(self, plugin: PluginRegistration) -> None:
         """Register a new plugin at runtime."""
         self._registry[plugin.process_name.upper()] = plugin
-        logger.info(
-            f"Registered plugin: {plugin.process_name} → {plugin.mcp_namespace}"
-        )
+        logger.info(f'Registered plugin: {plugin.process_name} → {plugin.mcp_namespace}')
 
     def list_plugins(self) -> List[PluginRegistration]:
         """List all registered plugins."""
         return list(self._registry.values())
 
-    def try_execute(
-        self,
-        process_name: str,
-        action_type: str,
-        payload: Optional[str] = None,
-        target_control: Optional[Dict[str, Any]] = None,
-    ) -> PluginExecutionResult:
+    def try_execute(self, process_name: str, action_type: str, payload: Optional[str]=None, target_control: Optional[Dict[str, Any]]=None) -> PluginExecutionResult:
         """
         Attempt to execute an action via API plugin instead of GUI.
 
@@ -173,57 +119,22 @@ class PluginManager:
         :return: PluginExecutionResult.
         """
         if not self._enabled:
-            return PluginExecutionResult(
-                success=False,
-                error="API plugins disabled in config.",
-                fell_back_to_gui=True,
-            )
-
+            return PluginExecutionResult(success=False, error='API plugins disabled in config.', fell_back_to_gui=True)
         plugin = self.get_plugin(process_name)
         if plugin is None:
-            return PluginExecutionResult(
-                success=False,
-                error=f"No plugin registered for {process_name}.",
-                fell_back_to_gui=True,
-            )
-
+            return PluginExecutionResult(success=False, error=f'No plugin registered for {process_name}.', fell_back_to_gui=True)
         if action_type not in plugin.supported_actions:
-            logger.debug(
-                f"Plugin {plugin.mcp_namespace} doesn't support "
-                f"action '{action_type}'. Falling back to GUI."
-            )
-            return PluginExecutionResult(
-                success=False,
-                plugin_used=plugin.mcp_namespace,
-                error=f"Action '{action_type}' not supported by plugin.",
-                fell_back_to_gui=True,
-            )
-
-        # Attempt MCP execution
+            logger.debug(f"Plugin {plugin.mcp_namespace} doesn't support action '{action_type}'. Falling back to GUI.")
+            return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error=f"Action '{action_type}' not supported by plugin.", fell_back_to_gui=True)
         try:
-            result = self._dispatch_to_mcp(
-                plugin, action_type, payload, target_control
-            )
+            result = self._dispatch_to_mcp(plugin, action_type, payload, target_control)
             return result
         except Exception as e:
-            logger.warning(
-                f"Plugin execution failed for {process_name}: {e}. "
-                f"Falling back to GUI."
-            )
-            return PluginExecutionResult(
-                success=False,
-                plugin_used=plugin.mcp_namespace,
-                error=str(e),
-                fell_back_to_gui=True,
-            )
+            logger.warning(f'Plugin execution failed for {process_name}: {e}. Falling back to GUI.')
+            return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error=str(e), fell_back_to_gui=True)
+            raise RuntimeError('Automation failed') from e
 
-    def _dispatch_to_mcp(
-        self,
-        plugin: PluginRegistration,
-        action_type: str,
-        payload: Optional[str],
-        target_control: Optional[Dict[str, Any]],
-    ) -> PluginExecutionResult:
+    def _dispatch_to_mcp(self, plugin: PluginRegistration, action_type: str, payload: Optional[str], target_control: Optional[Dict[str, Any]]) -> PluginExecutionResult:
         """
         Dispatch an action to the MCP server for API execution.
 
@@ -231,74 +142,26 @@ class PluginManager:
         rather than creating a parallel execution path.
         """
         try:
-            
             from ufo.client.mcp.mcp_client_manager import MCPClientManager
-
             manager = MCPClientManager.get_instance()
             client = manager.get_client(plugin.mcp_namespace)
-
             if client is None:
-                return PluginExecutionResult(
-                    success=False,
-                    plugin_used=plugin.mcp_namespace,
-                    error=f"MCP client '{plugin.mcp_namespace}' not available.",
-                    fell_back_to_gui=True,
-                )
-
-            # Build tool call based on action type
+                return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error=f"MCP client '{plugin.mcp_namespace}' not available.", fell_back_to_gui=True)
             tool_name = self._map_action_to_tool(plugin, action_type)
-            tool_args = {
-                "action_type": action_type,
-                "payload": payload or "",
-            }
+            tool_args = {'action_type': action_type, 'payload': payload or ''}
             if target_control:
-                tool_args["target"] = target_control
-
-            # Execute via MCP
+                tool_args['target'] = target_control
             result = client.call_tool(tool_name, tool_args)
-
-            logger.info(
-                f"Plugin execution succeeded: {plugin.process_name} → "
-                f"{plugin.mcp_namespace}.{tool_name}"
-            )
-
-            return PluginExecutionResult(
-                success=True,
-                plugin_used=plugin.mcp_namespace,
-                result_data=str(result) if result else None,
-            )
-
+            logger.info(f'Plugin execution succeeded: {plugin.process_name} → {plugin.mcp_namespace}.{tool_name}')
+            return PluginExecutionResult(success=True, plugin_used=plugin.mcp_namespace, result_data=str(result) if result else None)
         except ImportError:
-            return PluginExecutionResult(
-                success=False,
-                plugin_used=plugin.mcp_namespace,
-                error="MCP client infrastructure not available.",
-                fell_back_to_gui=True,
-            )
+            return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error='MCP client infrastructure not available.', fell_back_to_gui=True)
         except Exception as e:
-            return PluginExecutionResult(
-                success=False,
-                plugin_used=plugin.mcp_namespace,
-                error=f"MCP dispatch failed: {e}",
-                fell_back_to_gui=True,
-            )
+            return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error=f'MCP dispatch failed: {e}', fell_back_to_gui=True)
+            raise RuntimeError('Automation failed') from e
 
     @staticmethod
-    def _map_action_to_tool(
-        plugin: PluginRegistration, action_type: str
-    ) -> str:
+    def _map_action_to_tool(plugin: PluginRegistration, action_type: str) -> str:
         """Map an action type to the corresponding MCP tool name."""
-        # MCP tools typically follow a naming convention based on the namespace
-        # This mapping can be extended per-plugin
-        action_tool_map = {
-            "type": "insert_text",
-            "read": "read_content",
-            "format": "format_text",
-            "save": "save_document",
-            "navigate": "navigate_to",
-            "formula": "set_cell_formula",
-            "add_slide": "add_slide",
-            "click": "click_element",
-            "hotkey": "send_hotkey",
-        }
+        action_tool_map = {'type': 'insert_text', 'read': 'read_content', 'format': 'format_text', 'save': 'save_document', 'navigate': 'navigate_to', 'formula': 'set_cell_formula', 'add_slide': 'add_slide', 'click': 'click_element', 'hotkey': 'send_hotkey'}
         return action_tool_map.get(action_type, action_type)

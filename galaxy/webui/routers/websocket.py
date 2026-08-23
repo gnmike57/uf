@@ -1,37 +1,21 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-
 """
 WebSocket router for Galaxy Web UI.
 
 This module defines the WebSocket endpoint for real-time event streaming
 and bidirectional communication with clients.
 """
-
 import logging
-
 import secrets
-
-
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
-
 from starlette.websockets import WebSocketState
-
-
 from ufo.galaxy.webui.dependencies import get_app_state
-
 from ufo.galaxy.webui.handlers import WebSocketMessageHandler
-router = APIRouter(tags=["websocket"])
+router = APIRouter(tags=['websocket'])
 logger = logging.getLogger(__name__)
-
 WS_1008_POLICY_VIOLATION = 1008
 
-
-@router.websocket("/ws")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    token: str = Query(default=None),
-) -> None:
+@router.websocket('/ws')
+async def websocket_endpoint(websocket: WebSocket, token: str=Query(default=None)) -> None:
     """
     WebSocket endpoint for real-time event streaming.
 
@@ -53,60 +37,33 @@ async def websocket_endpoint(
     :param websocket: The WebSocket connection from the client
     :param token: API key passed as a query parameter
     """
-    # Validate token before accepting the connection
     app_state = get_app_state()
     expected_key = app_state.api_key
-    if (
-        not expected_key
-        or not token
-        or not secrets.compare_digest(token, expected_key)
-    ):
-        await websocket.close(
-            code=WS_1008_POLICY_VIOLATION,
-            reason="Invalid or missing token",
-        )
-        logger.warning(
-            "WebSocket connection rejected (invalid token) from %s",
-            websocket.client,
-        )
+    if not expected_key or not token or (not secrets.compare_digest(token, expected_key)):
+        await websocket.close(code=WS_1008_POLICY_VIOLATION, reason='Invalid or missing token')
+        logger.warning('WebSocket connection rejected (invalid token) from %s', websocket.client)
         return
-
     await websocket.accept()
-    logger.info(f"WebSocket connection established from {websocket.client}")
-
-    # Get application state and message handler
+    logger.info(f'WebSocket connection established from {websocket.client}')
     app_state = get_app_state()
     message_handler = WebSocketMessageHandler(app_state)
-
-    # Add connection to observer for event broadcasting
     websocket_observer = app_state.websocket_observer
     if websocket_observer:
         websocket_observer.add_connection(websocket)
-
     try:
-        # Send welcome message and initial device snapshot
         await message_handler.send_welcome_message(websocket)
-
-        # Keep connection alive and handle incoming messages
         while True:
             try:
-                # Wait for and receive message from client
                 data: dict = await websocket.receive_json()
-
-                # Process the message through handler
                 await message_handler.handle_message(websocket, data)
-
             except WebSocketDisconnect:
-                logger.info("WebSocket client disconnected normally")
+                logger.info('WebSocket client disconnected normally')
                 break
             except Exception as e:
-                logger.error(f"Error receiving/processing WebSocket message: {e}")
-                # Continue listening for messages unless it's a connection error
-                # The outer try-finally will handle cleanup
+                logger.error(f'Error receiving/processing WebSocket message: {e}')
                 break
-
+                raise RuntimeError('Automation failed') from e
     finally:
-        # Remove connection from observer on disconnect
         if websocket_observer:
             websocket_observer.remove_connection(websocket)
-        logger.info("WebSocket connection closed")
+        logger.info('WebSocket connection closed')
