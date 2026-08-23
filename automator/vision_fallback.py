@@ -47,6 +47,7 @@ class VisionFallbackResult(BaseModel):
     stage_1_attempted: bool = False
     stage_1_confidence: float = 0.0
     stage_2_attempted: bool = False
+    stage_3_attempted: bool = False
     error: Optional[str] = None
 
 class VisionFallbackManager:
@@ -112,6 +113,13 @@ class VisionFallbackManager:
         if stage2_result:
             logger.info(f'Stage 2 (Cloud VLM) succeeded: confidence={stage2_result.confidence:.2f}')
             return stage2_result
+        
+        logger.warning('Stage 2 failed. Cascading to Stage 3 (Reducto API).')
+        stage3_result = await self._stage3_reducto(screenshot_path, target_description)
+        if stage3_result:
+            logger.info(f'Stage 3 (Reducto API) succeeded: confidence={stage3_result.confidence:.2f}')
+            return stage3_result
+        
         logger.error('All vision grounding stages failed.')
         return None
 
@@ -141,8 +149,15 @@ class VisionFallbackManager:
         if stage2_box:
             result.resolved = True
             result.bounding_box = stage2_box
+            return result
+            
+        result.stage_3_attempted = True
+        stage3_box = await self._stage3_reducto(screenshot_path, target_description)
+        if stage3_box:
+            result.resolved = True
+            result.bounding_box = stage3_box
         else:
-            result.error = 'Both stages failed to resolve element'
+            result.error = 'All stages (including Reducto) failed to resolve element'
         return result
 
     def _stage1_omniparser(self, screenshot_path: str, target_description: str, application_window: Any=None) -> Optional[BoundingBox]:
@@ -232,6 +247,58 @@ class VisionFallbackManager:
             logger.warning(f'Stage 2 (Cloud VLM) failed: {e}')
             return None
             raise RuntimeError('Automation failed') from e
+
+    async def _stage3_reducto(self, screenshot_path: str, target_description: str) -> Optional[BoundingBox]:
+        """
+        Cascade to Reducto API for robust element grounding using agentic OCR.
+        Uploads screenshot and queries /parse endpoint.
+        """
+        try:
+            import requests
+            api_key = os.environ.get("REDUCTO_API_KEY")
+            if not api_key:
+                # Use the default known key for BankFidelity integration if env var missing
+                api_key = "605a959c5370e7540599d9e25adee460e6902de8a3f5ee7adba463b2e76ecb02c4b1bcc096b6deb885baf1950f106595"
+            
+            headers = {"Authorization": f"Bearer {api_key}"}
+            
+            # Step 1: Upload
+            upload_url = "https://platform.reducto.ai/upload"
+            with open(screenshot_path, "rb") as f:
+                upload_res = requests.post(upload_url, headers=headers, files={"file": f})
+            upload_res.raise_for_status()
+            file_id = upload_res.json().get("file_id")
+            if not file_id:
+                return None
+                
+            # Step 2: Parse with agentic OCR
+            parse_url = "https://platform.reducto.ai/parse"
+            payload = {
+                "document_url": f"reducto://{file_id}",
+                "ocr_mode": "agentic",
+                "custom_prompt": f"Analyze the screenshot and locate the UI element described as: '{target_description}'. Return ONLY a JSON object with the absolute pixel coordinates for the center of the element and your confidence level:\\n{{\\"center_x\\": <int>, \\"center_y\\": <int>, \\"width\\": <int>, \\"height\\": <int>, \\"confidence\\": <float 0.0-1.0>}}"
+            }
+            parse_res = requests.post(parse_url, headers=headers, json=payload)
+            parse_res.raise_for_status()
+            parsed_data = parse_res.json()
+            
+            # Check Reducto output format. It usually returns structured JSON if prompted.
+            result_text = str(parsed_data)
+            parsed_json = self._parse_json_response(result_text)
+            if parsed_json and parsed_json.get('center_x', 0) > 0:
+                return BoundingBox(
+                    center_x=int(parsed_json['center_x']), 
+                    center_y=int(parsed_json['center_y']), 
+                    width=int(parsed_json.get('width', 0)), 
+                    height=int(parsed_json.get('height', 0)), 
+                    confidence=float(parsed_json.get('confidence', 0.9)), 
+                    source='reducto'
+                )
+            
+            return None
+        except Exception as e:
+            logger.warning(f'Stage 3 (Reducto API) failed: {e}')
+            return None
 
     def _capture_screenshot(self, application_window: Any=None) -> Optional[str]:
         """Capture a screenshot, either of the app window or full desktop."""

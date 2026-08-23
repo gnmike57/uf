@@ -498,9 +498,11 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
             target_registry: TargetRegistry = context.get_local('target_registry')
             if target_registry:
                 control_info: List[Dict[str, Any]] = target_registry.to_list(keep_keys=['id', 'name', 'type'])
+                valid_control_ids = {str(c.get('id', '')) for c in control_info if c.get('id')}
             else:
                 self.logger.warning('Target registry is not available.')
                 control_info = []
+                valid_control_ids = set()
             clean_screenshot_path = context.get('clean_screenshot_path', '')
             request = context.get('request')
             subtask = context.get('subtask')
@@ -522,13 +524,70 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
             self.logger.info('Retrieving knowledge from the knowledge base')
             knowledge_retrieved = self._knowledge_retrieval(agent, subtask)
             self.logger.info('Building App Agent prompt with control information')
-            prompt_message = await self._build_app_prompt(agent=agent, control_info=control_info, image_string_list=image_string_list, knowledge_retrieved=knowledge_retrieved, request=request, subtask=subtask, plan=plan, prev_subtask=prev_subtask, host_message=host_message, application_process_name=application_process_name, session_step=session_step, request_logger=request_logger)
-            self.logger.info('Getting LLM response for App Agent')
-            response_text, llm_cost = await self._get_llm_response(agent, prompt_message)
-            self.logger.info('Parsing App Agent response')
-            parsed_response = self._parse_app_response(agent, response_text)
+            base_prompt_message = await self._build_app_prompt(agent=agent, control_info=control_info, image_string_list=image_string_list, knowledge_retrieved=knowledge_retrieved, request=request, subtask=subtask, plan=plan, prev_subtask=prev_subtask, host_message=host_message, application_process_name=application_process_name, session_step=session_step, request_logger=request_logger)
+            
+            # Self-Correction Loop
+            max_self_corrections = 3
+            correction_attempts = 0
+            prompt_message = base_prompt_message
+            total_llm_cost = 0.0
+
+            while correction_attempts < max_self_corrections:
+                self.logger.info(f'Getting LLM response for App Agent (attempt {correction_attempts + 1})')
+                response_text, llm_cost = await self._get_llm_response(agent, prompt_message)
+                total_llm_cost += llm_cost
+                
+                self.logger.info('Parsing App Agent response')
+                parsed_response = self._parse_app_response(agent, response_text)
+                
+                # Validation Logic
+                hallucination_errors = []
+                actions = parsed_response.action
+                if not isinstance(actions, list):
+                    actions = [actions] if actions else []
+                    
+                for act in actions:
+                    if not act: continue
+                    # Action is returned as Dict sometimes from _parse_app_response before model validation?
+                    # Wait, _parse_app_response returns AppAgentResponse object which has ActionCommandInfo
+                    function = getattr(act, 'function', '')
+                    arguments = getattr(act, 'arguments', {})
+                    if function in ('set_edit_text', 'click_input', 'texts', 'select_application_window'):
+                        control_id = arguments.get('id')
+                        if control_id and str(control_id) not in valid_control_ids:
+                            hallucination_errors.append(f"Control ID '{control_id}' does not exist in the current UI.")
+                    
+                    if function == 'set_edit_text' and arguments.get('text'):
+                        val = arguments.get('text')
+                        if "balance" in (subtask or "").lower() or "transfer" in (subtask or "").lower():
+                            try:
+                                float_val = float(str(val).replace(',', ''))
+                                if float_val < 0 or float_val > 1000000000:
+                                    hallucination_errors.append(f"Value '{val}' is outside valid balance ranges.")
+                            except ValueError:
+                                pass
+                
+                if not hallucination_errors:
+                    break
+                    
+                correction_attempts += 1
+                error_feedback = "Self-Correction Required: You hallucinated the following:\\n- " + "\\n- ".join(hallucination_errors) + "\\nPlease regenerate your response correcting these errors."
+                self.logger.warning(f"Hallucination detected: {error_feedback}. Re-prompting.")
+                
+                # Append error feedback to prompt
+                if isinstance(prompt_message, list) and len(prompt_message) > 0:
+                    last_msg = prompt_message[-1]
+                    if "content" in last_msg:
+                        if isinstance(last_msg["content"], list):
+                            last_msg["content"].append({"type": "text", "text": error_feedback})
+                        elif isinstance(last_msg["content"], str):
+                            last_msg["content"] += "\\n" + error_feedback
+
+            if correction_attempts >= max_self_corrections:
+                self.logger.error("Max self-correction attempts reached. Proceeding with potentially flawed response.")
+
             structured_data = parsed_response.model_dump()
-            return ProcessingResult(success=True, data={'parsed_response': parsed_response, 'response_text': response_text, 'llm_cost': llm_cost, 'concat_screenshot_path': concat_screenshot_path, 'last_control_screenshot_path': last_control_screenshot_path, 'prompt_message': prompt_message, **structured_data}, phase=ProcessingPhase.LLM_INTERACTION)
+            return ProcessingResult(success=True, data={'parsed_response': parsed_response, 'response_text': response_text, 'llm_cost': total_llm_cost, 'concat_screenshot_path': concat_screenshot_path, 'last_control_screenshot_path': last_control_screenshot_path, 'prompt_message': prompt_message, **structured_data}, phase=ProcessingPhase.LLM_INTERACTION)
         except Exception as e:
             error_msg = f'App LLM interaction failed: {str(e)}'
             self.logger.error(error_msg)
