@@ -147,7 +147,14 @@ async def main(parsed_args: Optional[argparse.Namespace]=None):
         clients = SessionPool(sessions)
         await clients.run_all()
         
-        res = UfoTaskResult(status="success", task_id=parsed_args.task, output="Completed")
+        output_str = "Completed"
+        if sessions and sessions[0].results:
+            try:
+                last_res = sessions[0].results[-1].get('result', '')
+                output_str = str(last_res)
+            except Exception:
+                pass
+        res = UfoTaskResult(status="success", task_id=parsed_args.task, output=output_str)
         log_dir = Path("logs") / parsed_args.task
         log_dir.mkdir(parents=True, exist_ok=True)
         with open(log_dir / "result.json", "w", encoding="utf-8") as f:
