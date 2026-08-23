@@ -140,13 +140,37 @@ async def main(parsed_args: Optional[argparse.Namespace]=None):
         raise RuntimeError('Automation failed') from wd_err
     try:
         from ufo.module.session_pool import SessionFactory, SessionPool
+        from ufo.utils.ipc import UfoTaskResult
+        from pathlib import Path
+        
         sessions = SessionFactory().create_session(task=parsed_args.task, mode=parsed_args.mode, plan=parsed_args.plan, request=parsed_args.request)
         clients = SessionPool(sessions)
         await clients.run_all()
+        
+        res = UfoTaskResult(status="success", task_id=parsed_args.task, output="Completed")
+        log_dir = Path("logs") / parsed_args.task
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with open(log_dir / "result.json", "w", encoding="utf-8") as f:
+            f.write(res.model_dump_json())
+            
     except Exception as e:
         logger.critical(f'FATAL SYSTEM CRASH: {e}', exc_info=True)
+        import traceback
+        from ufo.utils.ipc import UfoTaskResult
+        from pathlib import Path
+        
+        res = UfoTaskResult(
+            status="error",
+            task_id=parsed_args.task,
+            error_type=type(e).__name__,
+            error_message=str(e),
+            traceback=traceback.format_exc()
+        )
+        log_dir = Path("logs") / parsed_args.task
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with open(log_dir / "result.json", "w", encoding="utf-8") as f:
+            f.write(res.model_dump_json())
         sys.exit(1)
-        raise RuntimeError('Automation failed') from e
     finally:
         if watchdog:
             watchdog.stop()
