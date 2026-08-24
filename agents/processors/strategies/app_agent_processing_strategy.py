@@ -535,6 +535,10 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
                 # Validation Logic
                 hallucination_errors = []
                 actions = parsed_response.action
+                if not actions and hasattr(parsed_response, 'function') and parsed_response.function:
+                    from ufo.agents.processors.schemas.actions import ActionCommandInfo
+                    actions = [ActionCommandInfo(function=parsed_response.function, arguments=parsed_response.arguments or {})]
+                    parsed_response.action = actions
                 if not isinstance(actions, list):
                     actions = [actions] if actions else []
                     
@@ -889,6 +893,7 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
         :return: ProcessingResult with execution results
         """
         try:
+            from ufo.agents.processors.schemas.actions import ActionCommandInfo
             parsed_response: AppAgentResponse = context.get_local('parsed_response')
             log_path = context.get_local('log_path')
             session_step = context.get_local('session_step')
@@ -896,6 +901,10 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
             command_dispatcher = context.global_context.command_dispatcher
             if not parsed_response:
                 return ProcessingResult(success=True, data={'message': 'No response available for action execution'}, phase=ProcessingPhase.ACTION_EXECUTION)
+            self.logger.info(f"DEBUG parsed_response before execution: action={parsed_response.action}, function={getattr(parsed_response, 'function', None)}")
+            if not parsed_response.action and getattr(parsed_response, 'function', None):
+                parsed_response.action = [ActionCommandInfo(function=parsed_response.function, arguments=parsed_response.arguments or {})]
+                self.logger.info(f"DEBUG manually set parsed_response.action to {parsed_response.action}")
             execution_results = await self._execute_app_action(command_dispatcher, parsed_response.action)
             actions = self._create_action_info(annotation_dict, parsed_response.action, execution_results)
             action_info = ListActionCommandInfo(actions)
