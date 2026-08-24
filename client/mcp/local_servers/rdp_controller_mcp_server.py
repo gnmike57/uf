@@ -49,7 +49,7 @@ def _find_mstsc_window(host: str='', pid: int=0):
                         results.append((hwnd, title))
                         return
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
             title_lower = title.lower()
             if host and host.lower() in title_lower:
                 results.append((hwnd, title))
@@ -62,7 +62,6 @@ def _find_mstsc_window(host: str='', pid: int=0):
         logger.warning('[RDP] win32gui not available — cannot find RDP window')
     except Exception as e:
         logger.warning(f'[RDP] Error finding mstsc window: {e}')
-        raise RuntimeError('Automation failed') from e
     return (0, '')
 
 def _focus_window(hwnd: int) -> bool:
@@ -82,7 +81,6 @@ def _focus_window(hwnd: int) -> bool:
     except Exception as e:
         logger.warning(f'[RDP] Failed to focus window hwnd={hwnd}: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def _auto_focus_rdp(active_sessions: dict, host: str='') -> bool:
     """Auto-focus the RDP window, trying tracked sessions first."""
@@ -157,7 +155,7 @@ def create_rdp_controller_mcp_server(*args, **kwargs) -> FastMCP:
                     elif line.startswith('username:s:'):
                         username = line.split(':s:', 1)[1].strip()
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
         try:
             proc = subprocess.Popen(['mstsc', rdp_file_path])
             _active_sessions[host] = {'pid': proc.pid, 'username': username, 'port': 0}
@@ -193,7 +191,7 @@ def create_rdp_controller_mcp_server(*args, **kwargs) -> FastMCP:
             try:
                 subprocess.run(['taskkill', '/PID', str(session['pid']), '/F'], capture_output=True, check=False)
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
             return f'RDP session to {host} disconnected and credentials cleaned.'
         return f'Credentials for {host} removed. Close the RDP window manually if still open.'
 
@@ -273,7 +271,6 @@ def create_rdp_controller_mcp_server(*args, **kwargs) -> FastMCP:
                 pyautogui.write(keys, interval=0.02)
             except Exception:
                 pyautogui.typewrite(keys, interval=0.02)
-                raise RuntimeError('Automation failed')
             return f"Typed '{keys}' into the active RDP window."
         except Exception as e:
             raise ToolError(f'Failed to send keys: {e}')
@@ -345,7 +342,7 @@ def create_rdp_controller_mcp_server(*args, **kwargs) -> FastMCP:
                     result = subprocess.run(['tasklist', '/FI', f'PID eq {pid}', '/NH'], capture_output=True, text=True, timeout=5, check=False)
                     pid_alive = str(pid) in result.stdout
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
             hwnd, title = _find_mstsc_window(host=h, pid=pid)
             window_found = hwnd != 0
             status = 'HEALTHY' if pid_alive and window_found else 'DEGRADED' if pid_alive else 'DEAD'

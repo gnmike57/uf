@@ -56,7 +56,6 @@ class DeviceService:
         except Exception as exc:
             self.logger.warning(f'Failed to build device snapshot: {exc}', exc_info=True)
             return None
-            raise RuntimeError('Automation failed') from exc
 
     def get_device_manager(self) -> Optional[Any]:
         """
@@ -105,4 +104,3 @@ class DeviceService:
         except Exception as e:
             self.logger.warning(f'⚠️ Failed to register/connect device with manager: {e}')
             return False
-            raise RuntimeError('Automation failed') from e

@@ -124,7 +124,6 @@ async def main(args: Optional[argparse.Namespace]=None):
             display.print_error(f'❌ Galaxy Framework error: {e}')
         logging.error(f'Galaxy Framework error: {e}', exc_info=True)
         sys.exit(1)
-        raise RuntimeError('Automation failed') from e
     finally:
         try:
             await client.shutdown()
@@ -186,7 +185,6 @@ async def run_webui_mode(client: GalaxyClient):
             client.display.print_info(f'📝 Updated frontend config: {env_file}')
         except Exception as e:
             client.display.print_warning(f'⚠️  Could not write frontend config: {e}')
-            raise RuntimeError('Automation failed') from e
     client.display.print_info('🌌 Galaxy WebUI Starting...')
     client.display.print_info(f'📡 Server: http://localhost:{port}')
     client.display.print_info(f'🎨 Frontend: Open http://localhost:{port} in your browser')

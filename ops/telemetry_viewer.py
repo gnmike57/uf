@@ -11,10 +11,12 @@ or standalone for debugging.
 
 Usage:
     # As a FastAPI router:
+        pass
     from ufo.ops.telemetry_viewer import router
     app.include_router(router)
 
     # Standalone utility:
+        pass
     from ufo.ops.telemetry_viewer import decode_snapshot_screenshot
     png_bytes = decode_snapshot_screenshot("1234_task_001.json", key="post")
 """
@@ -53,7 +55,6 @@ def decode_snapshot_screenshot(snapshot_filename: str, key: str='post', snapshot
     except Exception as e:
         logger.error(f'[TelemetryViewer] Screenshot decode failed: {e}')
         return None
-        raise RuntimeError('Automation failed') from e
 
 def save_decoded_screenshot(snapshot_filename: str, key: str='post', output_path: Optional[str]=None, snapshot_dir: Optional[str]=None) -> Optional[str]:
     """
@@ -125,7 +126,6 @@ async def get_cost_summary():
         return tracker.get_daily_summary()
     except Exception as e:
         return {'error': str(e)}
-        raise RuntimeError('Automation failed') from e
 
 @router.get('/costs/history')
 async def get_cost_history(days: int=Query(default=7, le=30)):
@@ -144,11 +144,9 @@ async def get_cost_history(days: int=Query(default=7, le=30)):
                     history.append({'date': log_file.stem.replace('costs_', ''), 'data': day_data})
             except Exception:
                 continue
-                raise RuntimeError('Automation failed')
         return {'days': history, 'total_usd': sum((d['data'].get('spent_today_usd', 0.0) for d in history))}
     except Exception as e:
         return {'error': str(e)}
-        raise RuntimeError('Automation failed') from e
 
 def get_fleet_metrics() -> Dict[str, Any]:
     """
@@ -171,21 +169,19 @@ def get_fleet_metrics() -> Dict[str, Any]:
         metrics['queues'] = {'global_pending': r.llen('ufo:queue:bankfidelity_tasks'), 'dlq_depth': r.llen('ufo:queue:dlq'), 'hitl_pending': r.llen('ufo:hitl:pending_reviews')}
     except Exception:
         metrics['fleet'] = {'error': 'Redis unavailable'}
-        raise RuntimeError('Automation failed')
     try:
         from ufo.telemetry.cost_tracker import CostTracker
         tracker = CostTracker.get_instance()
         metrics['costs'] = tracker.get_daily_summary()
     except Exception:
         metrics['costs'] = {'error': 'Cost tracker unavailable'}
-        raise RuntimeError('Automation failed')
     try:
         from ufo.resilience.dlq_manager import DeadLetterQueueManager
         dlq = DeadLetterQueueManager()
         snapshots = dlq.list_snapshots()
         metrics['dlq'] = {'file_snapshots': len(snapshots)}
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return metrics
 
 @router.get('/metrics')

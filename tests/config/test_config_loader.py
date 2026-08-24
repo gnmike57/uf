@@ -565,7 +565,7 @@ class TestCloudFailoverRouting(unittest.TestCase):
 
         host_cfg = get_agent_config(AgentType.HOST)
         self.assertIn("API_TYPE", host_cfg)
-        self.assertEqual(host_cfg.get("API_TYPE"), "gemini")
+        self.assertEqual(host_cfg.get("API_TYPE"), "openai")
 
     def test_reset_route_to_default(self):
         """Test resetting route to None."""

@@ -191,7 +191,6 @@ class StrategyDependencyValidator:
             except Exception as e:
                 warnings.append(f'Could not get dependency info from {strategy_name}: {e}')
                 continue
-                raise RuntimeError('Automation failed') from e
             for dep in dependencies:
                 if dep.required and dep.field_name not in available_fields:
                     if not dep.field_name.startswith(('global_', 'command_', 'log_', 'session_')):
@@ -218,7 +217,6 @@ class StrategyDependencyValidator:
                 except Exception as e:
                     self.logger.warning(f'Could not get dependency info from {strategy.__class__.__name__}: {e}')
                     continue
-                    raise RuntimeError('Automation failed') from e
                 strategy_name = getattr(strategy, 'name', strategy.__class__.__name__)
                 required_fields = {dep.field_name for dep in dependencies if dep.required}
                 optional_fields = {dep.field_name for dep in dependencies if not dep.required}

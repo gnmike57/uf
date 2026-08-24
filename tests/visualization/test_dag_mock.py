@@ -112,7 +112,6 @@ class SimpleTaskConstellation:
             except Exception as e:
                 print(f'❌ Visualization error: {e}')
                 return False
-                raise RuntimeError('Automation failed') from e
         return False
 
     def add_task(self, task: TaskStar) -> bool:

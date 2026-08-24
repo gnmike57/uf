@@ -39,7 +39,7 @@ def create_code_interpreter_mcp_server(*args, **kwargs) -> FastMCP:
             try:
                 os.remove(path)
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
             output = result.stdout
             if result.stderr:
                 output += f'\nSTDERR:\n{result.stderr}'

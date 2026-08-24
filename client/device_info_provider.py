@@ -58,7 +58,6 @@ class DeviceInfoProvider:
         except Exception as e:
             logger.error(f'Error collecting system info: {e}', exc_info=True)
             return DeviceSystemInfo(device_id=client_id, platform='unknown', os_version='unknown', cpu_count=0, memory_total_gb=0.0, hostname='unknown', ip_address='unknown', supported_features=[], platform_type='unknown', custom_metadata=custom_metadata or {})
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _get_platform() -> str:
@@ -67,7 +66,6 @@ class DeviceInfoProvider:
             return platform.system().lower()
         except Exception:
             return 'unknown'
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _get_os_version() -> str:
@@ -76,7 +74,6 @@ class DeviceInfoProvider:
             return platform.version()
         except Exception:
             return 'unknown'
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _get_cpu_count() -> int:
@@ -87,7 +84,6 @@ class DeviceInfoProvider:
             return cpu_count if cpu_count is not None else 0
         except Exception:
             return 0
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _get_memory_total_gb() -> float:
@@ -101,7 +97,6 @@ class DeviceInfoProvider:
             return 0.0
         except Exception:
             return 0.0
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _get_hostname() -> str:
@@ -110,7 +105,6 @@ class DeviceInfoProvider:
             return socket.gethostname()
         except Exception:
             return 'unknown'
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _get_ip_address() -> str:
@@ -126,8 +120,6 @@ class DeviceInfoProvider:
                 return socket.gethostbyname(socket.gethostname())
             except Exception:
                 return 'unknown'
-                raise RuntimeError('Automation failed')
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _detect_features() -> List[str]:
@@ -186,4 +178,3 @@ class DeviceInfoProvider:
                 return {}
         except Exception:
             return {}
-            raise RuntimeError('Automation failed')

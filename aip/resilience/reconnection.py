@@ -73,7 +73,6 @@ class ReconnectionStrategy:
                     self.logger.info(f'Reconnection callback executed for {device_id}')
                 except Exception as e:
                     self.logger.error(f'Error in reconnection callback for {device_id}: {e}')
-                    raise RuntimeError('Automation failed') from e
 
     async def attempt_reconnection(self, endpoint: 'AIPEndpoint', device_id: str) -> bool:
         """
@@ -98,7 +97,6 @@ class ReconnectionStrategy:
                     self.logger.warning(f'Reconnection attempt {self._retry_count + 1} failed for {device_id}')
             except Exception as e:
                 self.logger.error(f'Error during reconnection attempt {self._retry_count + 1} for {device_id}: {e}')
-                raise RuntimeError('Automation failed') from e
             self._retry_count += 1
         self.logger.error(f'Max reconnection attempts ({self.max_retries}) reached for {device_id}')
         return False
@@ -116,7 +114,6 @@ class ReconnectionStrategy:
                 self.logger.info(f'Cancelled pending tasks for {device_id}')
         except Exception as e:
             self.logger.error(f'Error cancelling tasks for {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _notify_disconnection(self, endpoint: 'AIPEndpoint', device_id: str) -> None:
         """
@@ -131,7 +128,6 @@ class ReconnectionStrategy:
                 self.logger.info(f'Notified disconnection of {device_id}')
         except Exception as e:
             self.logger.error(f'Error notifying disconnection for {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     def _calculate_backoff(self) -> float:
         """

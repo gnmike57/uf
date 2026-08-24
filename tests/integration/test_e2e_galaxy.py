@@ -201,7 +201,6 @@ class E2EConstellationTester:
             logger.error(f'❌ Test failed with error: {e}')
             logger.error(traceback.format_exc())
             return {'dag_name': dag_name, 'status': 'failed', 'error': str(e), 'total_execution_time': time.time() - start_time, 'traceback': traceback.format_exc()}
-            raise RuntimeError('Automation failed') from e
 
     def _display_constellation_info(self, constellation: TaskConstellation):
         """Display detailed constellation information."""
@@ -225,7 +224,6 @@ class E2EConstellationTester:
             logger.info(f"  - Execution order: {' → '.join(topo_order[:5])}{('...' if len(topo_order) > 5 else '')}")
         except Exception as e:
             logger.warning(f'  - Could not determine execution order: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _analyze_device_utilization(self) -> Dict[str, Any]:
         """Analyze device utilization during test execution."""
@@ -255,12 +253,10 @@ class E2EConstellationTester:
                 characteristics['dag_depth'] = len(topo_order)
             except Exception:
                 characteristics['dag_depth'] = constellation.task_count
-                raise RuntimeError('Automation failed')
             return characteristics
         except Exception as e:
             logger.warning(f'Could not analyze DAG characteristics: {e}')
             return {'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     async def test_dag_modifications(self, constellation: TaskConstellation) -> Dict[str, Any]:
         """
@@ -304,7 +300,6 @@ class E2EConstellationTester:
         except Exception as e:
             logger.error(f'❌ DAG modification test failed: {e}')
             return {'status': 'failed', 'error': str(e), 'partial_results': modification_results}
-            raise RuntimeError('Automation failed') from e
 
     async def test_error_scenarios(self) -> Dict[str, Any]:
         """
@@ -321,7 +316,6 @@ class E2EConstellationTester:
             except Exception as e:
                 error_test_results['invalid_llm'] = {'status': 'expected_failure', 'error': str(e)}
                 logger.info('✅ Invalid LLM input correctly rejected')
-                raise RuntimeError('Automation failed') from e
             logger.info('📝 Test 2: Circular dependency detection...')
             try:
                 constellation = TaskConstellation(name='circular_test')
@@ -341,7 +335,6 @@ class E2EConstellationTester:
             except Exception as e:
                 error_test_results['circular_dependency'] = {'status': 'expected_failure', 'error': str(e)}
                 logger.info('✅ Circular dependency correctly detected and prevented')
-                raise RuntimeError('Automation failed') from e
             logger.info('📝 Test 3: Device failure handling...')
             simple_constellation = create_simple_constellation(['Task that might fail', 'Recovery task'], 'failure_test', sequential=True)
             await self.orchestrator.assign_devices_automatically(simple_constellation)
@@ -353,7 +346,6 @@ class E2EConstellationTester:
                 error_test_results['device_failure'] = {'status': 'handled', 'execution_result': result.get('status'), 'message': 'Constellation execution completed despite device failure'}
             except Exception as e:
                 error_test_results['device_failure'] = {'status': 'failed', 'error': str(e)}
-                raise RuntimeError('Automation failed') from e
             finally:
                 self.mock_client.connected_devices = original_devices
             logger.info('✅ Device failure scenario tested')
@@ -361,7 +353,6 @@ class E2EConstellationTester:
         except Exception as e:
             logger.error(f'❌ Error scenario testing failed: {e}')
             return {'status': 'failed', 'error': str(e), 'partial_results': error_test_results}
-            raise RuntimeError('Automation failed') from e
 
     async def run_comprehensive_test_suite(self) -> Dict[str, Any]:
         """
@@ -385,7 +376,6 @@ class E2EConstellationTester:
                 except Exception as e:
                     logger.error(f'Failed testing {dag_name}: {e}')
                     suite_results['dag_structure_tests'][dag_name] = {'status': 'failed', 'error': str(e)}
-                    raise RuntimeError('Automation failed') from e
             logger.info('\n🔄 PHASE 2: DAG Modification Testing')
             logger.info('-' * 50)
             successful_constellation = None
@@ -420,7 +410,6 @@ class E2EConstellationTester:
             suite_results['error'] = str(e)
             suite_results['total_execution_time'] = time.time() - suite_start_time
             return suite_results
-            raise RuntimeError('Automation failed') from e
 
     def _generate_performance_summary(self, suite_results: Dict[str, Any]) -> Dict[str, Any]:
         """Generate performance analysis summary."""
@@ -528,7 +517,6 @@ class GalaxySessionTester:
                 results['tests']['error_handling'] = {'status': 'success', 'error_processed': True, 'agent_status': weaver_agent.state.__class__.__name__}
             except Exception as e:
                 results['tests']['error_handling'] = {'status': 'handled_error', 'error': str(e)}
-                raise RuntimeError('Automation failed') from e
             results['status'] = 'success'
             results['total_execution_time'] = time.time() - results['start_time']
             self.logger.info('✅ GalaxySession lifecycle test completed successfully')
@@ -539,7 +527,6 @@ class GalaxySessionTester:
             self.logger.error(f'❌ GalaxySession lifecycle test failed: {e}')
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
         return results
 
     async def test_weaver_agent_scenarios(self) -> Dict[str, Any]:
@@ -588,7 +575,6 @@ class GalaxySessionTester:
             self.logger.error(f'❌ GalaxyWeaverAgent scenarios test failed: {e}')
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
         return results
 
     async def test_session_agent_integration(self) -> Dict[str, Any]:
@@ -628,7 +614,6 @@ class GalaxySessionTester:
             self.logger.error(f'❌ Session-Agent integration test failed: {e}')
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
         return results
 
     async def test_dynamic_dag_execution_flow(self) -> Dict[str, Any]:
@@ -723,7 +708,6 @@ class GalaxySessionTester:
             self.logger.error(f'❌ Dynamic DAG execution flow test failed: {e}')
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
         finally:
             results['total_execution_time'] = time.time() - results['start_time']
         return results
@@ -779,7 +763,6 @@ async def main():
         logger.error(f'❌ Test suite execution failed: {e}')
         logger.error(traceback.format_exc())
         return {'status': 'failed', 'error': str(e)}
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     results = asyncio.run(main())
     overall_success = results.get('overall_summary', {}).get('constellation_success', False) and results.get('overall_summary', {}).get('galaxy_success', False)

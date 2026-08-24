@@ -32,7 +32,6 @@ def pre_cleanup(filename: str=DEFAULT_FILENAME) -> None:
             logger.info(f'[Stage R1 Pre-Cleanup] Removed existing target file: {target_path}')
         except Exception as e:
             logger.warning(f'[Stage R1 Pre-Cleanup] Could not remove {target_path}: {e}')
-            raise RuntimeError('Automation failed') from e
     home_path = Path.home() / filename
     if home_path.exists():
         try:
@@ -40,7 +39,6 @@ def pre_cleanup(filename: str=DEFAULT_FILENAME) -> None:
             logger.info(f'[Stage R1 Pre-Cleanup] Removed existing target file: {home_path}')
         except Exception as e:
             logger.warning(f'[Stage R1 Pre-Cleanup] Could not remove {home_path}: {e}')
-            raise RuntimeError('Automation failed') from e
     try:
         proc_ver = verify_process_running(['notepad.exe', 'notepad'])
         if not proc_ver['verified']:
@@ -49,7 +47,6 @@ def pre_cleanup(filename: str=DEFAULT_FILENAME) -> None:
             time.sleep(0.5)
     except Exception as e:
         logger.warning(f'[Stage R1 Pre-Cleanup] Could not pre-launch Notepad: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def verify_r1(task_log_dir: Optional[Union[str, Path]]=None, expected_message: str=DEFAULT_MESSAGE, target_filename: str=DEFAULT_FILENAME, dry_run: bool=False, stage_data: Optional[Union[Dict[str, Any], str, Path]]=None, output_dir: Optional[Union[str, Path]]=None) -> Dict[str, Any]:
     """

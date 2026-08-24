@@ -83,7 +83,6 @@ async def test_constellation_client():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 @pytest.mark.asyncio
 async def test_device_operations():
@@ -107,7 +106,6 @@ async def test_device_operations():
     except Exception as e:
         print(f'[-] 设备操作测试失败: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 async def main():
     """主测试函数"""

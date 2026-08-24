@@ -86,7 +86,6 @@ class BaseOpenAIService(BaseService):
                 self.logger.warning(f'Startup probe for model {self.model} failed with {type(e).__name__}: {e}. Continuing without JSON schema validation.')
                 _PROBED_JSON_SCHEMA_MODELS[self.probe_key] = False
                 return False
-                raise RuntimeError('Automation failed') from e
         self.json_schema_enabled = await asyncio.to_thread(_sync_probe)
         self.config_llm['JSON_SCHEMA'] = self.json_schema_enabled
 
@@ -309,7 +308,6 @@ class BaseOpenAIService(BaseService):
                     cache_file.write(auth_record.serialize())
             except Exception as e:
                 print('failed to save auth record', e)
-                raise RuntimeError('Automation failed') from e
 
         def load_auth_record() -> Optional[AuthenticationRecord]:
             try:
@@ -320,7 +318,6 @@ class BaseOpenAIService(BaseService):
             except Exception as e:
                 print('failed to load auth record', e)
                 return None
-                raise RuntimeError('Automation failed') from e
         auth_record: Optional[AuthenticationRecord] = load_auth_record()
         current_auth_mode: Literal['client_secret', 'managed_identity', 'az_cli', 'interactive', 'device_code', 'none'] = 'none'
         implicit_mode = not (use_managed_identity or use_azure_cli or use_broker_login or use_device_code)

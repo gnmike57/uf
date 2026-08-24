@@ -137,7 +137,6 @@ def test_validation_and_error_handling():
         print('⚠️ BaseModel validation may be lenient')
     except Exception as e:
         print(f'✅ BaseModel validation caught error: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all tests."""
@@ -160,7 +159,6 @@ def main():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
     return True
 if __name__ == '__main__':
     success = main()

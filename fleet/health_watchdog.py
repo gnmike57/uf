@@ -18,12 +18,14 @@ Config in system.yaml:
 
 Usage:
     # Worker side — start heartbeat reporter:
+        pass
     from ufo.fleet.health_watchdog import WorkerHeartbeat
 
     heartbeat = WorkerHeartbeat(worker_id="vm-01")
     heartbeat.start()  # Background thread
 
     # Watchdog side — monitor fleet health:
+        pass
     from ufo.fleet.health_watchdog import FleetWatchdog
 
     watchdog = FleetWatchdog()
@@ -48,7 +50,7 @@ def _load_watchdog_config() -> Dict[str, Any]:
         if df and isinstance(df, dict):
             defaults.update({k: v for k, v in df.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 def _resolve_worker_id(configured: str) -> str:
@@ -88,7 +90,6 @@ class WorkerHeartbeat:
             self._available = True
         except Exception as e:
             logger.warning(f'[Heartbeat] Redis unavailable: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def start(self) -> Optional[threading.Thread]:
         """Start the heartbeat reporter as a daemon thread."""
@@ -120,7 +121,6 @@ class WorkerHeartbeat:
         except Exception as e:
             logger.warning(f'[Heartbeat] Beat failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def _heartbeat_loop(self) -> None:
         """Background loop that sends heartbeats periodically."""
@@ -129,7 +129,6 @@ class WorkerHeartbeat:
                 self._redis.hset(self._hb_key, self._worker_id, str(int(time.time())))
             except Exception as e:
                 logger.warning(f'[Heartbeat] Failed: {e}')
-                raise RuntimeError('Automation failed') from e
             self._stop_event.wait(timeout=self._interval)
 
 class FleetWatchdog:
@@ -168,7 +167,6 @@ class FleetWatchdog:
             self._available = True
         except Exception as e:
             logger.warning(f'[Watchdog] Redis unavailable: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def start(self) -> None:
         """Start the fleet health monitor. Blocks until stop() is called."""
@@ -188,7 +186,6 @@ class FleetWatchdog:
                 self._scan_heartbeats()
             except Exception as e:
                 logger.error(f'[Watchdog] Scan error: {e}')
-                raise RuntimeError('Automation failed') from e
             self._stop_event.wait(timeout=self._scan_interval)
         logger.info('[Watchdog] Monitor stopped.')
 
@@ -252,13 +249,11 @@ class FleetWatchdog:
                     logger.error(f"[Watchdog] Orphan triaged to DLQ from worker '{dead_worker_id}'.")
                 except Exception as e:
                     logger.error(f'[Watchdog] Failed to triage orphan: {e}')
-                    raise RuntimeError('Automation failed') from e
             self._fire_alert(dead_worker_id, triaged)
             return triaged
         except Exception as e:
             logger.error(f"[Watchdog] Orphan recovery failed for '{dead_worker_id}': {e}")
             return 0
-            raise RuntimeError('Automation failed') from e
 
     def _fire_alert(self, dead_worker_id: str, orphan_count: int) -> None:
         """Fire DLQ alert via the existing DLQ webhook infrastructure."""
@@ -268,7 +263,6 @@ class FleetWatchdog:
             dlq.capture_failure(task_id=f'ORPHAN_{dead_worker_id}', error_chain=f"Worker '{dead_worker_id}' flatlined. {orphan_count} orphaned tasks triaged to DLQ.", metadata={'dead_worker_id': dead_worker_id, 'orphan_count': orphan_count, 'event': 'worker_flatlined'})
         except Exception as e:
             logger.error(f'[Watchdog] DLQ alert failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _signal_handler(self, signum: int, frame: Any) -> None:
         """Handle OS signals for graceful shutdown."""
@@ -292,4 +286,3 @@ class FleetWatchdog:
             return {'workers': status, 'total_workers': len(status), 'alive_workers': sum((1 for w in status.values() if w['alive'])), 'dead_workers': sum((1 for w in status.values() if not w['alive']))}
         except Exception as e:
             return {'error': str(e)}
-            raise RuntimeError('Automation failed') from e

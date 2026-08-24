@@ -49,7 +49,6 @@ def create_pdf_reader_mcp_server(*args, **kwargs) -> FastMCP:
                 except Exception as e:
                     print(f'⚠️  Could not open PDF with default application: {e}')
                     print('📄 Proceeding with text extraction...')
-                    raise RuntimeError('Automation failed') from e
             print(f'📝 Extracting text from: {os.path.basename(pdf_path)}')
             with open(pdf_path, 'rb') as file:
                 pdf_reader = pypdf.PdfReader(file)
@@ -68,7 +67,6 @@ def create_pdf_reader_mcp_server(*args, **kwargs) -> FastMCP:
             return text_content.strip()
         except Exception as e:
             return f'Error reading PDF {pdf_path}: {str(e)}'
-            raise RuntimeError('Automation failed') from e
 
     def _extract_text_from_pdf_batch(pdf_paths: List[str], simulate_human: bool=True) -> Dict[str, str]:
         """
@@ -117,7 +115,6 @@ def create_pdf_reader_mcp_server(*args, **kwargs) -> FastMCP:
         except Exception as e:
             print(f'Error scanning directory {directory_path}: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
     mcp = FastMCP('UFO PDF Reader MCP Server')
 
     @mcp.tool(tags={'PDF'})
@@ -135,7 +132,6 @@ def create_pdf_reader_mcp_server(*args, **kwargs) -> FastMCP:
             validate_path_not_sensitive(pdf_path)
         except Exception as ve:
             return f'Error: Access denied to path {pdf_path}: {ve}'
-            raise RuntimeError('Automation failed') from ve
         if not os.path.exists(pdf_path):
             return f'Error: PDF file not found at {pdf_path}'
         if not pdf_path.lower().endswith('.pdf'):
@@ -152,7 +148,6 @@ def create_pdf_reader_mcp_server(*args, **kwargs) -> FastMCP:
             validate_path_not_sensitive(directory_path)
         except Exception as ve:
             return []
-            raise RuntimeError('Automation failed') from ve
         if not os.path.exists(directory_path):
             return []
         if not os.path.isdir(directory_path):
@@ -174,7 +169,6 @@ def create_pdf_reader_mcp_server(*args, **kwargs) -> FastMCP:
             validate_path_not_sensitive(directory_path)
         except Exception as ve:
             return {'error': f'Access denied to path {directory_path}: {ve}'}
-            raise RuntimeError('Automation failed') from ve
         if not os.path.exists(directory_path):
             return {'error': f'Directory not found: {directory_path}'}
         if not os.path.isdir(directory_path):

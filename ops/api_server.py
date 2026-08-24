@@ -52,7 +52,7 @@ def _load_ops_config() -> Dict[str, Any]:
         if cp and isinstance(cp, dict):
             defaults.update({k: v for k, v in cp.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 _config = _load_ops_config()
 _redis_client = None
@@ -68,7 +68,6 @@ def _get_redis():
         except Exception as e:
             logger.warning(f'[ControlPlane] Redis unavailable: {e}')
             _redis_client = None
-            raise RuntimeError('Automation failed') from e
     return _redis_client
 
 def _verify_api_key(x_api_key: Optional[str]=Header(None)) -> None:
@@ -110,7 +109,7 @@ async def health_check():
             r.ping()
             redis_ok = True
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return {'status': 'healthy', 'redis_connected': redis_ok, 'timestamp': time.time()}
 
 @app.get('/api/fleet/status')
@@ -152,7 +151,6 @@ async def get_pending_dlq_tasks(limit: int=Query(default=50, le=200)):
                     tasks.append({'index': i, 'data': raw})
         except Exception as e:
             logger.warning(f'[ControlPlane] Redis DLQ read failed: {e}')
-            raise RuntimeError('Automation failed') from e
     try:
         from ufo.resilience.dlq_manager import DeadLetterQueueManager
         dlq = DeadLetterQueueManager()
@@ -160,7 +158,7 @@ async def get_pending_dlq_tasks(limit: int=Query(default=50, le=200)):
         for snap in file_snapshots[:limit]:
             tasks.append({'index': len(tasks), 'source': 'file', 'data': snap})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return {'pending_count': len(tasks), 'tasks': tasks}
 
 @app.get('/api/dlq/snapshot/{snapshot_id}')
@@ -177,7 +175,7 @@ async def get_dlq_snapshot(snapshot_id: str):
                         val['base64'] = f"[{len(val['base64'])} chars — use /api/telemetry/screenshot/{snapshot_id}?key={key}]"
             return snapshot
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     r = _get_redis()
     if r:
         try:
@@ -185,7 +183,7 @@ async def get_dlq_snapshot(snapshot_id: str):
             if raw:
                 return json.loads(raw)
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
     raise HTTPException(status_code=404, detail=f"Snapshot '{snapshot_id}' not found")
 
 @app.post('/api/hitl/resolve')

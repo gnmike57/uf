@@ -83,7 +83,6 @@ class GeminiService(BaseService):
                 response = await asyncio.to_thread(self.client.models.generate_content, model=self.model, contents=processed_messages, config=fallback_config)
             else:
                 raise
-            raise RuntimeError('Automation failed') from e
         if response is None:
             raise RuntimeError(f"Gemini API returned None for model '{self.model}'")
         usage = getattr(response, 'usage_metadata', None)

@@ -101,7 +101,6 @@ class UFOWebSocketHandler:
                 await ctx.transport.close()
             except Exception as close_err:
                 self.logger.warning(f'[WS] Transport close error on duplicate client rejection: {close_err}')
-                raise RuntimeError('Automation failed') from close_err
             raise ValueError(str(dup_err)) from dup_err
         await self._send_registration_confirmation(ctx)
         self._log_client_connection(client_id, client_type)
@@ -199,7 +198,6 @@ class UFOWebSocketHandler:
                     await self.session_manager.cancel_task(session_id, reason='constellation_disconnected')
                 except Exception as e:
                     self.logger.error(f'[WS] Error cancelling session {session_id}: {e}')
-                    raise RuntimeError('Automation failed') from e
                 self.client_manager.remove_constellation_sessions(client_id)
         elif client_info and client_info.client_type == ClientType.DEVICE:
             session_ids = self.client_manager.get_device_sessions(client_id)
@@ -210,7 +208,6 @@ class UFOWebSocketHandler:
                     await self.session_manager.cancel_task(session_id, reason='device_disconnected')
                 except Exception as e:
                     self.logger.error(f'[WS] Error cancelling session {session_id}: {e}')
-                    raise RuntimeError('Automation failed') from e
                 self.client_manager.remove_device_sessions(client_id)
         self.client_manager.remove_client(client_id)
         self.logger.info(f'[WS] {client_id} disconnected')
@@ -243,7 +240,6 @@ class UFOWebSocketHandler:
             self.logger.error(f'[WS] Error with client {client_id}: {e}')
             if client_id:
                 await self.disconnect(client_id)
-            raise RuntimeError('Automation failed') from e
 
     async def handle_message(self, msg: str, ctx: Optional[ConnectionContext]=None, *, registered_client_id: Optional[str]=None, registered_client_type: Optional[ClientType]=None) -> None:
         """
@@ -326,7 +322,6 @@ class UFOWebSocketHandler:
             traceback.print_exc()
             self.logger.error(f'[WS] Error handling message from {client_id}: {e}')
             await self._safe_send_error(str(e), ctx)
-            raise RuntimeError('Automation failed') from e
 
     def _effective_ctx(self, ctx: Optional[ConnectionContext], *, registered_client_id: Optional[str]=None, registered_client_type: Optional[ClientType]=None) -> ConnectionContext:
         """Return the context to use for an incoming message.
@@ -370,7 +365,6 @@ class UFOWebSocketHandler:
             self.logger.debug(f'[WS] Could not send error response (connection closed): {send_error}')
         except Exception as send_error:
             self.logger.debug(f'[WS] Suppressed error while sending error response: {send_error}')
-            raise RuntimeError('Automation failed') from send_error
 
     async def handle_heartbeat(self, data: ClientMessage, ctx: ConnectionContext) -> None:
         """
@@ -506,7 +500,6 @@ class UFOWebSocketHandler:
             except Exception as e:
                 import traceback
                 self.logger.error(f'[WS] ❌ Failed to send result for {sid}: {e}\n{traceback.format_exc()}')
-                raise RuntimeError('Automation failed') from e
         self.logger.info(f'[WS] 🎯 About to call execute_task_async for session {session_id}')
         target_protocol = self.client_manager.get_task_protocol(target_device_id if client_type == ClientType.CONSTELLATION else client_id)
         try:
@@ -517,13 +510,11 @@ class UFOWebSocketHandler:
                     self.client_manager.remove_constellation_sessions(data.client_id)
                 except Exception as rollback_err:
                     self.logger.warning(f'[WS] Failed to remove constellation session on rollback: {rollback_err}')
-                    raise RuntimeError('Automation failed') from rollback_err
                 if target_device_id:
                     try:
                         self.client_manager.remove_device_sessions(target_device_id)
                     except Exception as rollback_err:
                         self.logger.warning(f'[WS] Failed to remove device session on rollback: {rollback_err}')
-                        raise RuntimeError('Automation failed') from rollback_err
             self.logger.warning(f'[WS] 🚨 cross-client session reuse rejected: session_id={owner_err.session_id!r} owner={owner_err.owner!r} attempted_by={owner_err.attempted_by!r}')
             await self._safe_send_error(f'session_id {owner_err.session_id!r} is owned by another client', ctx)
             return
@@ -584,7 +575,6 @@ class UFOWebSocketHandler:
                 self.logger.debug(f'[WS] Device info from {client_id} received but client_manager does not support update_device_info; data logged only.')
         except Exception as e:
             self.logger.warning(f'[WS] Failed to store device info for {client_id}: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_device_info_request(self, data: ClientMessage, ctx: ConnectionContext) -> None:
         """

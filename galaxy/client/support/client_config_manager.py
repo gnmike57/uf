@@ -57,7 +57,6 @@ class ClientConfigManager:
         except Exception as e:
             self.logger.error(f'❌ Failed to register device {device_config.device_id}: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def add_device_to_config(self, config: ConstellationConfig, device_id: str, server_url: str, local_client_ids: List[str], capabilities: Optional[List[str]]=None, metadata: Optional[Dict[str, Any]]=None, auto_connect: bool=True, register_immediately: bool=True) -> bool:
         """
@@ -88,7 +87,6 @@ class ClientConfigManager:
         except Exception as e:
             self.logger.error(f'❌ Failed to add device {device_id} to configuration: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def validate_config(self, config: ConstellationConfig) -> Dict[str, Any]:
         """

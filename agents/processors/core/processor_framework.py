@@ -153,7 +153,6 @@ class ProcessorTemplate(ABC):
             self.logger.debug('Successfully updated ContextNames from processing results')
         except Exception as e:
             self.logger.warning(f'Failed to update ContextNames from results: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _validate_strategy_chain(self) -> None:
         """
@@ -173,7 +172,6 @@ class ProcessorTemplate(ABC):
                 self.logger.info('Strategy chain validation passed')
         except Exception as e:
             self.logger.error(f'Error during strategy chain validation: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _validate_strategy_dependencies_runtime(self, strategy: ProcessingStrategy, processing_context: ProcessingContext) -> None:
         """
@@ -195,7 +193,6 @@ class ProcessorTemplate(ABC):
             self.logger.debug(f'Strategy {strategy.name} has no dependency declarations')
         except Exception as e:
             self.logger.warning(f'Runtime dependency validation error for {strategy.name}: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _validate_strategy_provides_runtime(self, strategy: ProcessingStrategy, result: ProcessingResult) -> None:
         """
@@ -209,7 +206,6 @@ class ProcessorTemplate(ABC):
             validate_provides_consistency(strategy.name, declared_provides, actual_provides, self.logger)
         except Exception as consistency_error:
             self.logger.error(f'Error during provides consistency check for {strategy.name}: {consistency_error}')
-            raise RuntimeError('Automation failed') from consistency_error
 
     async def process(self) -> ProcessingResult:
         """
@@ -261,4 +257,3 @@ class ProcessorTemplate(ABC):
                 self.logger.info(f'Executing middleware on_error: {middleware.name}')
                 await middleware.on_error(self, e)
             return error_result
-            raise RuntimeError('Automation failed') from e

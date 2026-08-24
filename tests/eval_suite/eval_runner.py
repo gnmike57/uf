@@ -2,6 +2,7 @@
 Evaluation Test Harness & Runner for UFO 5-Stage GUI Automation Sequence.
 
 Supported Stages:
+    pass
 - R1: Notepad Test (open Notepad, type text, save to Desktop)
 - R2: Chrome Navigation (open Chrome, navigate to URLs)
 - R3: Basic BankFidelity Task (open BankFidelity, verify UI)
@@ -76,7 +77,6 @@ def _collect_trajectory_logs(task_log_dir: Path, logger: logging.Logger) -> List
                     trajectories.append({'file': log_file.name, 'content': data})
             except Exception as e:
                 logger.warning(f'Could not read trajectory log file {log_file}: {e}')
-                raise RuntimeError('Automation failed') from e
     return trajectories
 
 class EvaluationRunner:
@@ -131,7 +131,6 @@ class EvaluationRunner:
                         await asyncio.to_thread(pre_cleanup_fn)
                 except Exception as e:
                     self.logger.warning(f'[Stage {stage_id} Pre-Cleanup] Failed: {e}')
-                    raise RuntimeError('Automation failed') from e
         start_time = time.time()
         start_iso = datetime.now().isoformat()
         status = 'SUCCESS'
@@ -193,7 +192,7 @@ class EvaluationRunner:
                             proc.kill()
                             await proc.wait()
                         except Exception:
-                            raise RuntimeError('Automation failed')
+                            pass
             task_log_dir = self.output_dir / task_name
             if not task_log_dir.exists():
                 fallback_dir = PROJECT_ROOT / 'logs' / task_name
@@ -219,7 +218,6 @@ class EvaluationRunner:
             status = 'ERROR'
             error_msg = str(ex)
             self.logger.error(f'Unhandled exception during Stage {stage_id}: {ex}', exc_info=True)
-            raise RuntimeError('Automation failed') from ex
         duration = time.time() - start_time
         end_iso = datetime.now().isoformat()
         result = {'stage_id': stage_id, 'stage_name': stage_meta['name'], 'target_app': stage_meta['target_app'], 'task_name': task_name, 'request': request_text, 'mode': mode, 'status': status, 'start_time': start_iso, 'end_time': end_iso, 'duration_seconds': round(duration, 3), 'error': error_msg, 'trajectories': trajectories, 'verification': verification_result, 'log_dir': str(self.output_dir / task_name)}

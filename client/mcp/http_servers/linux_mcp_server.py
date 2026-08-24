@@ -188,7 +188,6 @@ def create_bash_mcp_server(host: str='localhost', port: int=8010) -> None:
             return {'success': proc.returncode == 0, 'exit_code': proc.returncode, 'stdout': stdout.decode('utf-8', errors='replace'), 'stderr': stderr.decode('utf-8', errors='replace')}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def get_system_info(api_key: Annotated[str, Field(description='API key for authentication. Must match the UFO_MCP_API_KEY environment variable configured on the server.')]) -> Annotated[Dict[str, Any], Field(description="Dictionary containing basic Linux system information with keys: 'uname', 'uptime', 'memory', 'disk'.")]:
@@ -207,7 +206,6 @@ def create_bash_mcp_server(host: str='localhost', port: int=8010) -> None:
                 info[k] = out.decode('utf-8', errors='replace').strip()
             except Exception as e:
                 info[k] = f'Error: {e}'
-                raise RuntimeError('Automation failed') from e
         return info
     mcp.run(transport='streamable-http', middleware=[Middleware(LocalhostGuardMiddleware)])
 

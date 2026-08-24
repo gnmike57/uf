@@ -77,7 +77,6 @@ def demo_validation_rollback():
         print('   ✗ 意外成功')
     except Exception as e:
         print(f'   ✓ 预期失败: {e}')
-        raise RuntimeError('Automation failed') from e
     print(f'\n失败操作后: {len(constellation.tasks)} 个任务, {len(constellation.dependencies)} 个依赖')
     is_valid, errors = constellation.validate_dag()
     print(f"   状态: {('仍然有效' if is_valid else '已损坏')}")
@@ -88,7 +87,6 @@ def demo_validation_rollback():
         print(f'   ✓ 成功添加: {dependency.from_task_id} -> {dependency.to_task_id}')
     except Exception as e:
         print(f'   ✗ 意外失败: {e}')
-        raise RuntimeError('Automation failed') from e
     print(f'\n最终状态: {len(constellation.tasks)} 个任务, {len(constellation.dependencies)} 个依赖')
     is_valid, errors = constellation.validate_dag()
     print(f"   状态: {('有效' if is_valid else '无效')}")
@@ -108,7 +106,6 @@ def demo_advanced_features():
         print(f"   ✓ 构建结果: {('有效' if is_valid else '无效')}")
     except Exception as e:
         print(f'   ✗ 批量构建失败: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n测试撤销/重做:')
     print(f'   执行前: {len(constellation.tasks)} 个任务')
     print(f'   可撤销: {editor.can_undo()}')
@@ -146,6 +143,5 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     sys.exit(main())

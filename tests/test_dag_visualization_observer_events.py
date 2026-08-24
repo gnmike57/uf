@@ -186,7 +186,6 @@ async def test_error_handling():
     except Exception as e:
         print(f'❌ Error handling task event with unknown constellation: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     malformed_event = Event(event_type=EventType.TASK_STARTED, source_id='test', timestamp=time.time(), data={})
     try:
         await observer.on_event(malformed_event)
@@ -194,7 +193,6 @@ async def test_error_handling():
     except Exception as e:
         print(f'❌ Error handling malformed event: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     return True
 
 async def test_visualization_output_quality():
@@ -239,7 +237,6 @@ async def run_all_tests():
         except Exception as e:
             test_results.append((test_name, False))
             print(f'\n❌ {test_name}: FAILED - {e}')
-            raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 80)
     print('📊 Test Results Summary')
     print('=' * 80)

@@ -46,7 +46,7 @@ def _configure_pywinauto_timings() -> None:
                 pywinauto.timings.Timings.after_clickinput_wait = after_click
                 pywinauto.timings.Timings.after_click_wait = after_click
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
         _pywinauto_configured = True
 
 class ControlReceiver(ReceiverBasic):
@@ -94,7 +94,6 @@ class ControlReceiver(ReceiverBasic):
             message = f'An error occurred: {full_traceback}'
             logger.warning(message)
             result = message
-            raise RuntimeError('Automation failed') from e
         return result
 
     def click_input(self, params: Dict[str, Union[str, bool]]) -> str:
@@ -133,7 +132,7 @@ class ControlReceiver(ReceiverBasic):
                     if hasattr(self.control, 'window_text'):
                         target_text = self.control.window_text()
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
                 best_box = None
                 for box in parsed_boxes:
                     if target_text and target_text.lower() in str(box.get('name', '')).lower():
@@ -151,7 +150,6 @@ class ControlReceiver(ReceiverBasic):
                     logger.warning('Omniparser fallback failed: target not found.')
             except Exception as e:
                 logger.warning(f'Omniparser fallback exception: {e}')
-                raise RuntimeError('Automation failed') from e
         return f'Click action has been executed, with parameters: {params}'
 
     def click_on_coordinates(self, params: Dict[str, str]) -> str:
@@ -236,7 +234,7 @@ class ControlReceiver(ReceiverBasic):
                     if expected_text and expected_text not in win_text:
                         logger.warning(f"Note: expected_text '{expected_text}' not in window_text '{win_text}' after {method_name}")
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
             if ufo_config.system.input_text_enter and method_name in ['type_keys', 'set_text', 'set_edit_text']:
                 self.atomic_execution('type_keys', params={'keys': '{ENTER}'})
             return result
@@ -250,7 +248,6 @@ class ControlReceiver(ReceiverBasic):
                         return f'Successfully set text via UIA ValuePattern: {text_to_type}'
                 except Exception as val_err:
                     logger.warning(f'ValuePattern.SetValue failed: {val_err}')
-                    raise RuntimeError('Automation failed') from val_err
                 clear_text_keys = '^a{BACKSPACE}'
                 keys_to_send = clear_text_keys + TextTransformer.transform_text(str(text_to_type), 'all')
                 try:
@@ -269,11 +266,8 @@ class ControlReceiver(ReceiverBasic):
                         return f'Typed text via fallback: {text_to_type}'
                     except Exception as fallback_error:
                         return f'An error occurred: {fallback_error}'
-                        raise RuntimeError('Automation failed') from fallback_error
-                    raise RuntimeError('Automation failed')
             else:
                 return f'An error occurred: {e}'
-            raise RuntimeError('Automation failed') from e
 
     def keyboard_input(self, params: Dict[str, str]) -> str:
         """
@@ -295,7 +289,6 @@ class ControlReceiver(ReceiverBasic):
                 result = ''
             except Exception as e:
                 result = f'An error occurred: {e}'
-                raise RuntimeError('Automation failed') from e
         if isinstance(result, str) and result.startswith('An error occurred'):
             try:
                 if control_focus and self.control:
@@ -303,7 +296,6 @@ class ControlReceiver(ReceiverBasic):
                 pyautogui.write(keys, interval=ufo_config.system.input_text_inter_key_pause)
             except Exception as fallback_error:
                 return f'An error occurred: {fallback_error}'
-                raise RuntimeError('Automation failed') from fallback_error
         return keys
 
     def key_press(self, params: Dict[str, str]) -> str:

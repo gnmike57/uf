@@ -45,7 +45,6 @@ class AgentOutputObserver(IEventObserver):
                 await self._handle_agent_action(event)
         except Exception as e:
             self.logger.error(f'Error handling agent output event: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_agent_response(self, event: AgentEvent) -> None:
         """
@@ -63,7 +62,6 @@ class AgentOutputObserver(IEventObserver):
                 self.logger.debug(f'Received response from {event.agent_type} agent: {event.agent_name}')
         except Exception as e:
             self.logger.error(f'Error handling agent response: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_agent_action(self, event: AgentEvent) -> None:
         """
@@ -87,4 +85,3 @@ class AgentOutputObserver(IEventObserver):
                 self.logger.debug(f'Received action from {event.agent_type} agent: {event.agent_name}')
         except Exception as e:
             self.logger.error(f'Error handling agent action: {e}')
-            raise RuntimeError('Automation failed') from e

@@ -1,6 +1,7 @@
 """
 UI MCP Servers
 Provides two MCP servers:
+    pass
 1. UI Data MCP Server - for data retrieval operations
 2. UI Action MCP Server - for UI automation actions
 Both servers share the same UI state for coordinated operations.
@@ -56,7 +57,7 @@ def _get_control_rectangle(control: UIAWrapper) -> Optional[Rect]:
             rect = control.rectangle()
             return Rect(x=rect.left, y=rect.top, width=rect.width(), height=rect.height())
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return None
 
 def _window2window_info(window: UIAWrapper, annotation_id: Optional[str]=None) -> WindowInfo:
@@ -394,7 +395,6 @@ def create_data_mcp_server(*args, **kwargs) -> FastMCP:
                     screenshot = ui_state.photographer.capture_app_window_screenshot(ui_state.selected_app_window)
                 except Exception as win_err:
                     logger.warning(f'App window screenshot failed: {win_err}')
-                    raise RuntimeError('Automation failed') from win_err
             if screenshot is not None:
                 try:
                     w, h = screenshot.size
@@ -403,7 +403,6 @@ def create_data_mcp_server(*args, **kwargs) -> FastMCP:
                         screenshot = None
                 except Exception:
                     screenshot = None
-                    raise RuntimeError('Automation failed')
             if screenshot is None:
                 logger.info('Falling back to desktop screenshot')
                 screenshot = ui_state.photographer.capture_desktop_screen_screenshot(all_screens=False)
@@ -411,7 +410,6 @@ def create_data_mcp_server(*args, **kwargs) -> FastMCP:
             return screenshot_data
         except Exception as e:
             return f'Error capturing screenshot: {str(e)}'
-            raise RuntimeError('Automation failed') from e
 
     @data_mcp.tool()
     def capture_desktop_screenshot(all_screens: bool=True) -> str:
@@ -431,7 +429,6 @@ def create_data_mcp_server(*args, **kwargs) -> FastMCP:
         except Exception as e:
             logger.error(f'Desktop screenshot failed: {e}, returning empty image')
             return ui_state.photographer._empty_image_string
-            raise RuntimeError('Automation failed') from e
 
     @data_mcp.tool()
     def get_ui_tree() -> Dict[str, Any]:
@@ -445,7 +442,6 @@ def create_data_mcp_server(*args, **kwargs) -> FastMCP:
             return ui_tree.UITree(window).ui_tree
         except Exception as e:
             return {'error': f'Error getting UI tree: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     @data_mcp.tool()
     def add_control_list(control_list: List[Dict[str, Any]]) -> str:
@@ -490,7 +486,6 @@ def create_data_mcp_server(*args, **kwargs) -> FastMCP:
                     ui_state.logger.warning(f'Failed to wrap control at index {idx}: {str(e)}')
                     skipped_count += 1
                     continue
-                    raise RuntimeError('Automation failed') from e
                 control_id = control_data.get('id')
                 if not control_id:
                     control_id = str(next_id)

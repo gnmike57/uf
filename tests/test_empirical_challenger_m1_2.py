@@ -78,7 +78,6 @@ def _worker_thread_run(temp_output_dir, results_list, index):
         results_list[index] = res
     except Exception as e:
         results_list[index] = e
-        raise RuntimeError('Automation failed') from e
 
 def test_multithreaded_parallel_writes(temp_output_dir):
     """Stress test 20 parallel threads each executing run_suite in their own asyncio event loop."""

@@ -45,7 +45,6 @@ def run_test_suite():
         except Exception as e:
             print(f'💥 EXCEPTION: {test_file} - {e}')
             failed_tests.append(test_file)
-            raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 60)
     print('🏁 TEST SUITE SUMMARY')
     print('=' * 60)
@@ -92,7 +91,6 @@ def run_specific_test_scenarios():
         except Exception as e:
             print(f"💥 EXCEPTION: {scenario['name']} - {e}")
             failed_scenarios.append(scenario['name'])
-            raise RuntimeError('Automation failed') from e
     print(f'\n📊 Scenario Test Results:')
     print(f'   ✅ Passed: {len(passed_scenarios)}')
     print(f'   ❌ Failed: {len(failed_scenarios)}')
@@ -113,7 +111,6 @@ def check_test_coverage():
         print('⏰ Coverage analysis timed out')
     except Exception as e:
         print(f'💥 Coverage analysis failed: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Main test runner."""

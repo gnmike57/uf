@@ -2,6 +2,7 @@
 App Agent Processing Strategies - Modular strategies for App Agent using the new framework.
 
 This module contains all the processing strategies for App Agent including:
+    pass
 - Screenshot capture and UI control information collection
 - Control filtering and annotation
 - LLM interaction with app-specific prompting
@@ -60,6 +61,7 @@ class AppScreenshotCaptureStrategy(BaseProcessingStrategy):
     Strategy for capturing application screenshots and desktop screenshots.
 
     This strategy handles:
+        pass
     - Application window screenshot capture
     - Desktop screenshot capture (if needed)
     - Screenshot path management and storage
@@ -123,7 +125,6 @@ class AppScreenshotCaptureStrategy(BaseProcessingStrategy):
                                     raw_tree = json.load(f)
                             except Exception:
                                 raw_tree = None
-                                raise RuntimeError('Automation failed')
                         redacted_screenshot_path, redacted_tree = redactor.redact_for_cloud(clean_screenshot_path, raw_tree)
                         if redacted_screenshot_path and os.path.exists(redacted_screenshot_path) and (redacted_screenshot_path != clean_screenshot_path):
                             clean_screenshot_path = redacted_screenshot_path
@@ -134,17 +135,15 @@ class AppScreenshotCaptureStrategy(BaseProcessingStrategy):
                                 with open(ui_tree_path, 'w', encoding='utf-8') as f:
                                     json.dump(redacted_tree, f, indent=4)
                             except Exception:
-                                raise RuntimeError('Automation failed')
+                                pass
             except Exception as redact_err:
                 self.logger.warning(f'Observation layer cloud redaction failed: {redact_err}')
-                raise RuntimeError('Automation failed') from redact_err
             screenshot_time = time.time() - start_time
             return ProcessingResult(success=True, data={'clean_screenshot_path': clean_screenshot_path, 'desktop_screenshot_path': desktop_screenshot_path, 'screenshot_saved_time': screenshot_time, 'ui_tree_path': ui_tree_path, 'clean_screenshot_url': clean_screenshot_url, 'desktop_screenshot_url': desktop_screenshot_url, 'application_window_info': application_window_info}, phase=ProcessingPhase.DATA_COLLECTION)
         except Exception as e:
             error_msg = f'Screenshot capture failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.DATA_COLLECTION, context)
-            raise RuntimeError('Automation failed') from e
 
     async def _capture_app_screenshot(self, save_path: str, command_dispatcher: BasicCommandDispatcher) -> str:
         """
@@ -175,7 +174,6 @@ class AppScreenshotCaptureStrategy(BaseProcessingStrategy):
             self.logger.error(f'Failed to capture app screenshot: {str(e)}; using empty placeholder')
             from ufo.automator.ui_control.screenshot import PhotographerFacade
             return PhotographerFacade._empty_image_string
-            raise RuntimeError('Automation failed') from e
 
     async def _get_application_window_info(self, command_dispatcher: BasicCommandDispatcher) -> TargetInfo:
         """
@@ -195,7 +193,6 @@ class AppScreenshotCaptureStrategy(BaseProcessingStrategy):
                 self.logger.error(f'Application window info is empty')
         except Exception as e:
             self.logger.warning(f'Failed to get application window info: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     async def _capture_ui_tree(self, save_path: str, command_dispatcher: BasicCommandDispatcher) -> Dict[str, Any]:
         """
@@ -256,7 +253,6 @@ class AppScreenshotCaptureStrategy(BaseProcessingStrategy):
             desktop_screenshot_url = utils._empty_image_string
             utils.save_image_string(desktop_screenshot_url, save_path)
             return desktop_screenshot_url
-            raise RuntimeError('Automation failed') from e
 
 @depends_on('clean_screenshot_path', 'application_window_info')
 @provides('control_info', 'annotation_dict', 'control_filter_time', 'control_info_recorder', 'annotated_screenshot_path', 'annotated_screenshot_url')
@@ -265,6 +261,7 @@ class AppControlInfoStrategy(BaseProcessingStrategy):
     Strategy for collecting and filtering UI control information.
 
     This strategy handles:
+        pass
     - UI control tree collection via UIA
     - Control filtering based on various criteria
     - Control annotation and grounding
@@ -342,7 +339,6 @@ class AppControlInfoStrategy(BaseProcessingStrategy):
             error_msg = f'Control info collection failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.DATA_COLLECTION, context)
-            raise RuntimeError('Automation failed') from e
 
     def _create_annotation_dict(self, control_info_list: List[TargetInfo]) -> Dict[str, TargetInfo]:
         """
@@ -371,7 +367,6 @@ class AppControlInfoStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'UIA control collection failed: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     async def _collect_grounding_controls(self, clean_screenshot_path: str, application_window_info: TargetInfo) -> List[TargetInfo]:
         """
@@ -389,7 +384,6 @@ class AppControlInfoStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Grounding control collection failed: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     async def _collect_merged_control_list(self, api_control_list: List[TargetInfo], grounding_control_list: List[TargetInfo], command_dispatcher: BasicCommandDispatcher) -> List[TargetInfo]:
         """
@@ -416,7 +410,6 @@ class AppControlInfoStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Control collection failed: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     def _find_added_controls(self, api_control_list: List[TargetInfo], merged_control_list: List[TargetInfo]) -> List[TargetInfo]:
         """
@@ -447,7 +440,6 @@ class AppControlInfoStrategy(BaseProcessingStrategy):
                 self.logger.warning('Failed to add new controls')
         except Exception as e:
             self.logger.warning(f'Failed to send add control list command: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     def _save_annotated_screenshot(self, application_window_info: TargetInfo, clean_screenshot_path: str, target_list: List[TargetInfo], save_path: str) -> str:
         """
@@ -466,7 +458,6 @@ class AppControlInfoStrategy(BaseProcessingStrategy):
             self.logger.error(f'Failed to save annotated screenshot: {str(e)}')
             self.logger.error(traceback.format_exc())
             return None
-            raise RuntimeError('Automation failed') from e
 
 @provides('parsed_response', 'response_text', 'llm_cost', 'prompt_message', 'save_screenshot', 'comment', 'concat_screenshot_path', 'plan', 'observation', 'last_control_screenshot_path', 'action', 'thought')
 class AppLLMInteractionStrategy(BaseProcessingStrategy):
@@ -474,6 +465,7 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
     Strategy for LLM interaction with App Agent specific prompting.
 
     This strategy handles:
+        pass
     - Context-aware prompt construction with app-specific data
     - Control information integration in prompts
     - LLM interaction with retry logic
@@ -592,7 +584,6 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
             error_msg = f'App LLM interaction failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.LLM_INTERACTION, context)
-            raise RuntimeError('Automation failed') from e
 
     def _collect_image_strings(self, last_control_screenshot_path: str, clean_screenshot_path: str, annotated_screenshot_path: str, concat_screenshot_save_path: str):
         """
@@ -632,7 +623,6 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to get previous plan: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     def _knowledge_retrieval(self, agent: 'AppAgent', subtask: str):
         """
@@ -689,7 +679,6 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to get last success actions: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     def _log_request_data(self, session_step: int, plan: List[str], prev_subtask: List[str], request: str, control_info: List[TargetInfo], image_list: List[str], subtask: str, host_message: str, last_success_actions: List[Dict], application_process_name: str, include_last_screenshot: bool, prompt_message: List[Dict], request_logger: 'FileWriter') -> None:
         """
@@ -716,7 +705,6 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
                 request_logger.write(request_log_str)
         except Exception as e:
             self.logger.warning(f'Failed to log request data: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     async def _get_llm_response(self, agent: 'AppAgent', prompt_message: List[Dict[str, Any]]) -> tuple[str, float]:
         """
@@ -741,7 +729,6 @@ class AppLLMInteractionStrategy(BaseProcessingStrategy):
                     last_exception = e
                     if retry_count < max_retries - 1:
                         self.logger.warning(f'LLM response parsing failed (attempt {retry_count + 1}/{max_retries}): {str(e)}')
-                    raise RuntimeError('Automation failed') from e
             raise Exception(f'LLM interaction failed after {max_retries} attempts: {str(last_exception)}')
         except Exception as e:
             raise Exception(f'Failed to get LLM response: {str(e)}')
@@ -880,6 +867,7 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
     Strategy for executing App Agent actions.
 
     This strategy handles:
+        pass
     - Action execution with UI controls
     - Control interaction and automation
     - Action result validation
@@ -964,7 +952,6 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
                                 return ProcessingResult(success=True, data={'execution_result': [success_result], 'action_info': action_info, 'selected_control_screenshot_path': context.get_local('clean_screenshot_path', ''), 'control_log': action_info.get_target_info() if action_info else [], 'status': 'CONTINUE'}, phase=ProcessingPhase.ACTION_EXECUTION)
             except Exception as fallback_e:
                 self.logger.warning(f'Visual Coordinate Fallback failed: {str(fallback_e)}')
-                raise RuntimeError('Automation failed') from fallback_e
             from ufo.aip.messages import Result, ResultStatus
             failed_result = Result(status=ResultStatus.FAILED, return_data=f'Action execution failed: {str(e)}. The UI state might have changed or a popup might be blocking the view. Please observe the new screenshot carefully and formulate a recovery plan.', namespace='action')
             action_info = None
@@ -973,9 +960,8 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
                 from ufo.agents.processors.schemas.actions import ListActionCommandInfo
                 action_info = ListActionCommandInfo(actions)
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
             return ProcessingResult(success=True, data={'execution_result': [failed_result], 'action_info': action_info, 'selected_control_screenshot_path': context.get_local('clean_screenshot_path', ''), 'control_log': action_info.get_target_info() if action_info else [], 'status': 'CONTINUE'}, phase=ProcessingPhase.ACTION_EXECUTION)
-            raise RuntimeError('Automation failed') from e
 
     async def _execute_app_action(self, command_dispatcher: BasicCommandDispatcher, actions: ActionCommandInfo | List[ActionCommandInfo]) -> List[Result]:
         """
@@ -1038,7 +1024,6 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
             return actions
         except Exception as e:
             self.logger.warning(f'Failed to create action info: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     def _save_annotated_screenshot(self, application_window_info: TargetInfo, clean_screenshot_path: str, target_list: List[TargetInfo], save_path: str) -> str:
         """
@@ -1060,7 +1045,6 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
             self.logger.error(f'Failed to save annotated screenshot: {str(e)}')
             self.logger.error(traceback.format_exc())
             return None
-            raise RuntimeError('Automation failed') from e
 
 @depends_on('session_step', 'parsed_response')
 @provides('additional_memory', 'memory_item', 'updated_blackboard')
@@ -1069,6 +1053,7 @@ class AppMemoryUpdateStrategy(BaseProcessingStrategy):
     Strategy for updating App Agent memory and blackboard.
 
     This strategy handles:
+        pass
     - Memory item creation with app-specific data
     - Agent memory synchronization
     - Blackboard updates with screenshots and actions
@@ -1111,7 +1096,6 @@ class AppMemoryUpdateStrategy(BaseProcessingStrategy):
             error_msg = f'App memory update failed: {str(traceback.format_exc())}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.MEMORY_UPDATE, context)
-            raise RuntimeError('Automation failed') from e
 
     def _get_all_success_actions(self, agent: 'AppAgent') -> List[Dict[str, Any]]:
         """
@@ -1178,7 +1162,6 @@ class AppMemoryUpdateStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to detect stagnation: {str(e)}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def _execute_shake_up(self, agent: 'AppAgent', context: ProcessingContext):
         """
@@ -1192,7 +1175,6 @@ class AppMemoryUpdateStrategy(BaseProcessingStrategy):
                 self.logger.info('Sent ESCAPE key.')
             except Exception as e:
                 self.logger.warning(f'Failed to send ESCAPE key: {str(e)}')
-                raise RuntimeError('Automation failed') from e
             agent.memory.clear()
             self.logger.info('Cleared short-term memory.')
             warning_msg = 'WARNING: SHAKE-UP PROTOCOL INITIATED.\nYou have been stuck in an infinite loop, attempting the exact same action 3 times in a row with no change to the UI. Your short-term memory has been wiped. The system just pressed the ESCAPE key for you. Please carefully examine the current screenshot and try a completely different approach!'
@@ -1200,7 +1182,6 @@ class AppMemoryUpdateStrategy(BaseProcessingStrategy):
             agent.blackboard.add_trajectories({'shake_up': warning_msg})
         except Exception as e:
             self.logger.error(f'Failed to execute shake-up: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     def _create_additional_memory_data(self, agent: 'AppAgent', context: ProcessingContext) -> 'BasicProcessorContext':
         """
@@ -1271,7 +1252,6 @@ class AppMemoryUpdateStrategy(BaseProcessingStrategy):
                 agent.blackboard.add_image(screenshot_path, metadata)
         except Exception as e:
             self.logger.warning(f'Failed to update blackboard: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     def _update_structural_logs(self, context: ProcessingContext, memory_item: MemoryItem) -> None:
         """
@@ -1283,4 +1263,3 @@ class AppMemoryUpdateStrategy(BaseProcessingStrategy):
             context.global_context.add_to_structural_logs(memory_item.to_dict())
         except Exception as e:
             self.logger.warning(f'Failed to update structural logs: {str(e)}')
-            raise RuntimeError('Automation failed') from e

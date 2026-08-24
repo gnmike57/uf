@@ -80,7 +80,6 @@ class DesktopDataCollectionStrategy(BaseProcessingStrategy):
             error_msg = f'Desktop data collection failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.DATA_COLLECTION, context)
-            raise RuntimeError('Automation failed') from e
 
     async def _capture_desktop_screenshot(self, command_dispatcher: BasicCommandDispatcher, save_path: str) -> str:
         """
@@ -118,7 +117,6 @@ class DesktopDataCollectionStrategy(BaseProcessingStrategy):
             desktop_screenshot_url = utils._empty_image_string
             utils.save_image_string(desktop_screenshot_url, save_path)
             return desktop_screenshot_url
-            raise RuntimeError('Automation failed') from e
 
     async def _get_desktop_application_info(self, command_dispatcher: BasicCommandDispatcher) -> List[TargetInfo]:
         """
@@ -193,7 +191,6 @@ class DesktopDataCollectionStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to register third-party agents: {str(e)}')
             return 0
-            raise RuntimeError('Automation failed') from e
 
 @depends_on('target_info_list', 'desktop_screenshot_url')
 @provides('parsed_response', 'response_text', 'llm_cost', 'prompt_message', 'subtask', 'plan', 'result', 'host_message', 'status', 'question_list', 'function_name', 'function_arguments')
@@ -257,7 +254,6 @@ class HostLLMInteractionStrategy(BaseProcessingStrategy):
             error_msg = f'Host LLM interaction failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.LLM_INTERACTION, context)
-            raise RuntimeError('Automation failed') from e
 
     def _get_prev_plan(self, agent: 'HostAgent') -> List[str]:
         """
@@ -275,7 +271,6 @@ class HostLLMInteractionStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.error(f'Failed to get previous plan: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     async def _build_comprehensive_prompt(self, agent: 'HostAgent', target_info_list: List[Any], desktop_screenshot_url: str, prev_plan: List[Any], previous_subtasks: List[Any], request: str, session_step: int, request_logger) -> Dict[str, Any]:
         """
@@ -323,7 +318,6 @@ class HostLLMInteractionStrategy(BaseProcessingStrategy):
                 request_logger.write(request_log_str)
         except Exception as e:
             self.logger.warning(f'Failed to log request data: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     async def _get_llm_response_with_retry(self, host_agent: 'HostAgent', prompt_message: Dict[str, Any]) -> tuple[str, float]:
         """
@@ -350,7 +344,6 @@ class HostLLMInteractionStrategy(BaseProcessingStrategy):
                     self.logger.warning(f'LLM response parsing failed (attempt {retry_count + 1}/{max_retries}): {str(e)}')
                 else:
                     self.logger.error(f'LLM response parsing failed after all retries: {str(e)}')
-                raise RuntimeError('Automation failed') from e
         raise Exception(f'LLM interaction failed after {max_retries} attempts: {str(last_exception)}')
 
     def _parse_and_validate_response(self, host_agent: 'HostAgent', response_text: str) -> HostAgentResponse:
@@ -507,7 +500,6 @@ class HostActionExecutionStrategy(BaseProcessingStrategy):
             error_msg = f'Host action execution failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.ACTION_EXECUTION, context)
-            raise RuntimeError('Automation failed') from e
 
     async def _execute_constellation_dag(self, parsed_response, context: ProcessingContext) -> List[Any]:
         """Execute a predefined Constellation DAG for a specific task."""
@@ -527,7 +519,6 @@ class HostActionExecutionStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.error(f'Constellation execution failed: {e}')
             return [Result(status=ResultStatus.ERROR, result=f'Error executing DAG: {e}', error=str(e))]
-            raise RuntimeError('Automation failed') from e
 
     async def _execute_application_selection(self, parsed_response: HostAgentResponse, target_registry: TargetRegistry, command_dispatcher: BasicCommandDispatcher) -> List[Result]:
         """
@@ -653,7 +644,6 @@ class HostActionExecutionStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to create action info: {str(e)}')
             return ActionCommandInfo(function=parsed_response.function or 'unknown', arguments=parsed_response.arguments or {}, target=None, status=parsed_response.status or 'unknown', result=Result(status='error', result={'error': str(e)}))
-            raise RuntimeError('Automation failed') from e
 
 @depends_on('session_step')
 @provides('additional_memory', 'memory_item', 'memory_keys_count')
@@ -697,7 +687,6 @@ class HostMemoryUpdateStrategy(BaseProcessingStrategy):
             error_msg = f'Host memory update failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.MEMORY_UPDATE, context)
-            raise RuntimeError('Automation failed') from e
 
     def _create_additional_memory_data(self, agent: 'HostAgent', context: ProcessingContext) -> 'HostAgentProcessorContext':
         """
@@ -742,7 +731,6 @@ class HostMemoryUpdateStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to calculate time costs: {str(e)}')
             return {}
-            raise RuntimeError('Automation failed') from e
 
     def _create_control_log(self, action_info: Optional[ActionCommandInfo], control_text: str='') -> Dict[str, Any]:
         """
@@ -759,7 +747,6 @@ class HostMemoryUpdateStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to create control log: {str(e)}')
             return {}
-            raise RuntimeError('Automation failed') from e
 
     def _create_and_populate_memory_item(self, parsed_response: HostAgentResponse, additional_memory: 'HostAgentProcessorContext') -> MemoryItem:
         """
@@ -788,7 +775,6 @@ class HostMemoryUpdateStrategy(BaseProcessingStrategy):
             global_context.add_to_structural_logs(memory_item.to_dict())
         except Exception as e:
             self.logger.warning(f'Failed to update structural logs: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     def _update_blackboard_trajectories(self, host_agent: 'HostAgent', memory_item: MemoryItem) -> None:
         """
@@ -808,4 +794,3 @@ class HostMemoryUpdateStrategy(BaseProcessingStrategy):
                 self.logger.debug(f'Added {len(memorized_action)} items to blackboard')
         except Exception as e:
             self.logger.warning(f'Failed to update blackboard trajectories: {str(e)}')
-            raise RuntimeError('Automation failed') from e

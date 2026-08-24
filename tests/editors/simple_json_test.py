@@ -56,7 +56,6 @@ def test_basic_json_operations():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_task_star_line_basic():
     """Test basic TaskStarLine JSON operations."""
@@ -95,7 +94,6 @@ def test_task_star_line_basic():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_error_handling():
     """Test error handling in JSON operations."""
@@ -128,7 +126,6 @@ def test_error_handling():
     except Exception as e:
         print(f'✗ Unexpected error in error handling tests: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all tests."""

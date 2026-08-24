@@ -92,4 +92,3 @@ class HeartbeatProtocol(AIPProtocol):
             self.logger.debug('Heartbeat loop cancelled')
         except Exception as e:
             self.logger.error(f'Error in heartbeat loop: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e

@@ -93,7 +93,6 @@ class DeviceServerEndpoint(AIPEndpoint):
                 await self.session_manager.cancel_task(session_id, reason=reason)
             except Exception as e:
                 self.logger.error(f'Error cancelling session {session_id}: {e}')
-                raise RuntimeError('Automation failed') from e
 
     async def on_device_disconnected(self, device_id: str) -> None:
         """

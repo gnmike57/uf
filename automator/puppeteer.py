@@ -52,7 +52,6 @@ class AppPuppeteer:
             return receiver.type_name
         except Exception:
             return ''
-            raise RuntimeError('Automation failed')
 
     def execute_command(self, command_name: str, params: Dict[str, Any], *args, **kwargs) -> str:
         """

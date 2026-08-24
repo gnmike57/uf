@@ -42,7 +42,7 @@ def _load_execution_config() -> Dict[str, Any]:
             defaults['ENABLE_SET_OF_MARKS'] = lf.get('ENABLE_SET_OF_MARKS', False)
             defaults['ENABLE_API_PLUGINS'] = lf.get('ENABLE_API_PLUGINS', True)
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 class ExecutionMode:
@@ -141,7 +141,6 @@ class OrchestratorRouter:
                         logger.info('[ReAct] Experience memory matched — injecting prior knowledge.')
             except Exception as e:
                 logger.debug(f'[ReAct] Memory recall failed: {e}')
-                raise RuntimeError('Automation failed') from e
         result = {'mode': ExecutionMode.REACT, 'status': 'routed', 'intent': user_intent, 'prior_knowledge': prior_knowledge, 'active_features': features}
         if react_engine is not None:
             result['engine'] = react_engine
@@ -196,5 +195,4 @@ class OrchestratorRouter:
                 return 'dlq_captured'
         except Exception as e:
             logger.error(f'DLQ serialization failed: {e}')
-            raise RuntimeError('Automation failed') from e
         return 'dlq_failed'

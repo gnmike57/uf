@@ -18,7 +18,6 @@ def test_observer_imports():
         print(f'❌ Import failed: {e}')
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_observer_instantiation():
     """Test that observer instances can be created correctly."""
@@ -41,7 +40,6 @@ def test_observer_instantiation():
         print(f'❌ Instantiation failed: {e}')
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_modular_structure():
     """Test that the modular structure is working correctly."""
@@ -65,7 +63,6 @@ def test_modular_structure():
         print(f'❌ Modular structure test failed: {e}')
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_observer_interfaces():
     """Test that observers implement the expected interfaces."""
@@ -100,7 +97,6 @@ def test_observer_interfaces():
         print(f'❌ Interface test failed: {e}')
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all tests and report results."""
@@ -115,7 +111,6 @@ def main():
         except Exception as e:
             print(f'❌ Test {test.__name__} crashed: {e}')
             results.append(False)
-            raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 50)
     print('📊 Test Results Summary:')
     passed = sum(results)

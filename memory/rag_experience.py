@@ -50,7 +50,7 @@ def _load_memory_config() -> Dict[str, Any]:
             defaults['DB_PATH'] = lf_cfg.get('EXPERIENCE_DB_PATH', 'memory/chroma_db')
             defaults['SIMILARITY_THRESHOLD'] = float(lf_cfg.get('SOM_SIMILARITY_THRESHOLD', 0.3))
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 class ExperienceMemory:
@@ -93,7 +93,6 @@ class ExperienceMemory:
         except Exception as e:
             logger.warning(f'Experience memory initialization failed: {e}')
             self._available = False
-            raise RuntimeError('Automation failed') from e
 
     def is_enabled(self) -> bool:
         """Check if experience memory is enabled and not blocked by strict mode."""
@@ -129,7 +128,6 @@ class ExperienceMemory:
         except Exception as e:
             logger.warning(f'Experience memory query failed: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     def recall_top_k(self, user_intent: str, k: int=5) -> List[Dict[str, Any]]:
         """
@@ -151,7 +149,6 @@ class ExperienceMemory:
         except Exception as e:
             logger.warning(f'Experience memory top-k query failed: {e}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     def save_successful_run(self, user_intent: str, completed_dag_json: str, metadata: Optional[Dict[str, Any]]=None) -> bool:
         """
@@ -175,7 +172,6 @@ class ExperienceMemory:
         except Exception as e:
             logger.warning(f'Experience memory save failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def count(self) -> int:
         """Return the number of stored trajectories."""
@@ -185,7 +181,6 @@ class ExperienceMemory:
             return self._collection.count()
         except Exception:
             return 0
-            raise RuntimeError('Automation failed')
 
     def clear(self) -> bool:
         """Clear all stored trajectories."""
@@ -199,4 +194,3 @@ class ExperienceMemory:
         except Exception as e:
             logger.warning(f'Experience memory clear failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e

@@ -61,7 +61,6 @@ class HeartbeatManager:
                 if device_id in self._heartbeat_protocols:
                     del self._heartbeat_protocols[device_id]
                 break
-                raise RuntimeError('Automation failed') from e
 
     def handle_heartbeat_response(self, device_id: str) -> None:
         """Handle heartbeat response from device"""

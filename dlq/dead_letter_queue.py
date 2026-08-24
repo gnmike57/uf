@@ -37,10 +37,9 @@ class DeadLetterQueue:
                         data = json.load(f)
                         snapshots.append(data)
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
         except Exception as e:
             logger.debug(f'Error listing DLQ snapshots: {e}')
-            raise RuntimeError('Automation failed') from e
         return snapshots
 
     def _prune_oldest(self) -> None:
@@ -55,10 +54,9 @@ class DeadLetterQueue:
                     try:
                         p.unlink(missing_ok=True)
                     except Exception:
-                        raise RuntimeError('Automation failed')
+                        pass
         except Exception as e:
             logger.debug(f'Error pruning DLQ snapshots: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def record_failure(self, agent_type: str, messages: List[Dict[str, Any]], error: Exception, model: str='', circuit_breaker_state: str='UNKNOWN', extra_meta: Optional[Dict[str, Any]]=None) -> Optional[Path]:
         """
@@ -92,7 +90,6 @@ class DeadLetterQueue:
         except Exception as e:
             logger.error(f'Failed to record DLQ snapshot: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     def _dispatch_webhook(self, snapshot_data: Dict[str, Any]) -> None:
         """
@@ -113,7 +110,6 @@ class DeadLetterQueue:
                     logger.info(f'DLQ webhook dispatched to {webhook_url}, status: {response.status}')
         except Exception as e:
             logger.debug(f'DLQ webhook dispatch skipped or failed: {e}')
-            raise RuntimeError('Automation failed') from e
 _default_dlq_instance: Optional[DeadLetterQueue] = None
 _dlq_lock = threading.Lock()
 
@@ -138,7 +134,6 @@ def get_default_dlq() -> DeadLetterQueue:
                         webhook_url = dlq_cfg.get('WEBHOOK_URL', '')
                 except Exception as e:
                     logger.debug(f'Failed to load DLQ config: {e}')
-                    raise RuntimeError('Automation failed') from e
                 _default_dlq_instance = DeadLetterQueue(snapshot_dir=snapshot_dir, max_snapshots=max_snapshots, enabled=enabled, webhook_url=webhook_url)
     return _default_dlq_instance
 
@@ -151,4 +146,3 @@ def record_dlq_event(agent_type: str, messages: List[Dict[str, Any]], error: Exc
     except Exception as e:
         logger.error(f'record_dlq_event failed: {e}')
         return None
-        raise RuntimeError('Automation failed') from e

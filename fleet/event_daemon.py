@@ -73,7 +73,7 @@ def _load_daemon_config() -> Dict[str, Any]:
         if fd_cfg and isinstance(fd_cfg, dict):
             defaults.update({k: v for k, v in fd_cfg.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 class UFOEventDaemon:
@@ -171,7 +171,6 @@ class UFOEventDaemon:
         except Exception as e:
             logger.error(f'[Daemon] Failed to parse event: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def webhook_trigger(self, payload: Dict[str, Any]) -> bool:
         """
@@ -202,7 +201,6 @@ class UFOEventDaemon:
             except Exception as e:
                 logger.error(f'[Daemon] Unhandled error in event loop: {e}')
                 self._stats_failed += 1
-                raise RuntimeError('Automation failed') from e
 
     def _process_event(self, event: DaemonEvent) -> None:
         """Process a single event through the workflow pipeline."""
@@ -233,8 +231,7 @@ class UFOEventDaemon:
                 dlq = DeadLetterQueueManager()
                 dlq.capture_failure(task_id=f'daemon_{int(event.timestamp)}', error_chain=str(e), metadata={'event_type': event.event_type, 'instructions': event.instructions})
             except Exception:
-                raise RuntimeError('Automation failed')
-            raise RuntimeError('Automation failed') from e
+                pass
         finally:
             with self._lock:
                 self._current_workflow = None

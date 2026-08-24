@@ -75,7 +75,6 @@ class PrefillPrompter(BasicPrompter):
             return f'data:image/png;base64,{encoded_string}'
         except Exception:
             return ''
-            raise RuntimeError('Automation failed')
 
     def user_content_construction(self, given_task: str, reference_steps: List, log_path: str) -> List[Dict]:
         """

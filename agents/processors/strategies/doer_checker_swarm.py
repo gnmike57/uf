@@ -41,6 +41,7 @@ class DoerCheckerSwarmStrategy(BaseProcessingStrategy):
     Phase 3 Zero-Fail: /TEAMWORK-PREVIEW
 
     The Checker receives:
+        pass
     - The current screenshot
     - The Doer's proposed action and target control
     - A validation prompt asking it to confirm or reject
@@ -87,7 +88,6 @@ class DoerCheckerSwarmStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Doer-Checker swarm error (non-fatal, proceeding): {e}')
             return ProcessingResult(success=True, data={'checker_validation': 'error', 'reason': str(e)}, phase=ProcessingPhase.ACTION_EXECUTION)
-            raise RuntimeError('Automation failed') from e
 
     async def _run_checker(self, agent: 'AppAgent', parsed_response: Any, screenshot_path: str, context: ProcessingContext) -> Dict[str, Any]:
         """
@@ -105,7 +105,6 @@ class DoerCheckerSwarmStrategy(BaseProcessingStrategy):
                 action_summary = json.dumps(parsed_response.action if isinstance(parsed_response.action, (dict, list)) else str(parsed_response.action), default=str)
             except Exception:
                 action_summary = str(parsed_response.action)
-                raise RuntimeError('Automation failed')
         control_text = str(getattr(parsed_response, 'control_text', ''))
         subtask = str(context.get('subtask', ''))
         image_url = ''
@@ -114,7 +113,7 @@ class DoerCheckerSwarmStrategy(BaseProcessingStrategy):
             if screenshot_path and os.path.exists(screenshot_path):
                 image_url = utils.encode_image_from_path(screenshot_path)
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
         prompt_parts = [{'role': 'system', 'content': 'You are the CHECKER in a Doer-Checker safety swarm. The DOER has proposed a GUI action. Your job is to independently verify whether the proposed action targets the correct UI element and will achieve the stated subtask. Respond ONLY in JSON: {"approved": true|false, "confidence": 0.0-1.0, "reason": "explanation"}'}, {'role': 'user', 'content': []}]
         user_content = [{'type': 'text', 'text': f'Current subtask: {subtask}'}, {'type': 'text', 'text': f'Proposed action: {action_summary}'}, {'type': 'text', 'text': f'Target control: {control_text}'}]
         if image_url:
@@ -130,5 +129,4 @@ class DoerCheckerSwarmStrategy(BaseProcessingStrategy):
             except Exception as e:
                 logger.warning(f'Checker LLM call failed: {e}')
                 return {'approved': True, 'confidence': 0.5, 'reason': f'Checker error: {e}'}
-                raise RuntimeError('Automation failed') from e
         return {'approved': True, 'confidence': 0.95, 'reason': 'No checker agent available'}

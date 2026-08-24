@@ -209,7 +209,6 @@ class ConfigValidator:
             self.errors.append(f'Failed to load configuration: {e}')
             self.show_report()
             return False
-            raise RuntimeError('Automation failed') from e
 
     def show_configuration(self, config: Dict[str, Any]) -> None:
         """

@@ -53,7 +53,6 @@ class RegistrationProtocol(AIPProtocol):
         except Exception as e:
             self.logger.error(f'Error during device registration: {e}', exc_info=True)
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def register_as_constellation(self, constellation_id: str, target_device: str, metadata: Optional[Dict[str, Any]]=None) -> bool:
         """
@@ -84,7 +83,6 @@ class RegistrationProtocol(AIPProtocol):
         except Exception as e:
             self.logger.error(f'Error during constellation registration: {e}', exc_info=True)
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def send_registration_confirmation(self, response_id: Optional[str]=None) -> None:
         """

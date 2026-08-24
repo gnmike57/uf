@@ -43,4 +43,3 @@ def load_all_servers():
                 import traceback
                 traceback.print_exc()
                 print(f"Error loading module '{full_module_name}': {e}")
-                raise RuntimeError('Automation failed') from e

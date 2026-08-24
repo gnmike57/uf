@@ -93,7 +93,6 @@ class ConstellationModificationSynchronizer(IEventObserver):
             self.logger.error(f'Missing key in task event: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'Unexpected error handling task event in synchronizer: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_constellation_event(self, event: ConstellationEvent) -> None:
         """
@@ -132,7 +131,6 @@ class ConstellationModificationSynchronizer(IEventObserver):
             self.logger.error(f'Missing key in constellation event: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'Unexpected error handling constellation event in synchronizer: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _auto_complete_on_timeout(self, task_id: str, future: asyncio.Future) -> None:
         """
@@ -154,7 +152,6 @@ class ConstellationModificationSynchronizer(IEventObserver):
             raise
         except Exception as e:
             self.logger.error(f'Unexpected error in auto-complete timeout handler: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def wait_for_pending_modifications(self, timeout: Optional[float]=None) -> bool:
         """

@@ -145,7 +145,6 @@ def main():
             results['failed_tests'] += 1
             results['test_details'][test_name] = {'status': 'ERROR', 'error': str(e), 'execution_time': time.time() - test_start}
             print_with_color(f'💥 {test_name}: ERROR - {e}', 'red')
-            raise RuntimeError('Automation failed') from e
     total_time = time.time() - start_time
     success_rate = results['passed_tests'] / results['total_tests'] * 100
     results['total_execution_time'] = total_time

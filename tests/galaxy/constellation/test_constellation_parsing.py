@@ -36,7 +36,6 @@ def test_constellation_parsing(log_file_path: str):
                     error_msg = f'Line {line_num} - constellation_before parsing failed: {type(e).__name__}: {str(e)}'
                     results['errors'].append(error_msg)
                     print(f'  [FAIL] Failed to parse constellation_before: {e}')
-                    raise RuntimeError('Automation failed') from e
             if 'constellation_after' in log_entry and log_entry['constellation_after']:
                 results['lines_with_constellation_after'] += 1
                 constellation_after_str = log_entry['constellation_after']
@@ -54,7 +53,6 @@ def test_constellation_parsing(log_file_path: str):
                     error_msg = f'Line {line_num} - constellation_after parsing failed: {type(e).__name__}: {str(e)}'
                     results['errors'].append(error_msg)
                     print(f'  [FAIL] Failed to parse constellation_after: {e}')
-                    raise RuntimeError('Automation failed') from e
             print()
         except json.JSONDecodeError as e:
             error_msg = f'Line {line_num} - JSON decode error: {e}'

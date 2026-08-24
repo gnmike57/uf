@@ -103,7 +103,6 @@ class EvaluationAgentPrompter(BasicPrompter):
                 return False
         except Exception:
             return False
-            raise RuntimeError('Automation failed')
         return True
 
     @staticmethod

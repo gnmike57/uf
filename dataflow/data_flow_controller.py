@@ -193,7 +193,6 @@ class DataFlowController:
         except Exception as e:
             self.task_info['instantiation_result'][flow_type]['error'] = {'type': str(e.__class__), 'error_message': str(e), 'traceback': traceback.format_exc()}
             print_with_color(f'Error in {flow_type}: {e} {traceback.format_exc()}')
-            raise RuntimeError('Automation failed') from e
         finally:
             if flow_instance and hasattr(flow_instance, 'execution_time'):
                 self.task_info['time_cost'][flow_type] = flow_instance.execution_time

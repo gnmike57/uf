@@ -32,7 +32,6 @@ def pre_cleanup(summary_filename: str=DEFAULT_SUMMARY_FILENAME) -> None:
                 logger.info(f'[Stage R5 Pre-Cleanup] Removed existing summary file: {target_path}')
             except Exception as e:
                 logger.warning(f'[Stage R5 Pre-Cleanup] Could not remove {target_path}: {e}')
-                raise RuntimeError('Automation failed') from e
     try:
         proc_ver = verify_bankfidelity_process()
         if not proc_ver['verified']:
@@ -48,7 +47,6 @@ def pre_cleanup(summary_filename: str=DEFAULT_SUMMARY_FILENAME) -> None:
             time.sleep(0.5)
     except Exception as e:
         logger.warning(f'[Stage R5 Pre-Cleanup] Could not pre-launch target apps: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def verify_r5(stage_data: Optional[Union[Dict[str, Any], str, Path]]=None, output_dir: Optional[Union[str, Path]]=None, task_log_dir: Optional[Union[str, Path]]=None, dry_run: bool=False, summary_filename: str=DEFAULT_SUMMARY_FILENAME, expected_keyword: str='balance') -> Dict[str, Any]:
     """
@@ -92,7 +90,6 @@ def post_cleanup() -> None:
         logger.info('[Stage R5 Post-Cleanup] Terminated BankFidelity and Notepad.')
     except Exception as e:
         logger.warning(f'[Stage R5 Post-Cleanup] Could not terminate target apps: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def get_stage_config() -> Dict[str, Any]:
     """

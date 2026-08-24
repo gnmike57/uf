@@ -77,7 +77,6 @@ async def test_handler_methods():
         print(f'❌ 测试过程中出错: {e}')
         import traceback
         traceback.print_exc()
-        raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 80)
     print('🎯 重构验证结果:')
     print('   ✅ 方法结构清晰，职责分离明确')
@@ -93,6 +92,5 @@ async def main():
         print('\n测试被用户中断')
     except Exception as e:
         print(f'测试失败: {e}')
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     asyncio.run(main())

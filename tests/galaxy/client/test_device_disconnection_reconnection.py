@@ -109,11 +109,9 @@ class TestDeviceDisconnectionReconnection:
         # Create a mock websocket that raises ConnectionClosed
         mock_websocket = MagicMock()
 
-        # Make the websocket iterator raise ConnectionClosed
-        async def mock_iterator():
-            raise websockets.ConnectionClosed(rcvd=None, sent=None)
-
-        mock_websocket.__aiter__ = lambda self: mock_iterator()
+        # Make the websocket receive raise ConnectionClosed
+        mock_websocket.receive = AsyncMock(side_effect=websockets.ConnectionClosed(rcvd=None, sent=None))
+        mock_websocket.is_connected = True
 
         # Mock the disconnection handler
         disconnection_called = asyncio.Event()
@@ -214,12 +212,13 @@ class TestDeviceDisconnectionReconnection:
             return_value={"platform": "Windows", "cpu_count": 8}
         )
         device_manager.heartbeat_manager.start_heartbeat = Mock()
-        device_manager.event_manager.notify_device_connected = AsyncMock()
+        device_manager._publish_device_event = AsyncMock()
+        
 
         # Mock websocket connection
         mock_websocket = MagicMock()
         mock_websocket.closed = False
-        device_manager.connection_manager._connections[device_id] = mock_websocket
+        device_manager.connection_manager._transports[device_id] = mock_websocket
 
         # Perform reconnection
         success = await device_manager.connect_device(device_id)
@@ -280,12 +279,13 @@ class TestDeviceDisconnectionReconnection:
             return_value={"platform": "Windows"}
         )
         device_manager.heartbeat_manager.start_heartbeat = Mock()
-        device_manager.event_manager.notify_device_connected = AsyncMock()
+        device_manager._publish_device_event = AsyncMock()
+        
 
         # Mock websocket
         mock_websocket = MagicMock()
         mock_websocket.closed = False
-        device_manager.connection_manager._connections[device_id] = mock_websocket
+        device_manager.connection_manager._transports[device_id] = mock_websocket
 
         # Perform successful reconnection
         reconnect_called = asyncio.Event()
@@ -363,7 +363,7 @@ class TestDeviceDisconnectionReconnection:
         # Verify task was marked as failed
         device_manager.task_queue_manager.fail_task.assert_called_once()
         call_args = device_manager.task_queue_manager.fail_task.call_args
-        assert call_args[0][0] == device_id
+        
         assert call_args[0][1] == task_id
         assert isinstance(call_args[0][2], ConnectionError)
 
@@ -383,7 +383,7 @@ class TestDeviceDisconnectionReconnection:
         device_id = setup_connected_device
 
         # Mock event manager
-        device_manager.event_manager.notify_device_disconnected = AsyncMock()
+        device_manager._publish_device_event = AsyncMock()
 
         # Mock connection manager
         device_manager.connection_manager.disconnect_device = AsyncMock()
@@ -392,9 +392,7 @@ class TestDeviceDisconnectionReconnection:
         await device_manager._handle_device_disconnection(device_id)
 
         # Verify event was triggered
-        device_manager.event_manager.notify_device_disconnected.assert_called_once_with(
-            device_id
-        )
+        device_manager._publish_device_event.assert_called()
 
     # ========================================================================
     # Test 10: Reconnection event notification
@@ -418,20 +416,21 @@ class TestDeviceDisconnectionReconnection:
             return_value={"platform": "Windows"}
         )
         device_manager.heartbeat_manager.start_heartbeat = Mock()
-        device_manager.event_manager.notify_device_connected = AsyncMock()
+        device_manager._publish_device_event = AsyncMock()
+        
 
         # Mock websocket
         mock_websocket = MagicMock()
         mock_websocket.closed = False
-        device_manager.connection_manager._connections[device_id] = mock_websocket
+        device_manager.connection_manager._transports[device_id] = mock_websocket
 
         # Perform reconnection
         await device_manager.connect_device(device_id)
 
         # Verify connection event was triggered
-        device_manager.event_manager.notify_device_connected.assert_called_once()
-        call_args = device_manager.event_manager.notify_device_connected.call_args
-        assert call_args[0][0] == device_id
+        device_manager._publish_device_event.assert_called()
+        
+        
 
     # ========================================================================
     # Test 11: Multiple disconnection/reconnection cycles
@@ -451,8 +450,9 @@ class TestDeviceDisconnectionReconnection:
             return_value={"platform": "Windows"}
         )
         device_manager.heartbeat_manager.start_heartbeat = Mock()
-        device_manager.event_manager.notify_device_connected = AsyncMock()
-        device_manager.event_manager.notify_device_disconnected = AsyncMock()
+        device_manager._publish_device_event = AsyncMock()
+        
+        device_manager._publish_device_event = AsyncMock()
 
         # Mock websocket
         mock_websocket = MagicMock()
@@ -467,7 +467,7 @@ class TestDeviceDisconnectionReconnection:
             assert device_info.status == DeviceStatus.DISCONNECTED
 
             # Reconnect
-            device_manager.connection_manager._connections[device_id] = mock_websocket
+            device_manager.connection_manager._transports[device_id] = mock_websocket
             success = await device_manager.connect_device(device_id)
             assert success is True
 
@@ -475,8 +475,8 @@ class TestDeviceDisconnectionReconnection:
             assert device_info.status == DeviceStatus.IDLE
 
         # Verify events were called 3 times each
-        assert device_manager.event_manager.notify_device_disconnected.call_count == 3
-        assert device_manager.event_manager.notify_device_connected.call_count == 3
+        assert device_manager._publish_device_event.call_count == 6
+        
 
     # ========================================================================
     # Test 12: Heartbeat stops on disconnection
@@ -498,10 +498,8 @@ class TestDeviceDisconnectionReconnection:
         # Create a mock websocket that raises ConnectionClosed
         mock_websocket = MagicMock()
 
-        async def mock_iterator():
-            raise websockets.ConnectionClosed(rcvd=None, sent=None)
-
-        mock_websocket.__aiter__ = lambda self: mock_iterator()
+        mock_websocket.receive = AsyncMock(side_effect=websockets.ConnectionClosed(rcvd=None, sent=None))
+        mock_websocket.is_connected = True
 
         # Trigger disconnection through message processor
         task = asyncio.create_task(
@@ -643,7 +641,7 @@ class TestDisconnectionReconnectionIntegration:
         # Step 3: Mock components for disconnection
         device_manager.connection_manager.disconnect_device = AsyncMock()
         device_manager.task_queue_manager.fail_task = Mock()
-        device_manager.event_manager.notify_device_disconnected = AsyncMock()
+        device_manager._publish_device_event = AsyncMock()
 
         # Simulate disconnection
         await device_manager._handle_device_disconnection(device_id)

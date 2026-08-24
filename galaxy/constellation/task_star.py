@@ -178,7 +178,6 @@ class TaskStar(ITask):
         except Exception as e:
             end_time = datetime.now(timezone.utc)
             return ExecutionResult(task_id=self.task_id, status=TaskStatus.FAILED, error=e, start_time=start_time, end_time=end_time, metadata={'device_id': self.target_device_id})
-            raise RuntimeError('Automation failed') from e
 
     def validate(self) -> bool:
         """
@@ -475,7 +474,6 @@ class TaskStar(ITask):
                 return self._serialize_result(obj_dict)
             except Exception:
                 return str(result)
-                raise RuntimeError('Automation failed')
         return str(result)
 
     def _serialize_task_data(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -671,7 +669,6 @@ class TaskStar(ITask):
                         serializable_data[key] = vars(value)
                     except Exception:
                         serializable_data[key] = str(value)
-                        raise RuntimeError('Automation failed')
                 elif isinstance(value, set):
                     serializable_data[key] = list(value)
                 elif callable(value):

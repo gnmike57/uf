@@ -240,7 +240,6 @@ class EventBus(IEventPublisher):
                 await asyncio.gather(*tasks, return_exceptions=True)
             except Exception as e:
                 self.logger.error(f'Error notifying observers: {e}')
-                raise RuntimeError('Automation failed') from e
 _event_bus = EventBus()
 
 def get_event_bus() -> EventBus:

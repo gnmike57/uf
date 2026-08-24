@@ -65,7 +65,6 @@ def test_refactoring_completion():
     except Exception as e:
         print(f'  ❌ Compatibility test failed: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n🎉 REFACTORING SUMMARY:')
     print('=' * 40)
     print('✅ Visualization logic centralized in visualization module')

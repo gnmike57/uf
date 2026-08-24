@@ -112,7 +112,6 @@ if __name__ == '__main__':
             print(f'❌ Enhanced continuation test failed: {e}')
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
         try:
             await test_case.test_multiple_continuation_cycles()
             print('✅ Multiple continuation cycles test completed')
@@ -120,5 +119,4 @@ if __name__ == '__main__':
             print(f'❌ Multiple continuation cycles test failed: {e}')
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
     asyncio.run(run_tests())

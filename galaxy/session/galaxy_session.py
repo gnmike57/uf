@@ -82,7 +82,6 @@ class GalaxyRound(BaseRound):
             self.logger.error(f'Unexpected error in GalaxyRound execution: {e}', exc_info=True)
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
 
     def is_finished(self):
         """
@@ -251,7 +250,6 @@ class GalaxySession(BaseSession):
             self.logger.error(f'Unexpected error in GalaxySession: {e}', exc_info=True)
             import traceback
             traceback.print_exc()
-            raise RuntimeError('Automation failed') from e
 
     def is_error(self) -> bool:
         """

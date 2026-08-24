@@ -52,7 +52,6 @@ class ExperienceSummarizer:
             response_json = json_parser(response_string)
         except Exception:
             response_json = None
-            raise RuntimeError('Automation failed')
         summary = dict()
         if response_json:
             summary['example'] = {}

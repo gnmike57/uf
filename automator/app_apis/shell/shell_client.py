@@ -171,7 +171,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': f'Command timed out after {timeout} seconds', 'command': command}
         except Exception as e:
             return {'error': f'Command execution failed: {str(e)}', 'command': command}
-            raise RuntimeError('Automation failed') from e
 
     def execute_command(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -204,7 +203,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': 'Command timed out after 120 seconds', 'command': str(command)}
         except Exception as e:
             return {'error': f'Command execution failed: {str(e)}', 'command': str(command)}
-            raise RuntimeError('Automation failed') from e
 
     def change_directory(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -221,7 +219,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to change directory: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def get_current_directory(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -233,7 +230,6 @@ class ShellReceiver(ReceiverBasic):
             return {'current_directory': current_dir}
         except Exception as e:
             return {'error': f'Failed to get current directory: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def list_files(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -261,7 +257,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to list files: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def create_directory(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -282,7 +277,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': f'Directory already exists: {path}'}
         except Exception as e:
             return {'error': f'Failed to create directory: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def remove_file(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -328,7 +322,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to copy: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def move_file(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -346,7 +339,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to move: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def read_file(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -366,7 +358,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to read file: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def write_file(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -386,7 +377,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to write file: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def check_file_exists(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -415,7 +405,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to get file info: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def find_files(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -442,7 +431,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': str(ve)}
         except Exception as e:
             return {'error': f'Failed to find files: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def get_environment_variable(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -470,7 +458,6 @@ class ShellReceiver(ReceiverBasic):
             return {'success': True, 'variable_name': name}
         except Exception as e:
             return {'error': f'Failed to set environment variable: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def get_system_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -499,7 +486,6 @@ class ShellReceiver(ReceiverBasic):
             return {'error': 'psutil library not available for system info'}
         except Exception as e:
             return {'error': f'Failed to get system info: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
 class ShellCommand(CommandBasic):
     """

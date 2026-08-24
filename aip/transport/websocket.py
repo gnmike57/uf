@@ -193,7 +193,6 @@ class WebSocketTransport(Transport):
                 self.logger.info('WebSocket closed')
         except Exception as e:
             self.logger.warning(f'Error during close: {e}')
-            raise RuntimeError('Automation failed') from e
         finally:
             self._state = TransportState.DISCONNECTED
             self._ws = None

@@ -34,7 +34,6 @@ def _probe_service(port: int) -> str:
             return f'UP (HTTP {resp.status})'
     except Exception as e:
         return f'DOWN ({type(e).__name__})'
-        raise RuntimeError('Automation failed') from e
 
 def _get_system_info() -> Dict[str, Any]:
     """Collect system information for the crash report."""
@@ -78,7 +77,6 @@ def _get_config_snapshot() -> Dict[str, Any]:
                     snapshot[config_file] = safe_data
     except Exception as e:
         snapshot['error'] = str(e)
-        raise RuntimeError('Automation failed') from e
     return snapshot
 
 def generate_crash_report(exception: Exception, task_name: Optional[str]=None, log_dir: Optional[str]=None, extra_context: Optional[Dict[str, Any]]=None) -> str:
@@ -109,5 +107,4 @@ def generate_crash_report(exception: Exception, task_name: Optional[str]=None, l
         logger.error(f'Failed to write crash report: {write_err}')
         print(json.dumps(report, indent=2, default=str), file=sys.stderr)
         filepath = '(printed to stderr)'
-        raise RuntimeError('Automation failed') from write_err
     return filepath

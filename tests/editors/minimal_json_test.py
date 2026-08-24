@@ -158,7 +158,6 @@ def test_minimal_task_star():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_minimal_task_star_line():
     """Test the minimal TaskStarLine JSON functionality."""
@@ -200,7 +199,6 @@ def test_minimal_task_star_line():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_error_handling():
     """Test error handling."""
@@ -233,7 +231,6 @@ def test_error_handling():
     except Exception as e:
         print(f'✗ Unexpected error: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all tests."""

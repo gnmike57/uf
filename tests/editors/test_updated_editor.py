@@ -54,7 +54,6 @@ def test_command_registry():
         print(f'   ✓ Created task via registry: {result.task_id}')
     except Exception as e:
         print(f'   ✗ Error executing via registry: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def test_validation_rollback():
     """Test that commands validate constellation and rollback on failure."""
@@ -77,7 +76,6 @@ def test_validation_rollback():
         print(f'   ✗ Unexpected success: {result}')
     except Exception as e:
         print(f'   ✓ Expected failure: {e}')
-        raise RuntimeError('Automation failed') from e
     print(f'After failed operation: {len(constellation.tasks)} tasks, {len(constellation.dependencies)} dependencies')
     is_valid, errors = constellation.validate_dag()
     print(f'Constellation is still valid: {is_valid}')
@@ -90,7 +88,6 @@ def test_validation_rollback():
         print(f'   ✓ Successfully added dependency: {result.from_task_id} -> {result.to_task_id}')
     except Exception as e:
         print(f'   ✗ Unexpected failure: {e}')
-        raise RuntimeError('Automation failed') from e
     print(f'Final state: {len(constellation.tasks)} tasks, {len(constellation.dependencies)} dependencies')
     is_valid, errors = constellation.validate_dag()
     print(f'Constellation is valid: {is_valid}')
@@ -130,7 +127,6 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-        raise RuntimeError('Automation failed') from e
     return 0
 if __name__ == '__main__':
     sys.exit(main())

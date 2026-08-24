@@ -74,7 +74,6 @@ class ConstellationProgressObserver(IEventObserver):
             self.logger.error(f'Missing key in task event: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'Unexpected error handling task event: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_constellation_event(self, event: ConstellationEvent) -> None:
         """
@@ -92,7 +91,6 @@ class ConstellationProgressObserver(IEventObserver):
             self.logger.error(f'Attribute error handling constellation event: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'Unexpected error handling constellation event: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
 class SessionMetricsObserver(IEventObserver):
     """

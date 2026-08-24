@@ -37,7 +37,6 @@ class ConstellationFormatter:
             return dt.strftime('%Y-%m-%d %H:%M:%S')
         except Exception:
             return timestamp
-            raise RuntimeError('Automation failed')
 
     def create_overview_table(self, data: Dict[str, Any]) -> Table:
         """Create overview information table."""

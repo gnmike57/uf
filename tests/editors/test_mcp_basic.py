@@ -41,7 +41,6 @@ def test_basic_operations():
         success_count += 1
     except Exception as e:
         print(f'   ✗ Failed to add task: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n2. Testing update_task...')
     total_tests += 1
     try:
@@ -51,7 +50,6 @@ def test_basic_operations():
         success_count += 1
     except Exception as e:
         print(f'   ✗ Failed to update task: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n3. Testing add second task...')
     total_tests += 1
     try:
@@ -61,7 +59,6 @@ def test_basic_operations():
         success_count += 1
     except Exception as e:
         print(f'   ✗ Failed to add second task: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n4. Testing add_dependency...')
     total_tests += 1
     try:
@@ -73,7 +70,6 @@ def test_basic_operations():
     except Exception as e:
         print(f'   ✗ Failed to add dependency: {e}')
         dep_id = None
-        raise RuntimeError('Automation failed') from e
     print('\n5. Testing update_dependency...')
     total_tests += 1
     if dep_id:
@@ -84,7 +80,6 @@ def test_basic_operations():
             success_count += 1
         except Exception as e:
             print(f'   ✗ Failed to update dependency: {e}')
-            raise RuntimeError('Automation failed') from e
     else:
         print(f'   ⚠ Skipped (no dependency ID)')
     print('\n6. Testing build_constellation...')
@@ -97,7 +92,6 @@ def test_basic_operations():
         success_count += 1
     except Exception as e:
         print(f'   ✗ Failed to build constellation: {e}')
-        raise RuntimeError('Automation failed') from e
     return (success_count, total_tests)
 
 def main():
@@ -119,6 +113,5 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     sys.exit(main())

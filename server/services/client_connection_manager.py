@@ -307,7 +307,6 @@ class ClientConnectionManager:
                 logger.warning("[ClientConnectionManager] No 'devices' section found in config file")
         except Exception as e:
             logger.error(f'[ClientConnectionManager] Error loading device configs: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     def _merge_device_info(self, system_info: Dict[str, Any], server_config: Dict[str, Any]) -> Dict[str, Any]:
         """

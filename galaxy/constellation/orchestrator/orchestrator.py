@@ -407,7 +407,6 @@ class TaskConstellationOrchestrator:
             except Exception as recovery_err:
                 if self._logger:
                     self._logger.warning(f'Recovery node injection failed for {task.task_id}: {recovery_err}')
-                raise RuntimeError('Automation failed') from recovery_err
             newly_ready = constellation.mark_task_completed(task.task_id, success=False, error=e)
             failed_event = TaskEvent(event_type=EventType.TASK_FAILED, source_id=f'orchestrator_{id(self)}', timestamp=time.time(), data={'constellation_id': constellation.constellation_id, 'newly_ready_tasks': [t.task_id for t in newly_ready], 'recovery_injected': recovery_injected}, task_id=task.task_id, status=TaskStatus.FAILED.value, error=e)
             await self._event_bus.publish_event(failed_event)
@@ -415,7 +414,6 @@ class TaskConstellationOrchestrator:
                 self._logger.error(f'Task {task.task_id} failed: {e}')
             if not recovery_injected:
                 raise
-            raise RuntimeError('Automation failed') from e
         return result
 
     async def _inject_recovery_node(self, failed_task: TaskStar, constellation: TaskConstellation, error: Exception) -> bool:
@@ -444,7 +442,6 @@ class TaskConstellationOrchestrator:
             if self._logger:
                 self._logger.error(f'Failed to inject recovery node: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def execute_single_task(self, task: TaskStar, target_device_id: Optional[str]=None) -> Any:
         """

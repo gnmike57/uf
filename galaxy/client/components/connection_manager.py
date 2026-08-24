@@ -140,7 +140,6 @@ class WebSocketConnectionManager:
         except Exception as e:
             self.logger.error(f'❌ Unexpected error during registration for device {device_info.device_id}: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def send_task_to_device(self, device_id: str, task_request: TaskRequest) -> ExecutionResult:
         """
@@ -285,7 +284,6 @@ class WebSocketConnectionManager:
                 await transport.close()
             except Exception as e:
                 self.logger.debug(f'Error closing transport for {device_id}: {e}')
-                raise RuntimeError('Automation failed') from e
             self._cleanup_device_protocols(device_id)
             self.logger.warning(f'🔌 Disconnected from device {device_id}')
 
@@ -359,7 +357,6 @@ class WebSocketConnectionManager:
             self.logger.error(f'❌ Error requesting device info for {device_id}: {e}')
             self._pending_device_info.pop(request_id, None)
             return None
-            raise RuntimeError('Automation failed') from e
 
     def complete_device_info_response(self, request_id: str, device_info: Optional[Dict[str, Any]]) -> None:
         """

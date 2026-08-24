@@ -53,7 +53,6 @@ class LiveVisualVerifier:
             return ActionVerificationResult(verified=bool(response_dict.get('verified', True)), confidence_score=float(response_dict.get('confidence_score', 0.9)), status=status_enum, observed_visual_changes=str(response_dict.get('observed_visual_changes', '')), detected_ui_diffs=list(response_dict.get('detected_ui_diffs', [])), failure_reason=response_dict.get('failure_reason'), suggested_recovery_action=response_dict.get('suggested_recovery_action'))
         except Exception as e:
             return ActionVerificationResult(verified=True, confidence_score=0.7, status=VerificationStatus.SUCCESS, observed_visual_changes=f'Verification fallback due to exception: {str(e)}', detected_ui_diffs=[])
-            raise RuntimeError('Automation failed') from e
 
 @depends_on('clean_screenshot_path', 'execution_result', 'parsed_response')
 @provides('verification_result', 'post_screenshot_path')
@@ -93,7 +92,6 @@ class AppLiveVisualVerificationStrategy(BaseProcessingStrategy):
                             prev_hash = frame_hash
                     except Exception:
                         break
-                        raise RuntimeError('Automation failed')
                 results = await command_dispatcher.execute_commands([Command(tool_name='capture_window_screenshot', parameters={}, tool_type='data_collection')])
                 if results and results[0].status == ResultStatus.SUCCESS and isinstance(results[0].result, str):
                     utils.save_image_string(results[0].result, post_screenshot_path)
@@ -117,11 +115,9 @@ class AppLiveVisualVerificationStrategy(BaseProcessingStrategy):
                         context.set_local('suggested_recovery_action', result.suggested_recovery_action)
                 except Exception as undo_err:
                     self.logger.warning(f'Automated rollback failed: {undo_err}')
-                    raise RuntimeError('Automation failed') from undo_err
                 return ProcessingResult(success=False, error=f'Visual Verification Failed: {result.failure_reason}', data={'verification_result': result, 'post_screenshot_path': post_screenshot_path, 'rollback_attempted': True}, phase=ProcessingPhase.LIVE_VERIFICATION)
             return ProcessingResult(success=True, data={'verification_result': result, 'post_screenshot_path': post_screenshot_path}, phase=ProcessingPhase.LIVE_VERIFICATION)
         except Exception as e:
             self.logger.warning(f'Live visual verification encountered error: {str(e)}')
             fallback_result = ActionVerificationResult(verified=True, confidence_score=0.5, status=VerificationStatus.CAPTURE_FAILED, observed_visual_changes=str(e))
             return ProcessingResult(success=True, data={'verification_result': fallback_result, 'post_screenshot_path': ''}, phase=ProcessingPhase.LIVE_VERIFICATION)
-            raise RuntimeError('Automation failed') from e

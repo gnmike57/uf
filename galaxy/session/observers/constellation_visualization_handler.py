@@ -44,7 +44,6 @@ class ConstellationVisualizationHandler:
             self._visualizer.display_dag_topology(constellation)
         except Exception as e:
             self.logger.debug(f'Error displaying constellation start: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_constellation_completed(self, event: ConstellationEvent, constellation: Optional[TaskConstellation]) -> None:
         """
@@ -63,7 +62,6 @@ class ConstellationVisualizationHandler:
             self.constellation_display.display_constellation_completed(constellation, execution_time, additional_info)
         except Exception as e:
             self.logger.debug(f'Error displaying constellation completion: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_constellation_failed(self, event: ConstellationEvent, constellation: Optional[TaskConstellation]) -> None:
         """
@@ -82,7 +80,6 @@ class ConstellationVisualizationHandler:
             self.constellation_display.display_constellation_failed(constellation, error, additional_info)
         except Exception as e:
             self.logger.debug(f'Error displaying constellation failure: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_constellation_modified(self, event: ConstellationEvent, constellation: Optional[TaskConstellation]) -> None:
         """
@@ -111,7 +108,6 @@ class ConstellationVisualizationHandler:
             self._visualizer.display_dag_topology(new_constellation)
         except Exception as e:
             self.logger.debug(f'Error displaying constellation modification: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_constellation_event(self, event: ConstellationEvent, constellation: Optional[TaskConstellation]) -> None:
         """

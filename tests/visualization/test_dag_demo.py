@@ -81,6 +81,5 @@ def main():
         print(f'❌ Error during demo: {e}')
         import traceback
         traceback.print_exc()
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     main()

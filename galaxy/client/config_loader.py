@@ -69,7 +69,6 @@ class ConstellationConfig:
         except Exception as e:
             logging.getLogger(__name__).error(f'Failed to load config from {config_path}: {e}')
             return cls()
-            raise RuntimeError('Automation failed') from e
 
     @classmethod
     def from_yaml(cls, config_path: str) -> 'ConstellationConfig':
@@ -104,7 +103,6 @@ class ConstellationConfig:
         except Exception as e:
             logging.getLogger(__name__).error(f'Unexpected error loading YAML config from {config_path}: {e}', exc_info=True)
             return cls()
-            raise RuntimeError('Automation failed') from e
 
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> 'ConstellationConfig':
@@ -136,7 +134,6 @@ class ConstellationConfig:
                     logging.getLogger(__name__).error(f'Invalid device config value: {device_str} - {e}', exc_info=True)
                 except Exception as e:
                     logging.getLogger(__name__).error(f'Unexpected error parsing device config: {device_str} - {e}', exc_info=True)
-                    raise RuntimeError('Automation failed') from e
         return config
 
     @classmethod
@@ -159,7 +156,6 @@ class ConstellationConfig:
                     config.devices.append(device_config)
             except Exception as e:
                 logging.getLogger(__name__).error(f'Failed to parse devices from environment: {e}')
-                raise RuntimeError('Automation failed') from e
         return config
 
     def to_file(self, config_path: str) -> None:
@@ -188,7 +184,6 @@ class ConstellationConfig:
             logging.getLogger(__name__).info(f'Configuration saved to {config_path}')
         except Exception as e:
             logging.getLogger(__name__).error(f'Failed to save config to {config_path}: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def to_yaml(self, config_path: str) -> None:
         """
@@ -206,7 +201,6 @@ class ConstellationConfig:
             logging.getLogger(__name__).info(f'Configuration saved to {config_path}')
         except Exception as e:
             logging.getLogger(__name__).error(f'Failed to save config to {config_path}: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def add_device(self, device_id: str, server_url: str, capabilities: Optional[List[str]]=None, metadata: Optional[Dict[str, Any]]=None, auto_connect: bool=True) -> None:
         """

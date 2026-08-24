@@ -147,7 +147,6 @@ class Computer:
             self.logger.error(error_msg, exc_info=True)
             error_content = [TextContent(type='text', text=error_msg)]
             return CallToolResult(content=error_content, structured_content=None, data=None, is_error=True)
-            raise RuntimeError('Automation failed') from e
 
     async def run_actions(self, tool_calls: List[MCPToolCall]) -> List[CallToolResult]:
         """

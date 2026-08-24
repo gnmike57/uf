@@ -112,7 +112,6 @@ class EnhancedLoggingMiddleware(ProcessorMiddleware):
                 self.logger.info('Enhanced action log record written to events.jsonl')
         except Exception as e:
             self.logger.warning(f'Failed writing enhanced action log record: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     async def on_error(self, processor: 'ProcessorTemplate', error: Exception) -> None:
         """Enhanced error logging with context information."""

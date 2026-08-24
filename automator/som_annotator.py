@@ -35,7 +35,7 @@ def _load_som_config() -> Dict[str, Any]:
         if lf and isinstance(lf, dict):
             defaults['ENABLED'] = lf.get('ENABLE_SET_OF_MARKS', False)
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 _ACTIONABLE_LEAVES = {'Button', 'Edit', 'MenuItem', 'TabItem', 'ListItem', 'Hyperlink', 'CheckBox', 'RadioButton', 'ComboBox', 'TreeItem', 'Spinner', 'Text'}
 

@@ -30,6 +30,7 @@ Usage:
             dlm.release_lock(idempotency_key="abc123", worker_id="vm-01")
 
     # Or as a context manager:
+        pass
     with dlm.lock(idempotency_key="abc123", worker_id="vm-01") as acquired:
         if acquired:
             # Execute
@@ -53,7 +54,7 @@ def _load_fleet_config() -> Dict[str, Any]:
         if df and isinstance(df, dict):
             defaults.update({k: v for k, v in df.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 def _resolve_worker_id(configured: str) -> str:
@@ -102,7 +103,6 @@ class DistributedLockManager:
             logger.info('[DLM] redis package not installed — using local locks. Install with: pip install redis')
         except Exception as e:
             logger.warning(f'[DLM] Redis connection failed ({e}) — using local locks.')
-            raise RuntimeError('Automation failed') from e
 
     @property
     def worker_id(self) -> str:
@@ -155,7 +155,6 @@ class DistributedLockManager:
         except Exception as e:
             logger.warning(f'[DLM] Lock extend failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def is_locked(self, idempotency_key: str) -> bool:
         """Check if a key is currently locked (by anyone)."""
@@ -165,7 +164,6 @@ class DistributedLockManager:
                 return self._redis.exists(lock_key) > 0
             except Exception:
                 return False
-                raise RuntimeError('Automation failed')
         else:
             with self._local_lock_guard:
                 lock = self._local_locks.get(idempotency_key)
@@ -180,7 +178,6 @@ class DistributedLockManager:
             return self._redis.get(lock_key)
         except Exception:
             return None
-            raise RuntimeError('Automation failed')
 
     @contextmanager
     def lock(self, idempotency_key: str, worker_id: Optional[str]=None):
@@ -190,6 +187,7 @@ class DistributedLockManager:
         Usage:
             with dlm.lock("key123") as acquired:
                 if acquired:
+                    pass
                     # do work
         """
         wid = worker_id or self._worker_id
@@ -215,7 +213,6 @@ class DistributedLockManager:
         except Exception as e:
             logger.error(f'[DLM] Redis acquire failed: {e}')
             return self._acquire_local(idempotency_key)
-            raise RuntimeError('Automation failed') from e
 
     def _release_redis(self, idempotency_key: str, worker_id: str) -> bool:
         """Release via atomic Lua script (only owner can delete)."""
@@ -231,7 +228,6 @@ class DistributedLockManager:
         except Exception as e:
             logger.error(f'[DLM] Redis release failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def _acquire_local(self, idempotency_key: str) -> bool:
         """Fallback: acquire a local threading.Lock."""

@@ -49,7 +49,6 @@ class Win32COMHealthMonitor:
             return True
         except Exception:
             return False
-            raise RuntimeError('Automation failed')
 
 @MCPRegistry.register_factory_decorator('WordCOMExecutor')
 @MCPRegistry.register_factory_decorator('server_5_WordCOMExecutor')
@@ -95,7 +94,6 @@ def create_word_mcp_server(process_name: str='WINWORD.EXE', *args, **kwargs) -> 
                 result_queue.put(('success', res))
             except Exception as e:
                 result_queue.put(('error', e))
-                raise RuntimeError('Automation failed') from e
             finally:
                 if pythoncom:
                     pythoncom.CoUninitialize()
@@ -113,7 +111,6 @@ def create_word_mcp_server(process_name: str='WINWORD.EXE', *args, **kwargs) -> 
                         break
             except Exception as kill_err:
                 logger.warning(f'Failed to kill hung Word process: {kill_err}')
-                raise RuntimeError('Automation failed') from kill_err
             raise ToolError('Word COM automation action timed out. Hung process was killed.')
         status, data = result_queue.get()
         if status == 'error':

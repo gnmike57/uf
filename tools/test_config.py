@@ -36,7 +36,6 @@ def test_ufo_config():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_galaxy_config():
     """Test Galaxy configuration loading."""
@@ -63,7 +62,6 @@ def test_galaxy_config():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_path_detection():
     """Test configuration path detection."""

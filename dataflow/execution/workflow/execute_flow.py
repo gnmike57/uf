@@ -234,7 +234,6 @@ class ExecuteFlow(AppAgentProcessor):
                     return
         except Exception:
             self.general_error_handler()
-            raise RuntimeError('Automation failed')
 
     def general_error_handler(self) -> None:
         """

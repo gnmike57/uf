@@ -187,7 +187,6 @@ class TaskStarLine(IDependency):
             self._last_evaluation_result = False
             self._is_satisfied = False
             return False
-            raise RuntimeError('Automation failed') from e
 
     def mark_satisfied(self) -> None:
         """Mark the dependency as satisfied (for manual override)."""
@@ -309,7 +308,6 @@ class TaskStarLine(IDependency):
                         serializable_data[key] = vars(value)
                     except Exception:
                         serializable_data[key] = str(value)
-                        raise RuntimeError('Automation failed')
                 elif isinstance(value, set):
                     serializable_data[key] = list(value)
                 elif callable(value):

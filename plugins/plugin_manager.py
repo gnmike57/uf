@@ -76,7 +76,7 @@ class PluginManager:
             if lf and isinstance(lf, dict):
                 self._enabled = lf.get('ENABLE_API_PLUGINS', True)
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
 
     def _register_builtins(self) -> None:
         """Register built-in plugins from the static registry."""
@@ -132,7 +132,6 @@ class PluginManager:
         except Exception as e:
             logger.warning(f'Plugin execution failed for {process_name}: {e}. Falling back to GUI.')
             return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error=str(e), fell_back_to_gui=True)
-            raise RuntimeError('Automation failed') from e
 
     def _dispatch_to_mcp(self, plugin: PluginRegistration, action_type: str, payload: Optional[str], target_control: Optional[Dict[str, Any]]) -> PluginExecutionResult:
         """
@@ -158,7 +157,6 @@ class PluginManager:
             return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error='MCP client infrastructure not available.', fell_back_to_gui=True)
         except Exception as e:
             return PluginExecutionResult(success=False, plugin_used=plugin.mcp_namespace, error=f'MCP dispatch failed: {e}', fell_back_to_gui=True)
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _map_action_to_tool(plugin: PluginRegistration, action_type: str) -> str:

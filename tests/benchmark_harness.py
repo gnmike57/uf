@@ -57,7 +57,6 @@ def run_benchmark(task_id, mode, request, log_level, python_exe, output_json_pat
         returncode = -1
         stdout = ''
         stderr = f'Exception executing process: {str(e)}'
-        raise RuntimeError('Automation failed') from e
     wall_clock_seconds = round(end_time - start_time, 4)
     log_dir = Path(f'C:/ufo/logs/{task_id}')
     log_files = []
@@ -73,7 +72,7 @@ def run_benchmark(task_id, mode, request, log_level, python_exe, output_json_pat
                     if line.strip():
                         step_details.append(line.strip())
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
     report = {'task_id': task_id, 'mode': mode, 'request': request, 'log_level': log_level, 'python_exe': python_exe, 'command': ' '.join(ufo_cmd), 'start_timestamp': start_timestamp, 'end_timestamp': end_timestamp, 'wall_clock_seconds': wall_clock_seconds, 'returncode': returncode, 'success': returncode == 0, 'log_dir': str(log_dir.resolve()) if log_dir.exists() else None, 'log_files': log_files, 'step_details': step_details, 'stdout_tail': stdout[-2000:] if len(stdout) > 2000 else stdout, 'stderr_tail': stderr[-2000:] if len(stderr) > 2000 else stderr, 'stdout_full': stdout, 'stderr_full': stderr}
     json_output = json.dumps(report, indent=2)
     print('\n' + '=' * 70)

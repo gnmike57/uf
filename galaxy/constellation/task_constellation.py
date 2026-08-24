@@ -737,7 +737,6 @@ class TaskConstellation(IConstellation):
                 return self._ensure_json_serializable(obj_dict)
             except Exception:
                 return str(data)
-                raise RuntimeError('Automation failed')
         if callable(data):
             return f"<callable: {getattr(data, '__name__', 'unknown')}>"
         return str(data)
@@ -874,7 +873,6 @@ class TaskConstellation(IConstellation):
                 visualizer.display_constellation_overview(self)
         except Exception as e:
             print(f'Visualization error: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def __str__(self) -> str:
         """String representation of the TaskConstellation."""

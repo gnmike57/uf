@@ -55,7 +55,6 @@ class LinuxLLMInteractionStrategy(AppLLMInteractionStrategy):
             error_msg = f'App LLM interaction failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.LLM_INTERACTION, context)
-            raise RuntimeError('Automation failed') from e
 
 class LinuxActionExecutionStrategy(AppActionExecutionStrategy):
     """
@@ -96,7 +95,6 @@ class LinuxActionExecutionStrategy(AppActionExecutionStrategy):
             error_msg = f'App action execution failed: {str(traceback.format_exc())}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.ACTION_EXECUTION, context)
-            raise RuntimeError('Automation failed') from e
 
     def _create_action_info(self, actions: ActionCommandInfo | List[ActionCommandInfo], execution_results: List[Result]) -> List[ActionCommandInfo]:
         """
@@ -121,7 +119,6 @@ class LinuxActionExecutionStrategy(AppActionExecutionStrategy):
             return actions
         except Exception as e:
             self.logger.warning(f'Failed to create action info: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
 class LinuxLoggingMiddleware(AppAgentLoggingMiddleware):
     """

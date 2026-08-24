@@ -3,6 +3,7 @@ Standalone test for Mobile MCP Servers
 Tests mobile servers directly without full UFO infrastructure.
 
 Prerequisites:
+    pass
 - Android emulator or physical device must be running
 - ADB must be installed and accessible
 - Mobile MCP servers must be running on ports 8020 (data) and 8021 (action)
@@ -31,7 +32,7 @@ def find_adb():
         if result.returncode == 0:
             return result.stdout.strip().split('\n')[0]
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return 'adb'
 
 async def check_adb_connection() -> bool:
@@ -58,7 +59,6 @@ async def check_adb_connection() -> bool:
     except Exception as e:
         print(f'❌ Error checking ADB: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 async def test_data_collection_server():
     """Test the Mobile Data Collection Server"""
@@ -133,7 +133,6 @@ async def test_data_collection_server():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 async def test_action_server():
     """Test the Mobile Action Server"""
@@ -186,7 +185,6 @@ async def test_action_server():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 async def test_shared_state():
     """Test that data and action servers share the same state"""
@@ -231,7 +229,6 @@ async def test_shared_state():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 async def main():
     """Main test runner"""
@@ -257,19 +254,16 @@ async def main():
     except Exception as e:
         print(f'❌ Data collection server test crashed: {e}')
         results.append(False)
-        raise RuntimeError('Automation failed') from e
     try:
         results.append(await test_action_server())
     except Exception as e:
         print(f'❌ Action server test crashed: {e}')
         results.append(False)
-        raise RuntimeError('Automation failed') from e
     try:
         results.append(await test_shared_state())
     except Exception as e:
         print(f'❌ Shared state test crashed: {e}')
         results.append(False)
-        raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 70)
     print('TEST SUMMARY')
     print('=' * 70)

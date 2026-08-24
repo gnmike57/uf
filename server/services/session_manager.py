@@ -328,7 +328,6 @@ class SessionManager:
             self.logger.error(f'[SessionManager] ❌ Error in session {session_id}: {e}')
             status = TaskStatus.FAILED
             error = str(e)
-            raise RuntimeError('Automation failed') from e
         finally:
             if was_cancelled:
                 self.logger.info(f'[SessionManager] 🛑 Session {session_id} cancelled, skipping callback')
@@ -345,7 +344,6 @@ class SessionManager:
                     except Exception as e:
                         import traceback
                         self.logger.error(f'[SessionManager] ❌ Callback error for session {session_id}: {e}\n{traceback.format_exc()}')
-                        raise RuntimeError('Automation failed') from e
                 else:
                     self.logger.warning(f'[SessionManager] ⚠️ No callback registered for session {session_id}')
             self._running_tasks.pop(session_id, None)

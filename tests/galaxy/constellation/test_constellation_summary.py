@@ -73,7 +73,6 @@ def test_working_vs_broken():
         print(f'  - State: {constellation.state.value}\n')
     except Exception as e:
         print(f'  Failed: {e}\n')
-        raise RuntimeError('Automation failed') from e
     print('[FAIL] BROKEN CASE: Line 2 - constellation_before')
     log2 = json.loads(lines[1])
     const_before_str = log2['constellation_before']
@@ -82,7 +81,6 @@ def test_working_vs_broken():
         print(f'  Unexpectedly succeeded!\n')
     except Exception as e:
         print(f'  Failed as expected: {type(e).__name__}: {e}\n')
-        raise RuntimeError('Automation failed') from e
     print('=' * 80)
     print('PROBLEMATIC DATA EXAMPLE (Line 2 constellation_before)')
     print('=' * 80)

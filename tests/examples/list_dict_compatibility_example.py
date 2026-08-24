@@ -127,7 +127,6 @@ def main():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     success = main()
     exit(0 if success else 1)

@@ -46,7 +46,6 @@ class Win32COMHealthMonitor:
             return True
         except Exception:
             return False
-            raise RuntimeError('Automation failed')
 
 @MCPRegistry.register_factory_decorator('ExcelCOMExecutor')
 @MCPRegistry.register_factory_decorator('excel_wincom_mcp_server')
@@ -91,7 +90,6 @@ def create_excel_mcp_server(process_name: str='EXCEL.EXE', *args, **kwargs) -> F
                 result_queue.put(('success', res))
             except Exception as e:
                 result_queue.put(('error', e))
-                raise RuntimeError('Automation failed') from e
             finally:
                 if pythoncom:
                     pythoncom.CoUninitialize()
@@ -109,7 +107,6 @@ def create_excel_mcp_server(process_name: str='EXCEL.EXE', *args, **kwargs) -> F
                         break
             except Exception as kill_err:
                 logger.warning(f'Failed to kill hung Excel process: {kill_err}')
-                raise RuntimeError('Automation failed') from kill_err
             raise ToolError('Excel COM automation action timed out. Hung process was killed.')
         status, data = result_queue.get()
         if status == 'error':

@@ -147,7 +147,6 @@ class GalaxyTrajectory:
         except Exception as e:
             logger.warning(f'Unexpected error parsing constellation: {e}')
             return {'parse_error': {'field': 'constellation', 'error_type': 'unexpected_error', 'message': f'Unexpected error: {str(e)}'}}
-            raise RuntimeError('Automation failed') from e
 
     def _format_task_table(self, tasks: Dict[str, Any]) -> str:
         """
@@ -213,7 +212,6 @@ class GalaxyTrajectory:
             pos = nx.spring_layout(G, k=1.5, iterations=100, seed=42)
         except Exception:
             pos = nx.spring_layout(G, seed=42)
-            raise RuntimeError('Automation failed')
         from matplotlib.patches import Ellipse
         for i, node in enumerate(G.nodes()):
             text_length = len(str(node))
@@ -583,7 +581,6 @@ if __name__ == '__main__':
         except Exception as e:
             console.print(f'[FAIL] {str(e)[:50]}', style='red')
             error_count += 1
-            raise RuntimeError('Automation failed') from e
     console.print('\n' + '=' * 60, style='cyan')
     console.print(f'[BOLD] Summary:', style='cyan bold')
     console.print(f'  Total: {len(task_dirs)}', style='white')

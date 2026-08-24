@@ -30,7 +30,6 @@ async def test_galaxy_session_basic_functionality():
         import traceback
         traceback.print_exc()
         return
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 2: Session Properties ===')
     try:
         print(f'✅ Current constellation: {session.current_constellation}')
@@ -41,7 +40,6 @@ async def test_galaxy_session_basic_functionality():
     except Exception as e:
         print(f'❌ Error testing properties: {e}')
         return
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 3: Round Creation ===')
     try:
         round_obj = session.create_new_round()
@@ -57,7 +55,6 @@ async def test_galaxy_session_basic_functionality():
         import traceback
         traceback.print_exc()
         return
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 4: Event System Integration ===')
     try:
         event_bus = session._event_bus
@@ -69,7 +66,6 @@ async def test_galaxy_session_basic_functionality():
     except Exception as e:
         print(f'❌ Error testing event system: {e}')
         return
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 5: Session Control ===')
     try:
         await session.force_finish('Test termination')
@@ -80,7 +76,6 @@ async def test_galaxy_session_basic_functionality():
     except Exception as e:
         print(f'❌ Error testing session control: {e}')
         return
-        raise RuntimeError('Automation failed') from e
     print('\n✅ All GalaxySession basic functionality tests completed!')
 
 async def test_galaxy_session_mock_execution():
@@ -104,7 +99,6 @@ async def test_galaxy_session_mock_execution():
         import traceback
         traceback.print_exc()
         return
-        raise RuntimeError('Automation failed') from e
     print('\n✅ Mock execution test completed!')
 
 async def test_galaxy_session_issues():
@@ -135,7 +129,6 @@ async def test_galaxy_session_issues():
     except Exception as e:
         issues_found.append(f'Initialization error: {e}')
         print(f'❌ Initialization error: {e}')
-        raise RuntimeError('Automation failed') from e
     try:
         mock_client = MagicMock()
         mock_client.device_manager = MagicMock()
@@ -150,7 +143,6 @@ async def test_galaxy_session_issues():
     except Exception as e:
         issues_found.append(f'Attribute check error: {e}')
         print(f'❌ Attribute check error: {e}')
-        raise RuntimeError('Automation failed') from e
     print(f'\n📊 Issues Summary:')
     if issues_found:
         print(f'❌ Found {len(issues_found)} issues:')
@@ -183,6 +175,5 @@ async def main():
         print(f'💥 Critical error during testing: {e}')
         import traceback
         traceback.print_exc()
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     asyncio.run(main())

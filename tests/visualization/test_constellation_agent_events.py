@@ -91,7 +91,6 @@ async def test_constellation_agent_event_publishing():
             print('   ❌ No events were captured!')
     except Exception as e:
         print(f'❌ Error during process_editing: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 80)
     print('\n=== Test 2: Verify DAG Visualization Observer integration ===')
     await asyncio.sleep(0.1)

@@ -256,6 +256,5 @@ def main():
         console.print(f'\n\n[red]Error during conversion:[/red] {e}')
         console.print_exception()
         exit(1)
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     main()

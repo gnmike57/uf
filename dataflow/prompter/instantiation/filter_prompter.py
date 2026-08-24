@@ -59,7 +59,6 @@ class FilterPrompter(BasicPrompter):
             return ans
         except Exception as e:
             print(e)
-            raise RuntimeError('Automation failed') from e
 
     def user_prompt_construction(self, request: str) -> str:
         """

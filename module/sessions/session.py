@@ -270,7 +270,6 @@ class FromFileSession(WindowsBaseSession):
             import traceback
             traceback.print_exc()
             print(f'An error occurred: {e}')
-            raise RuntimeError('Automation failed') from e
         await self.terminate_application_processes()
     _ALLOWED_APP_NAMES = {'WINWORD.EXE', 'EXCEL.EXE', 'POWERPNT.EXE'}
 
@@ -318,7 +317,6 @@ class FromFileSession(WindowsBaseSession):
                 word_app.WindowState = 1
             except Exception as e:
                 print(f'An error occurred: {e}')
-                raise RuntimeError('Automation failed') from e
 
     def request_to_evaluate(self) -> str:
         """
@@ -411,4 +409,3 @@ class OpenAIOperatorSession(Session):
                 utils.save_image_string(image, save_path)
         except Exception as e:
             self.logger.warning(f'The last snapshot capture failed, due to the error: {e}')
-            raise RuntimeError('Automation failed') from e

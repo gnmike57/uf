@@ -58,7 +58,6 @@ class WebReceiver(ReceiverBasic):
             return {'error': f'Failed to navigate to URL: {e}', 'url': url}
         except Exception as e:
             return {'error': f'Failed to navigate to URL: {str(e)}', 'url': url}
-            raise RuntimeError('Automation failed') from e
 
     def get_page_content(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -90,7 +89,6 @@ class WebReceiver(ReceiverBasic):
                     return {'content': text_content}
         except Exception as e:
             return {'error': f'Failed to get page content: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def get_page_title(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -112,7 +110,6 @@ class WebReceiver(ReceiverBasic):
                 return {'title': title_text}
         except Exception as e:
             return {'error': f'Failed to get page title: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def get_element_text(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -134,7 +131,6 @@ class WebReceiver(ReceiverBasic):
                 return {'error': 'BeautifulSoup not available for CSS selectors'}
         except Exception as e:
             return {'error': f'Failed to get element text: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     def get_element_attribute(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -158,7 +154,6 @@ class WebReceiver(ReceiverBasic):
                 return {'error': 'BeautifulSoup not available for CSS selectors'}
         except Exception as e:
             return {'error': f'Failed to get element attribute: {str(e)}'}
-            raise RuntimeError('Automation failed') from e
 
     @property
     def type_name(self):

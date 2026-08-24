@@ -262,7 +262,6 @@ def test_task_constellation_json():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 def test_error_handling():
     """Test error handling in TaskConstellation JSON operations."""
@@ -295,7 +294,6 @@ def test_error_handling():
     except Exception as e:
         print(f'✗ Unexpected error: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all tests."""

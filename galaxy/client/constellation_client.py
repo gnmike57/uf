@@ -56,7 +56,6 @@ class ConstellationClient:
             except Exception as e:
                 self.logger.error(f'❌ Error registering device {device_config.device_id}: {e}')
                 results[device_config.device_id] = False
-                raise RuntimeError('Automation failed') from e
         return results
 
     async def register_device_from_config(self, device_config: DeviceConfig) -> bool:

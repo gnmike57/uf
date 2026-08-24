@@ -69,7 +69,6 @@ def example_data_validation():
         print(f'✅ 成功创建任务: {task.name}')
     except Exception as e:
         print(f'❌ 数据验证失败: {e}')
-        raise RuntimeError('Automation failed') from e
     invalid_data = valid_data.copy()
     invalid_data['task_id'] = ''
     try:
@@ -78,7 +77,6 @@ def example_data_validation():
         print('⚠️ 空 task_id 被接受了')
     except Exception as e:
         print(f'✅ 正确捕获无效数据: {type(e).__name__}')
-        raise RuntimeError('Automation failed') from e
 
 def example_api_integration():
     """示例：API 集成"""
@@ -97,7 +95,6 @@ def example_api_integration():
         print(f'   - 任务状态: {task.status.value}')
     except Exception as e:
         print(f'❌ API 集成失败: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """运行所有示例"""

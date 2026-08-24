@@ -53,7 +53,6 @@ class ConstellationEditingActionExecutionStrategy(BaseConstellationActionExecuti
         except Exception as e:
             self.logger.warning(f'Failed to create editing action info: {str(e)}')
             return [ActionCommandInfo(function='no_action', arguments={}, status=parsed_response.status if parsed_response.status else 'FAILED', result=Result(status='error', result={'error': str(e)}))]
-            raise RuntimeError('Automation failed') from e
 
     async def publish_actions(self, agent: 'ConstellationAgent', actions: ListActionCommandInfo) -> None:
         """
@@ -93,7 +92,6 @@ class ConstellationEditingActionExecutionStrategy(BaseConstellationActionExecuti
                 except Exception as e:
                     self.logger.warning(f'Failed to parse result as constellation: {e}')
                     continue
-                    raise RuntimeError('Automation failed') from e
         if constellation_json:
             try:
                 if isinstance(constellation_json, str):
@@ -104,6 +102,5 @@ class ConstellationEditingActionExecutionStrategy(BaseConstellationActionExecuti
                 self.logger.info(f'Successfully synced constellation from editing operation: constellation_id={constellation.constellation_id}')
             except Exception as e:
                 self.logger.error(f'Failed to sync constellation from result: {e}')
-                raise RuntimeError('Automation failed') from e
         else:
             self.logger.debug('No constellation data found in results to sync')

@@ -33,7 +33,6 @@ class ActionExecutor:
         except Exception as e:
             logging.getLogger(__name__).warning(f'Control validation failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _get_control_log(action: ActionCommandInfo, control_selected: Optional[UIAWrapper]=None, application_window: Optional[UIAWrapper]=None) -> BaseControlLog:

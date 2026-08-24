@@ -59,7 +59,6 @@ def pre_cleanup() -> None:
             time.sleep(0.5)
     except Exception as e:
         logger.warning(f'[Stage R2 Pre-Cleanup] Could not pre-launch Chrome: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def get_stage_config() -> Dict[str, Any]:
     """

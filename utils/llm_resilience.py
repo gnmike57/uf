@@ -97,7 +97,6 @@ class LLMWatchdog:
                         server.last_healthy = time.time()
                 except Exception as e:
                     logger.error(f'Watchdog error checking {server.name}: {e}')
-                    raise RuntimeError('Automation failed') from e
             self._stop_event.wait(self.check_interval)
 
     def _check_health(self, server: LLMServerConfig) -> bool:
@@ -114,7 +113,6 @@ class LLMWatchdog:
                 return resp.status == 200
         except Exception:
             return False
-            raise RuntimeError('Automation failed')
 
     def _handle_unhealthy(self, server: LLMServerConfig) -> None:
         """
@@ -160,7 +158,6 @@ class LLMWatchdog:
                         proc.wait(timeout=10)
         except Exception as e:
             logger.warning(f'Error killing existing process: {e}')
-            raise RuntimeError('Automation failed') from e
         cmd = [LLAMA_SERVER_PATH, '-m', server.model_path, '-t', str(server.threads), '-c', str(server.context_size), '--host', '127.0.0.1', '--port', str(server.port)]
         if server.mmproj_path and os.path.exists(server.mmproj_path):
             cmd.extend(['--mmproj', server.mmproj_path])
@@ -179,7 +176,6 @@ class LLMWatchdog:
         except Exception as e:
             logger.error(f'Failed to launch llama-server: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def _trigger_cloud_failover(self) -> None:
         """
@@ -194,7 +190,6 @@ class LLMWatchdog:
                 logger.error('LLM Watchdog: Cloud failover failed — could not load or validate cloud configuration.')
         except Exception as e:
             logger.error(f'Cloud failover failed: {e}')
-            raise RuntimeError('Automation failed') from e
 _watchdog_instance: Optional[LLMWatchdog] = None
 
 def get_watchdog() -> LLMWatchdog:

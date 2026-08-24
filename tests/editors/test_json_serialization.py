@@ -39,7 +39,6 @@ def test_task_star_json():
     except Exception as e:
         print(f'✗ JSON string generation failed: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\nTest 2: Creating TaskStar from JSON string...')
     try:
         restored_task = TaskStar.from_json(json_data=json_str)
@@ -54,7 +53,6 @@ def test_task_star_json():
     except Exception as e:
         print(f'✗ TaskStar creation from JSON string failed: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\nTest 3: File-based JSON serialization...')
     with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.json', delete=False) as f:
         temp_file = f.name
@@ -73,7 +71,6 @@ def test_task_star_json():
         if os.path.exists(temp_file):
             os.unlink(temp_file)
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n🎉 All TaskStar JSON tests passed!')
     return True
 
@@ -109,7 +106,6 @@ def test_task_star_line_json():
     except Exception as e:
         print(f'✗ JSON string generation failed: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\nTest 2: Creating TaskStarLine from JSON string...')
     try:
         restored_line = TaskStarLine.from_json(json_data=json_str)
@@ -126,7 +122,6 @@ def test_task_star_line_json():
     except Exception as e:
         print(f'✗ TaskStarLine creation from JSON string failed: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\nTest 3: File-based JSON serialization...')
     with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.json', delete=False) as f:
         temp_file = f.name
@@ -146,7 +141,6 @@ def test_task_star_line_json():
         if os.path.exists(temp_file):
             os.unlink(temp_file)
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n🎉 All TaskStarLine JSON tests passed!')
     return True
 
@@ -165,7 +159,6 @@ def test_edge_cases():
     except Exception as e:
         print(f'✗ Unexpected exception: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\nTest 2: Missing parameters...')
     try:
         TaskStar.from_json()
@@ -176,7 +169,6 @@ def test_edge_cases():
     except Exception as e:
         print(f'✗ Unexpected exception: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\nTest 3: Both parameters provided...')
     try:
         TaskStar.from_json(json_data='{"test": "data"}', file_path='test.json')
@@ -187,7 +179,6 @@ def test_edge_cases():
     except Exception as e:
         print(f'✗ Unexpected exception: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\nTest 4: Non-existent file...')
     try:
         TaskStar.from_json(file_path='non_existent_file.json')
@@ -198,7 +189,6 @@ def test_edge_cases():
     except Exception as e:
         print(f'✗ Unexpected exception: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n🎉 All edge case tests passed!')
     return True
 

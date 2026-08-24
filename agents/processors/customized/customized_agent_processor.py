@@ -71,7 +71,6 @@ class LinuxAgentProcessor(CustomizedProcessor):
                 self.global_context.set(ContextNames.ROUND_RESULT, result)
         except Exception as e:
             self.logger.warning(f'Failed to update ContextNames from results: {e}')
-            raise RuntimeError('Automation failed') from e
 
 class MobileAgentProcessor(CustomizedProcessor):
     """
@@ -102,4 +101,3 @@ class MobileAgentProcessor(CustomizedProcessor):
                 self.global_context.set(ContextNames.ROUND_RESULT, result)
         except Exception as e:
             self.logger.warning(f'Failed to update ContextNames from results: {e}')
-            raise RuntimeError('Automation failed') from e

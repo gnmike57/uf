@@ -67,7 +67,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('状态管理器基础功能')
         except Exception as e:
             self._record_failure('状态管理器基础功能', e)
-            raise RuntimeError('Automation failed') from e
 
     async def test_state_transitions(self):
         """测试状态转换"""
@@ -86,7 +85,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('状态转换逻辑')
         except Exception as e:
             self._record_failure('状态转换逻辑', e)
-            raise RuntimeError('Automation failed') from e
 
     async def test_monitoring_state_task_tracking(self):
         """测试监控状态任务跟踪"""
@@ -108,7 +106,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('监控状态任务跟踪')
         except Exception as e:
             self._record_failure('监控状态任务跟踪', e)
-            raise RuntimeError('Automation failed') from e
 
     async def test_observer_integration(self):
         """测试观察者集成"""
@@ -131,7 +128,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('观察者集成')
         except Exception as e:
             self._record_failure('观察者集成', e)
-            raise RuntimeError('Automation failed') from e
 
     async def test_complete_workflow(self):
         """测试完整工作流"""
@@ -157,7 +153,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('完整工作流')
         except Exception as e:
             self._record_failure('完整工作流', e)
-            raise RuntimeError('Automation failed') from e
 
     async def test_race_condition_resolution(self):
         """测试竞态条件解决"""
@@ -184,7 +179,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('竞态条件解决')
         except Exception as e:
             self._record_failure('竞态条件解决', e)
-            raise RuntimeError('Automation failed') from e
 
     async def test_error_handling(self):
         """测试错误处理"""
@@ -205,7 +199,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('错误处理')
         except Exception as e:
             self._record_failure('错误处理', e)
-            raise RuntimeError('Automation failed') from e
 
     async def test_concurrent_operations(self):
         """测试并发操作"""
@@ -225,7 +218,6 @@ class GalaxyStateMachineTestRunner:
             self._record_success('并发操作')
         except Exception as e:
             self._record_failure('并发操作', e)
-            raise RuntimeError('Automation failed') from e
 
     def _record_success(self, test_name: str):
         """记录成功测试"""

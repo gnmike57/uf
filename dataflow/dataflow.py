@@ -42,7 +42,6 @@ def process_task(task_path: str, task_type: str) -> None:
         print_with_color(f'Task {task_path} completed successfully.', 'green')
     except Exception as e:
         print_with_color(f'Error processing {task_path}: {traceback.format_exc()}', 'red')
-        raise RuntimeError('Automation failed') from e
 
 def process_batch(task_dir: str, task_type: str) -> None:
     """

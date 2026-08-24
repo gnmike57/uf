@@ -89,7 +89,6 @@ class UFOWebSocketClient:
                 self.connected_event.clear()
                 self.retry_count += 1
                 await self._maybe_retry()
-                raise RuntimeError('Automation failed') from e
 
     async def register_client(self):
         """
@@ -105,7 +104,6 @@ class UFOWebSocketClient:
         except Exception as e:
             self.logger.error(f'[WS] [AIP] Error collecting device info: {e}', exc_info=True)
             metadata = {'registration_time': datetime.datetime.now(datetime.timezone.utc).isoformat()}
-            raise RuntimeError('Automation failed') from e
         self.logger.info(f'[WS] [AIP] Attempting to register as {self.ufo_client.client_id}')
         success = await self.registration_protocol.register_as_device(device_id=self.ufo_client.client_id, metadata=metadata, platform=self.ufo_client.platform)
         if success:
@@ -191,7 +189,6 @@ class UFOWebSocketClient:
                 self.logger.warning(f'[WS] Unknown message type: {msg_type}')
         except Exception as e:
             self.logger.error(f'[WS] Error handling message: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def start_task(self, request_text: str, task_name: str | None):
         """
@@ -217,7 +214,6 @@ class UFOWebSocketClient:
                 self.logger.error(f'[WS] [AIP] Error sending task request: {e}', exc_info=True)
                 error_msg = ClientMessage(type=ClientMessageType.ERROR, error=str(e), client_id=self.ufo_client.client_id, timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat())
                 await self.transport.send(error_msg.model_dump_json().encode())
-                raise RuntimeError('Automation failed') from e
         self.current_task = asyncio.create_task(task_loop())
 
     async def handle_commands(self, server_response: ServerMessage):

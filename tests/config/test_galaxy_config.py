@@ -154,4 +154,3 @@ if __name__ == '__main__':
         print(f'\n❌ Test failed: {e}')
         import traceback
         traceback.print_exc()
-        raise RuntimeError('Automation failed') from e

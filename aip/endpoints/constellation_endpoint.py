@@ -115,7 +115,6 @@ class ConstellationEndpoint(AIPEndpoint):
         except Exception as e:
             self.logger.error(f'Reconnection failed for {device_id}: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def cancel_device_tasks(self, device_id: str, reason: str) -> None:
         """

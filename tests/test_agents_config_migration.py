@@ -37,7 +37,6 @@ def test_system_config_fields():
             failed += 1
             failures.append((old_key, new_attr, 'ERROR', str(e)))
             print(f'✗ {old_key:40s} → {new_attr:40s} ERROR: {e}')
-            raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 80)
     print(f'System Config Test Results: {passed} passed, {failed} failed')
     print('=' * 80)
@@ -71,7 +70,6 @@ def test_rag_config_fields():
             failed += 1
             failures.append((old_key, new_attr, 'ERROR', str(e)))
             print(f'✗ {old_key:45s} → {new_attr:40s} ERROR: {e}')
-            raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 80)
     print(f'RAG Config Test Results: {passed} passed, {failed} failed')
     print('=' * 80)
@@ -120,12 +118,10 @@ def test_agent_config_fields():
                     except Exception:
                         failed += 1
                         print(f'✗ {old_key}.{old_field:20s} FIELD NOT FOUND IN NEW CONFIG')
-                        raise RuntimeError('Automation failed')
         except Exception as e:
             failed += 1
             failures.append((old_key, config_name, 'ERROR', str(e)))
             print(f'✗ {old_key:40s} → {config_name:40s} ERROR: {e}')
-            raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 80)
     print(f'Agent Config Test Results: {passed} passed, {failed} failed')
     print('=' * 80)

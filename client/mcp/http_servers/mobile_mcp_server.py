@@ -1,6 +1,7 @@
 """
 Mobile MCP Servers
 Provides two MCP servers:
+    pass
 1. Mobile Data Collection Server - for data retrieval operations (screenshots, UI tree, device info, etc.)
 2. Mobile Action Server - for device control actions (tap, swipe, type, launch app, etc.)
 Both servers share the same MobileServerState for coordinated operations.
@@ -164,7 +165,6 @@ async def _search_app_by_name(app_name: str, adb_path: str, include_system_apps:
         return None
     except Exception:
         return None
-        raise RuntimeError('Automation failed')
 
 def create_mobile_data_collection_server(host: str='', port: int=8020, adb_path: Optional[str]=None) -> None:
     """
@@ -222,7 +222,6 @@ def create_mobile_data_collection_server(host: str='', port: int=8020, adb_path:
                 return {'success': False, 'error': stderr.decode('utf-8')}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def get_device_info() -> Annotated[Dict[str, Any], Field(description='Dictionary with device information: model, android_version, sdk_version, screen_size, battery, etc.')]:
@@ -263,7 +262,6 @@ def create_mobile_data_collection_server(host: str='', port: int=8020, adb_path:
             return {'success': True, 'device_info': info, 'from_cache': False}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def get_mobile_app_target_info(filter: Annotated[str, Field(description="Filter pattern for package names (optional, e.g., 'com.android')")]='', include_system_apps: Annotated[bool, Field(description='Whether to include system apps (default: False, only show user-installed apps)')]=False, force_refresh: Annotated[bool, Field(description='Force refresh from device, ignoring cache (default: False)')]=False) -> Annotated[List[TargetInfo], Field(description='List of TargetInfo objects representing installed applications')]:
@@ -341,7 +339,7 @@ def create_mobile_data_collection_server(host: str='', port: int=8020, adb_path:
                             if x2 >= x1 and y2 >= y1 and (x2 > 0) and (y2 > 0):
                                 rect = [x1, y1, x2, y2]
                     except Exception:
-                        raise RuntimeError('Automation failed')
+                        pass
                 control_name = attribs.get('text') or attribs.get('content-desc') or ''
                 control_type = attribs.get('class', '').split('.')[-1]
                 is_meaningful = attribs.get('clickable') == 'true' or attribs.get('long-clickable') == 'true' or attribs.get('checkable') == 'true' or (attribs.get('scrollable') == 'true') or control_name or ('Edit' in control_type) or ('Button' in control_type)
@@ -359,7 +357,6 @@ def create_mobile_data_collection_server(host: str='', port: int=8020, adb_path:
             print(f'Error in get_app_window_controls_target_info: {str(e)}')
             print(traceback.format_exc())
             return []
-            raise RuntimeError('Automation failed') from e
     mcp.run(transport='streamable-http')
 
 def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional[str]=None) -> None:
@@ -387,7 +384,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return {'success': proc.returncode == 0, 'action': f'tap({x}, {y})', 'output': stdout.decode('utf-8') if stdout else '', 'error': stderr.decode('utf-8') if stderr else ''}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def swipe(start_x: Annotated[int, Field(description='Starting X coordinate')], start_y: Annotated[int, Field(description='Starting Y coordinate')], end_x: Annotated[int, Field(description='Ending X coordinate')], end_y: Annotated[int, Field(description='Ending Y coordinate')], duration: Annotated[int, Field(description='Duration of swipe in milliseconds (default 300)')]=300) -> Annotated[Dict[str, Any], Field(description="Dictionary with keys: 'success' (bool), 'action' (str), or 'error' (str)")]:
@@ -404,7 +400,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return {'success': proc.returncode == 0, 'action': f'swipe({start_x},{start_y})->({end_x},{end_y}) in {duration}ms', 'output': stdout.decode('utf-8') if stdout else '', 'error': stderr.decode('utf-8') if stderr else ''}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def type_text(text: Annotated[str, Field(description='Text to input. Spaces and special characters are automatically escaped.')], control_id: Annotated[str, Field(description='REQUIRED: The precise annotated ID of the control to type into (from get_app_window_controls_target_info). The control will be clicked before typing to ensure focus.')], control_name: Annotated[str, Field(description='REQUIRED: The precise name of the control to type into, must match the selected control_id.')], clear_current_text: Annotated[bool, Field(description='Whether to clear existing text before typing. If True, selects all text (Ctrl+A) and deletes it first.')]=False) -> Annotated[Dict[str, Any], Field(description="Dictionary with keys: 'success' (bool), 'action' (str), 'message' (str), or 'error' (str)")]:
@@ -413,9 +408,11 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
         Always clicks the target control first to ensure it's focused before typing.
 
         Usage:
+            pass
         type_text(text="hello world", control_id="5", control_name="Search")
 
         Steps:
+            pass
         1. Call get_app_window_controls_target_info to get the list of controls
         2. Identify the input field control (EditText, etc.)
         3. Call type_text with the control's id and name
@@ -457,7 +454,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return {'success': True, 'action': action_desc, 'message': ' | '.join(messages), 'control_info': {'id': target_control.id, 'name': target_control.name, 'type': target_control.type}}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def launch_app(package_name: Annotated[str, Field(description="Package name of the app to launch (e.g., 'com.android.settings')")], id: Annotated[Optional[str], Field(description='Optional: The precise annotated ID of the app from get_mobile_app_target_info.')]=None) -> Annotated[Dict[str, Any], Field(description="Dictionary with keys: 'success' (bool), 'message' (str), or 'error' (str)")]:
@@ -465,6 +461,7 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
         Launch an application by package name or app ID.
 
         Usage modes:
+            pass
         1. Launch by package name: launch_app(package_name="com.android.settings")
         2. Launch from cached app list: launch_app(package_name="com.android.settings", id="5")
 
@@ -507,7 +504,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return result
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def press_key(key_code: Annotated[str, Field(description='Key code to press. Common codes: KEYCODE_HOME, KEYCODE_BACK, KEYCODE_ENTER, KEYCODE_MENU')]) -> Annotated[Dict[str, Any], Field(description="Dictionary with keys: 'success' (bool), 'action' (str), or 'error' (str)")]:
@@ -521,7 +517,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return {'success': proc.returncode == 0, 'action': f'press_key({key_code})', 'output': stdout.decode('utf-8') if stdout else '', 'error': stderr.decode('utf-8') if stderr else ''}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def click_control(control_id: Annotated[str, Field(description='The precise annotated ID of the control to click (from get_app_window_controls_target_info)')], control_name: Annotated[str, Field(description='The precise name of the control to click, must match the selected control_id')]) -> Annotated[Dict[str, Any], Field(description="Dictionary with keys: 'success' (bool), 'action' (str), 'message' (str), or 'error' (str)")]:
@@ -553,7 +548,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return result
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def wait(seconds: Annotated[float, Field(description='Number of seconds to wait (can be decimal, e.g., 0.5 for 500ms)')]=1.0) -> Annotated[Dict[str, Any], Field(description="Dictionary with keys: 'success' (bool), 'action' (str), 'message' (str)")]:
@@ -561,6 +555,7 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
         Wait for a specified number of seconds.
         Useful for waiting for UI transitions, animations, or app loading.
         Examples:
+            pass
         - wait(seconds=1.0) - Wait 1 second
         - wait(seconds=0.5) - Wait 500 milliseconds
         - wait(seconds=2.5) - Wait 2.5 seconds
@@ -574,7 +569,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return {'success': True, 'action': f'wait({seconds}s)', 'message': f'Waited for {seconds} seconds'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
 
     @mcp.tool()
     async def invalidate_cache(cache_type: Annotated[str, Field(description="Type of cache to invalidate: 'controls', 'apps', 'ui_tree', 'device_info', or 'all'")]='all') -> Annotated[Dict[str, Any], Field(description="Dictionary with keys: 'success' (bool), 'message' (str), or 'error' (str)")]:
@@ -605,7 +599,6 @@ def create_mobile_action_server(host: str='', port: int=8021, adb_path: Optional
             return {'success': True, 'message': message}
         except Exception as e:
             return {'success': False, 'error': str(e)}
-            raise RuntimeError('Automation failed') from e
     mcp.run(transport='streamable-http')
 
 def _detect_adb_path() -> str:
@@ -619,7 +612,7 @@ def _detect_adb_path() -> str:
         if result.returncode == 0:
             return result.stdout.strip().split('\n')[0]
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return 'adb'
 
 def _run_both_servers_sync(host: str, data_port: int, action_port: int, adb_path: str):
@@ -687,7 +680,6 @@ def main():
     except Exception as e:
         print(f'❌ Error checking ADB: {e}')
         print('   Servers will start but may not function properly.')
-        raise RuntimeError('Automation failed') from e
     print('=' * 70)
     if args.server == 'both':
         import uvicorn

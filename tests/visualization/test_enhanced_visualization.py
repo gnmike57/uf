@@ -83,7 +83,6 @@ async def test_enhanced_visualization():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 async def main():
     """Run the enhanced visualization test."""

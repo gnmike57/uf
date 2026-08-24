@@ -50,7 +50,6 @@ class XMLLoader(basic.BasicDocumentLoader):
         except Exception as e:
             logger.warning(f'XML parse error: {e}')
             doc_text = None
-            raise RuntimeError('Automation failed') from e
         return doc_text
 
     def construct_document(self):

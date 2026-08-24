@@ -41,7 +41,6 @@ async def test_galaxy_session_workflow():
         print(f'❌ Error in round creation: {e}')
         import traceback
         traceback.print_exc()
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 3: Session State Management ===')
     try:
         print(f'✅ Session finished: {session.is_finished()}')
@@ -54,7 +53,6 @@ async def test_galaxy_session_workflow():
     except Exception as e:
         print(f'❌ Error in state management: {e}')
         return
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 4: Agent Integration ===')
     try:
         agent = session.agent
@@ -66,7 +64,6 @@ async def test_galaxy_session_workflow():
     except Exception as e:
         print(f'❌ Error in agent integration: {e}')
         return
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 5: Event System Integration ===')
     try:
         event_bus = session._event_bus
@@ -79,7 +76,6 @@ async def test_galaxy_session_workflow():
     except Exception as e:
         print(f'❌ Error in event system: {e}')
         return
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 6: Session Cleanup ===')
     try:
         await session.force_finish('Integration test completed')
@@ -90,7 +86,6 @@ async def test_galaxy_session_workflow():
     except Exception as e:
         print(f'❌ Error in session cleanup: {e}')
         return
-        raise RuntimeError('Automation failed') from e
     print('\n✅ GalaxySession workflow test completed successfully!')
 
 async def test_galaxy_session_error_scenarios():
@@ -102,7 +97,6 @@ async def test_galaxy_session_error_scenarios():
         print('❌ Should have failed with None client')
     except Exception as e:
         print(f'✅ Correctly failed with None client: {type(e).__name__}')
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 2: Long Task Name Scenario ===')
     try:
         mock_client = MagicMock()
@@ -113,7 +107,6 @@ async def test_galaxy_session_error_scenarios():
         print(f'   Task length: {len(session.task)}')
     except Exception as e:
         print(f'❌ Failed with long task name: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n=== Test 3: Empty Request Scenario ===')
     try:
         mock_client = MagicMock()
@@ -124,7 +117,6 @@ async def test_galaxy_session_error_scenarios():
         print(f"   Eval request: '{session.request_to_evaluate()}'")
     except Exception as e:
         print(f'❌ Failed with empty request: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n✅ Error scenario testing completed!')
 
 async def main():
@@ -143,6 +135,5 @@ async def main():
         print(f'\n💥 Critical error during integration testing: {e}')
         import traceback
         traceback.print_exc()
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     asyncio.run(main())

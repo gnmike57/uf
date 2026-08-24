@@ -25,6 +25,7 @@ Usage:
     tracker = CostTracker.get_instance()
 
     # After each LLM call:
+        pass
     within_budget = tracker.record_usage(
         model="gpt-5.6-terra",
         api_type="openai",
@@ -32,10 +33,13 @@ Usage:
         completion_tokens=300,
     )
     if not within_budget:
+        pass
         # Cloud APIs are locked — fall back to local or fail gracefully
 
     # Check before dispatching:
+        pass
     if tracker.is_budget_exceeded():
+        pass
         # Don't send to cloud, use local fallback
 """
 import json
@@ -83,7 +87,7 @@ def _load_prices() -> Dict[str, Dict[str, float]]:
         if raw and isinstance(raw, dict):
             return raw.get('PRICES', {})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     try:
         import yaml
         prices_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'ufo', 'prices.yaml')
@@ -93,7 +97,7 @@ def _load_prices() -> Dict[str, Dict[str, float]]:
                 if isinstance(data, dict):
                     return data.get('PRICES', {})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return {}
 
 class CostTracker:
@@ -146,7 +150,6 @@ class CostTracker:
                 self._persist_path = t_cfg.get('PERSIST_PATH', 'logs/telemetry')
         except Exception as e:
             logger.debug(f'Using default telemetry config: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def record_usage(self, model: str, api_type: str, prompt_tokens: int, completion_tokens: int) -> bool:
         """
@@ -258,4 +261,3 @@ class CostTracker:
             logger.info(f'[Telemetry] Daily log persisted: {log_file}')
         except Exception as e:
             logger.warning(f'[Telemetry] Failed to persist daily log: {e}')
-            raise RuntimeError('Automation failed') from e

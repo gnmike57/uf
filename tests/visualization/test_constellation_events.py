@@ -101,7 +101,6 @@ async def test_constellation_events():
         import traceback
         traceback.print_exc()
         return False
-        raise RuntimeError('Automation failed') from e
 
 async def main():
     """Run the test."""

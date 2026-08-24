@@ -26,7 +26,6 @@ def run_test(test_file, description):
     except Exception as e:
         print(f'❌ {description} - ERROR: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all Galaxy Session tests."""

@@ -55,7 +55,7 @@ def _load_vault_config() -> Dict[str, Any]:
             if isinstance(vault, dict):
                 defaults.update({k: v for k, v in vault.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 def _scrub_string(s: str) -> None:
@@ -69,7 +69,7 @@ def _scrub_string(s: str) -> None:
         str_buffer = ctypes.cast(id(s) + sys.getsizeof('') - 1, ctypes.POINTER(ctypes.c_char * len(s)))
         ctypes.memset(str_buffer, ord('X'), len(s))
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
 
 class VaultManager:
     """
@@ -149,7 +149,6 @@ class VaultManager:
         except Exception as e:
             logger.error(f'[Vault] Injection failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
         finally:
             if self._scrub_memory and secret:
                 _scrub_string(secret)
@@ -192,7 +191,6 @@ class VaultManager:
         except Exception as e:
             logger.error(f'[Vault] Failed to store credential: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
         finally:
             if self._scrub_memory:
                 _scrub_string(password)
@@ -210,7 +208,6 @@ class VaultManager:
         except Exception as e:
             logger.error(f'[Vault] Failed to delete credential: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def has_credential(self, username_key: str, service_name: Optional[str]=None) -> bool:
         """Check if a credential exists in the keyring (without retrieving it)."""
@@ -222,4 +219,3 @@ class VaultManager:
             return keyring.get_password(svc, username_key) is not None
         except Exception:
             return False
-            raise RuntimeError('Automation failed')

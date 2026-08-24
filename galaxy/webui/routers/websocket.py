@@ -62,7 +62,6 @@ async def websocket_endpoint(websocket: WebSocket, token: str=Query(default=None
             except Exception as e:
                 logger.error(f'Error receiving/processing WebSocket message: {e}')
                 break
-                raise RuntimeError('Automation failed') from e
     finally:
         if websocket_observer:
             websocket_observer.remove_connection(websocket)

@@ -55,7 +55,6 @@ class ConstellationCreationActionExecutionStrategy(BaseConstellationActionExecut
         except Exception as e:
             self.logger.warning(f'Failed to create creation action info: {str(e)}')
             return [ActionCommandInfo(function=agent._constellation_creation_tool_name, arguments={'config': parsed_response.constellation if parsed_response.constellation else '{}'}, status=parsed_response.status if parsed_response.status else 'FAILED')]
-            raise RuntimeError('Automation failed') from e
 
     async def publish_actions(self, agent: 'ConstellationAgent', actions: ListActionCommandInfo) -> None:
         """

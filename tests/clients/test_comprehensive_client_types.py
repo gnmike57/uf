@@ -62,14 +62,13 @@ async def comprehensive_client_type_test():
         print(f'❌ 测试过程中出错: {e}')
         import traceback
         traceback.print_exc()
-        raise RuntimeError('Automation failed') from e
     finally:
         print('\n[5] 清理连接...')
         for ws in connections:
             try:
                 await ws.close()
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
         print('🧹 连接已清理')
     print('\n' + '=' * 80)
     print('🎯 请检查服务器日志确认客户端类型被正确识别:')
@@ -87,6 +86,5 @@ async def main():
         print('\n测试被用户中断')
     except Exception as e:
         print(f'测试失败: {e}')
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     asyncio.run(main())

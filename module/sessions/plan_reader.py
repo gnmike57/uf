@@ -27,7 +27,6 @@ class PlanReader:
                     self.plan = {'task': os.path.basename(plan_file), 'steps': lines}
                 except Exception:
                     self.plan = {'task': 'Unknown', 'steps': []}
-                    raise RuntimeError('Automation failed')
         else:
             self.plan = {'task': 'Empty', 'steps': []}
         self.remaining_steps = self.get_steps()

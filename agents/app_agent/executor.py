@@ -128,7 +128,6 @@ class AppAgentExecutor:
             result.error = f'Security gate exception: {e}'
             logger.error(f'[Executor] {result.error}')
             return result
-            raise RuntimeError('Automation failed') from e
         if action_type == 'secure_type':
             success = self._step_vault_inject(node, payload)
             result.status = NodeStatus.COMPLETED.value if success else NodeStatus.FAILED.value
@@ -156,7 +155,6 @@ class AppAgentExecutor:
             result.error = f'Physical execution exception: {e}'
             logger.error(f'[Executor] {result.error}')
             return result
-            raise RuntimeError('Automation failed') from e
         result.settlement_passed = self._step_settlement(application_window)
         result.status = NodeStatus.COMPLETED.value
         logger.info(f"[Executor] Node '{node_id}' completed successfully. Settlement: {('PASS' if result.settlement_passed else 'SKIP')}")
@@ -229,7 +227,6 @@ class AppAgentExecutor:
             except Exception as e:
                 logger.warning(f'[Executor] Vision resolution failed with error: {e}')
                 bbox = None
-                raise RuntimeError('Automation failed') from e
             if bbox and bbox.center_x > 0 and (bbox.center_y > 0):
                 coords = (bbox.center_x, bbox.center_y)
                 result.coordinates = coords
@@ -288,7 +285,6 @@ class AppAgentExecutor:
         except Exception as e:
             logger.error(f'[Executor] Physical execution error: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def _step_settlement(self, application_window: Any=None) -> bool:
         """Step 6: Wait for UI to settle and optionally verify."""
@@ -300,7 +296,6 @@ class AppAgentExecutor:
         except Exception as e:
             logger.debug(f'[Executor] Settlement check failed: {e}')
             return True
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _resolve_from_uia(target_control: Dict[str, Any], uia_tree: Dict[str, Any]) -> Optional[Tuple[int, int]]:

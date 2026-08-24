@@ -25,7 +25,6 @@ def main():
     except Exception as e:
         console.print(f'[RED][FAIL] Failed to load trajectory: {e}')
         return 1
-        raise RuntimeError('Automation failed') from e
     console.print('\n[BOLD]Trajectory Summary:')
     console.print(f'  - Steps: {trajectory.total_steps}')
     console.print(f'  - Cost: ${trajectory.total_cost:.4f}')
@@ -43,7 +42,6 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-        raise RuntimeError('Automation failed') from e
     console.print(f'\n[GREEN][OK] Report successfully generated!')
     console.print(f'[GREEN]    Location: {output_path}')
     return 0

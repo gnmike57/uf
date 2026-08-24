@@ -76,7 +76,6 @@ def main():
             passed += 1
         except Exception as e:
             print(f'Test {test.__name__} crashed: {e}')
-            raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 60)
     print(f'RESULTS: {passed}/{total} tests passed')
     print('=' * 60)

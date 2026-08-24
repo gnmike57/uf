@@ -59,7 +59,7 @@ def _load_lifecycle_config() -> Dict[str, Any]:
         if lc and isinstance(lc, dict):
             defaults.update({k: v for k, v in lc.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 class GracefulKiller:
@@ -162,7 +162,6 @@ class GracefulKiller:
             pass
         except Exception as e:
             logger.debug(f'[Lifecycle] Win32 handler registration failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _handle_signal(self, signum: int, frame: Any) -> None:
         """Handle termination signal."""
@@ -188,7 +187,6 @@ class GracefulKiller:
                 self._on_shutdown()
             except Exception as e:
                 logger.error(f'[Lifecycle] Shutdown callback failed: {e}')
-                raise RuntimeError('Automation failed') from e
         self._stop_dispatcher()
         if self._active_workflow_id:
             logger.warning(f"[Lifecycle] Active workflow '{self._active_workflow_id}' in progress. Waiting up to {self._max_drain}s for completion...")
@@ -208,7 +206,6 @@ class GracefulKiller:
                     return
                 except Exception as e:
                     logger.warning(f'[Lifecycle] Dispatcher.{method_name}() failed: {e}')
-                    raise RuntimeError('Automation failed') from e
         for attr_name in ('_accepting', 'accepting', 'running'):
             if hasattr(self._dispatcher, attr_name):
                 try:
@@ -216,7 +213,7 @@ class GracefulKiller:
                     logger.info(f"[Lifecycle] Dispatcher flag '{attr_name}' set to False")
                     return
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
         logger.warning('[Lifecycle] Could not stop dispatcher — no compatible interface found.')
 
     async def wait_for_safe_exit(self) -> None:
@@ -266,7 +263,6 @@ class GracefulKiller:
             pass
         except Exception as e:
             logger.warning(f'[Lifecycle] Lock release failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def get_status(self) -> Dict[str, Any]:
         """Get current lifecycle status for telemetry/dashboard."""

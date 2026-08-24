@@ -206,7 +206,6 @@ class ComposedStrategy(BaseProcessingStrategy):
                         return ProcessingResult(success=False, data=combined_data, error=error_msg, phase=self.execution_phase)
                     else:
                         self.logger.warning(f"Continuing with remaining strategies despite exception in '{strategy_name}'")
-                    raise RuntimeError('Automation failed') from e
             total_time = time.time() - start_time
             successful_strategies = sum((1 for result in execution_results if result.success))
             overall_success = successful_strategies > 0
@@ -220,4 +219,3 @@ class ComposedStrategy(BaseProcessingStrategy):
             error_msg = f"Composed strategy '{self.name}' failed: {str(e)}"
             self.logger.error(error_msg)
             return self.handle_error(e, self.execution_phase, context)
-            raise RuntimeError('Automation failed') from e

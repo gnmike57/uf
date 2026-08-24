@@ -107,11 +107,9 @@ class HeartbeatManager:
                         self.logger.debug(f'Sent heartbeat for {client_id}')
                     except Exception as e:
                         self.logger.error(f'Error sending heartbeat for {client_id}: {e}')
-                        raise RuntimeError('Automation failed') from e
                 else:
                     self.logger.warning(f'Protocol not connected for {client_id}, skipping heartbeat')
         except asyncio.CancelledError:
             self.logger.debug(f'Heartbeat loop cancelled for {client_id}')
         except Exception as e:
             self.logger.error(f'Unexpected error in heartbeat loop for {client_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e

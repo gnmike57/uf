@@ -105,7 +105,6 @@ class OfflineDocRetriever(Retriever):
         except Exception as e:
             logger.warning(f'Failed to load experience indexer from {path}, error: {e}.')
             return None
-            raise RuntimeError('Automation failed') from e
 
 class ExperienceRetriever(Retriever):
     """
@@ -130,7 +129,6 @@ class ExperienceRetriever(Retriever):
         except Exception as e:
             logger.warning(f'Failed to load experience indexer from {db_path}, error: {e}.')
             return None
-            raise RuntimeError('Automation failed') from e
 
 class OnlineDocRetriever(Retriever):
     """
@@ -163,7 +161,6 @@ class OnlineDocRetriever(Retriever):
         except Exception as e:
             logger.warning(f'Failed to create online indexer, error: {e}.')
             return None
-            raise RuntimeError('Automation failed') from e
         return indexer
 
 class DemonstrationRetriever(Retriever):
@@ -189,4 +186,3 @@ class DemonstrationRetriever(Retriever):
         except Exception as e:
             logger.warning(f'Failed to load experience indexer from {db_path}, error: {e}.')
             return None
-            raise RuntimeError('Automation failed') from e

@@ -39,7 +39,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to add tasks: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n2. Testing list_tasks...')
     try:
         tasks_result = call_tool('list_tasks')
@@ -50,7 +49,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to list tasks: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n3. Testing add_dependency...')
     try:
         dep_result = call_tool('add_dependency', from_task_id='mcp_test_task1', to_task_id='mcp_test_task2', condition_description='Task2 waits for Task1 to complete successfully before starting execution')
@@ -59,7 +57,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to add dependency: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n4. Testing list_dependencies...')
     try:
         deps_result = call_tool('list_dependencies')
@@ -70,7 +67,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to list dependencies: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n5. Testing update_task...')
     try:
         updated_result = call_tool('update_task', task_id='mcp_test_task1', name='MCP Test Task 1 (Updated)', description='This is an updated task description with more details', tips='Updated tips: Remember to validate results after completion')
@@ -79,7 +75,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to update task: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n6. Testing update_dependency...')
     try:
         deps_result = call_tool('list_dependencies')
@@ -94,7 +89,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to update dependency: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n7. Testing get_constellation_status...')
     try:
         status_result = call_tool('get_constellation_status')
@@ -106,7 +100,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to get status: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n8. Testing build_constellation...')
     config = {'tasks': [{'task_id': 'batch_task1', 'name': '批量任务1', 'description': '批量创建的任务1', 'priority': 1}, {'task_id': 'batch_task2', 'name': '批量任务2', 'description': '批量创建的任务2', 'priority': 2}], 'dependencies': [{'from_task_id': 'batch_task1', 'to_task_id': 'batch_task2', 'dependency_type': 'unconditional'}], 'metadata': {'batch_created': True, 'test_constellation': True}}
     try:
@@ -116,7 +109,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to build constellation: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n9. Testing undo_last_operation...')
     try:
         undo_result = call_tool('undo_last_operation')
@@ -126,7 +118,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to undo: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n10. Testing redo_last_operation...')
     try:
         redo_result = call_tool('redo_last_operation')
@@ -136,7 +127,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to redo: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n11. Testing clear_constellation...')
     try:
         clear_result = call_tool('clear_constellation')
@@ -145,7 +135,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to clear constellation: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     return True
 
 def main():
@@ -166,7 +155,6 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-        raise RuntimeError('Automation failed') from e
     return 0
 if __name__ == '__main__':
     sys.exit(main())

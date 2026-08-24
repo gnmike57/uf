@@ -43,7 +43,6 @@ async def main():
     except Exception as e:
         logger.error(f'[WS] WebSocket client error: {str(e)}', exc_info=True)
         sys.exit(1)
-        raise RuntimeError('Automation failed') from e
     if args.request_text:
         await ws_client.connected_event.wait()
         await ws_client.start_task(args.request_text, args.task_name)

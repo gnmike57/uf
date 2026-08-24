@@ -351,7 +351,6 @@ def decode_base64_image(base64_string: str) -> bytes:
             return base64.b64decode(base64_string, validate=False)
         except Exception:
             return base64.b64decode(_empty_image_string.split(',')[1])
-            raise RuntimeError('Automation failed')
 _empty_image_string = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 
 def encode_image_from_path(image_path: str, mime_type: Optional[str]=None) -> str:
@@ -413,12 +412,10 @@ def load_image(image_path: str) -> Image.Image:
         except Exception as e:
             logger.warning(f'Image {image_path} appears to be corrupted: {e}')
             return Image.new('RGB', (1, 1), color='white')
-            raise RuntimeError('Automation failed') from e
     except Exception as e:
         import traceback
         logger.error(f'Error loading image from {image_path}: {traceback.format_exc()}')
         return Image.new('RGB', (1, 1), color='white')
-        raise RuntimeError('Automation failed') from e
 
 def save_image_string(image_string: str, save_path: str) -> Image.Image:
     """
@@ -463,8 +460,6 @@ def save_image_string(image_string: str, save_path: str) -> Image.Image:
                 with open(save_path, 'wb') as f:
                     f.write(empty_data)
                 return load_image(save_path)
-                raise RuntimeError('Automation failed') from fallback_error
-            raise RuntimeError('Automation failed') from e
     except Exception as e:
         logger.error(f'Failed to save image string to {save_path}: {e}')
         try:
@@ -474,5 +469,3 @@ def save_image_string(image_string: str, save_path: str) -> Image.Image:
             return load_image(save_path)
         except Exception:
             return Image.new('RGB', (1, 1), color='white')
-            raise RuntimeError('Automation failed')
-        raise RuntimeError('Automation failed') from e

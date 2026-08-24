@@ -70,7 +70,6 @@ class ConstellationEditor:
                 observer(self, command, result)
             except Exception as e:
                 logger.warning(f"Observer {observer!r} raised an error on command '{command}': {e}", exc_info=True)
-                raise RuntimeError('Automation failed') from e
 
     def add_task(self, task: Union[TaskStar, Dict[str, Any]]) -> TaskStar:
         """
@@ -422,7 +421,6 @@ class ConstellationEditor:
                 results.append(result)
             except Exception as e:
                 results.append(e)
-                raise RuntimeError('Automation failed') from e
         return results
 
     def create_subgraph(self, task_ids: List[str]) -> 'ConstellationEditor':

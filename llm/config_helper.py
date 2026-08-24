@@ -45,7 +45,6 @@ def _probe_endpoint(url: str, timeout: float=2.0) -> bool:
             return resp.status == 200
     except Exception:
         return False
-        raise RuntimeError('Automation failed')
 
 def _probe_local_auto() -> bool:
     if _probe_endpoint('http://127.0.0.1:4000/health'):
@@ -77,7 +76,6 @@ def get_backend_selection() -> dict:
                 return copy.deepcopy(data)
     except Exception as e:
         logger.warning('Failed to read backend_state.json, falling back to disk configuration: %s', e)
-        raise RuntimeError('Automation failed') from e
     return {'selected': 'disk', 'source': 'default'}
 
 def set_backend_selection(selection: str, profile_path: Optional[str]=None, updated_by: str='api') -> dict:
@@ -124,7 +122,6 @@ def _get_file_stat_key(path: Path) -> str:
         return f'{stat.st_mtime_ns}:{stat.st_size}'
     except Exception:
         return '0:0'
-        raise RuntimeError('Automation failed')
 
 def resolve_backend_profile(selection: Optional[str]=None, profile_path: Optional[str]=None) -> Optional[Dict[str, Any]]:
     global _auto_probe_memo

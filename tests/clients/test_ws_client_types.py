@@ -36,7 +36,6 @@ class MockWSClient:
         except Exception as e:
             logger.error(f'[{self.client_type.upper()}] Failed to connect {self.client_id}: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def send_heartbeat(self):
         """发送心跳消息"""
@@ -50,7 +49,6 @@ class MockWSClient:
         except Exception as e:
             logger.error(f'[{self.client_type.upper()}] Failed to send heartbeat from {self.client_id}: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def disconnect(self):
         """断开连接"""
@@ -90,7 +88,6 @@ async def test_client_types():
         print('\n✅ 客户端类型区分测试完成')
     except Exception as e:
         logger.error(f'测试过程中出错: {e}')
-        raise RuntimeError('Automation failed') from e
     finally:
         print('\n[5] 清理连接...')
         await device_client.disconnect()
@@ -104,6 +101,5 @@ async def main():
         print('\n测试被用户中断')
     except Exception as e:
         print(f'测试失败: {e}')
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     asyncio.run(main())

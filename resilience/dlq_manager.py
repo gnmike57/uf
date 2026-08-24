@@ -68,7 +68,6 @@ class DeadLetterQueueManager:
                 self._max_snapshots = dlq_cfg.get('MAX_SNAPSHOTS', 100)
         except Exception as e:
             logger.debug(f'Using default DLQ config: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def capture_failure(self, task_id: str, error_chain: str='', dag_state: Optional[Dict[str, Any]]=None, uia_tree: Optional[Dict[str, Any]]=None, screenshots: Optional[Dict[str, str]]=None, agent_config: Optional[Dict[str, Any]]=None, metadata: Optional[Dict[str, Any]]=None) -> Optional[str]:
         """
@@ -98,7 +97,6 @@ class DeadLetterQueueManager:
                         snapshot['screenshots'][key] = {'path': path, 'size_bytes': len(img_bytes), 'base64': base64.b64encode(img_bytes).decode('utf-8')}
                     except Exception as e:
                         snapshot['screenshots'][key] = {'path': path, 'error': str(e)}
-                        raise RuntimeError('Automation failed') from e
         snapshot_path = self._save_snapshot(filename, snapshot)
         if snapshot_path:
             logger.warning(f'[DLQ] Diagnostic snapshot saved: {snapshot_path} (task_id={task_id})')
@@ -118,7 +116,6 @@ class DeadLetterQueueManager:
                 snapshots.append({'filename': f.name, 'path': str(f), 'size_bytes': stat.st_size, 'created': time.ctime(stat.st_ctime)})
             except Exception:
                 continue
-                raise RuntimeError('Automation failed')
         return snapshots
 
     def load_snapshot(self, filename: str) -> Optional[Dict[str, Any]]:
@@ -132,7 +129,6 @@ class DeadLetterQueueManager:
         except Exception as e:
             logger.error(f'Failed to load DLQ snapshot {filename}: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     def _save_snapshot(self, filename: str, snapshot: Dict[str, Any]) -> Optional[str]:
         """Save snapshot to disk."""
@@ -146,7 +142,6 @@ class DeadLetterQueueManager:
         except Exception as e:
             logger.error(f'[DLQ] Failed to save snapshot: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     def _prune_old_snapshots(self) -> None:
         """Remove oldest snapshots if count exceeds MAX_SNAPSHOTS."""
@@ -162,10 +157,9 @@ class DeadLetterQueueManager:
                         old_file.unlink()
                         logger.info(f'[DLQ] Pruned old snapshot: {old_file.name}')
                     except Exception:
-                        raise RuntimeError('Automation failed')
+                        pass
         except Exception as e:
             logger.debug(f'[DLQ] Snapshot pruning failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _trigger_alert(self, snapshot_path: str, task_id: str, error_summary: str) -> None:
         """
@@ -185,7 +179,6 @@ class DeadLetterQueueManager:
                 logger.info(f'[DLQ] Alert webhook fired: {resp.status} (task_id={task_id})')
         except Exception as e:
             logger.warning(f'[DLQ] Webhook alert failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _collect_system_info() -> Dict[str, Any]:

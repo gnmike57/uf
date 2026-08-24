@@ -135,7 +135,6 @@ class AddTaskCommand(BaseConstellationCommand):
             self._restore_backup()
             self._executed = False
             self._task_added = False
-            raise RuntimeError('Automation failed') from e
 
 @register_command(name='remove_task', description='Remove a task from the constellation', category='task_management')
 class RemoveTaskCommand(BaseConstellationCommand):
@@ -281,7 +280,6 @@ class UpdateTaskCommand(BaseConstellationCommand):
             self._restore_backup()
             self._executed = False
             self._original_values = {}
-            raise RuntimeError('Automation failed') from e
 
 @register_command(name='add_dependency', description='Add a dependency to the constellation', category='dependency_management')
 class AddDependencyCommand(BaseConstellationCommand):
@@ -350,7 +348,6 @@ class AddDependencyCommand(BaseConstellationCommand):
             self._restore_backup()
             self._executed = False
             self._dependency_added = False
-            raise RuntimeError('Automation failed') from e
 
 @register_command(name='remove_dependency', description='Remove a dependency from the constellation', category='dependency_management')
 class RemoveDependencyCommand(BaseConstellationCommand):
@@ -486,7 +483,6 @@ class UpdateDependencyCommand(BaseConstellationCommand):
             self._restore_backup()
             self._executed = False
             self._original_values = {}
-            raise RuntimeError('Automation failed') from e
 
 @register_command(name='build_constellation', description='Build a constellation from configuration data', category='bulk_operations')
 class BuildConstellationCommand(BaseConstellationCommand):

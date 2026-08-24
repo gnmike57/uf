@@ -148,13 +148,11 @@ class EventSerializer:
                 return self.serialize_value(value.model_dump())
             except Exception as e:
                 self.logger.debug(f'Failed to serialize Pydantic model: {e}')
-                raise RuntimeError('Automation failed') from e
         if hasattr(value, 'to_dict') and callable(value.to_dict):
             try:
                 return self.serialize_value(value.to_dict())
             except Exception as e:
                 self.logger.debug(f'Failed to serialize using to_dict: {e}')
-                raise RuntimeError('Automation failed') from e
         return str(value)
 
     def _serialize_task_star_line(self, value: Any) -> Dict[str, Any]:
@@ -169,7 +167,6 @@ class EventSerializer:
         except Exception as e:
             self.logger.warning(f'Failed to serialize TaskStarLine: {e}')
             return str(value)
-            raise RuntimeError('Automation failed') from e
 
     def _serialize_constellation(self, value: Any) -> Dict[str, Any]:
         """
@@ -185,12 +182,10 @@ class EventSerializer:
                     constellation_dict['statistics'] = value.get_statistics()
                 except Exception as e:
                     self.logger.warning(f'Failed to get constellation statistics: {e}')
-                    raise RuntimeError('Automation failed') from e
             return constellation_dict
         except Exception as e:
             self.logger.warning(f'Failed to serialize TaskConstellation: {e}')
             return str(value)
-            raise RuntimeError('Automation failed') from e
 
     def _serialize_constellation_tasks(self, tasks: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """
@@ -207,7 +202,6 @@ class EventSerializer:
             except Exception as e:
                 self.logger.warning(f'Failed to serialize task {task_id}: {e}')
                 serialized_tasks[task_id] = {'task_id': task_id, 'error': str(e)}
-                raise RuntimeError('Automation failed') from e
         return serialized_tasks
 
     def _serialize_dependencies(self, dependencies: Dict[str, Any]) -> Dict[str, List[str]]:
@@ -286,11 +280,9 @@ class WebSocketObserver(IEventObserver):
                 except Exception as e:
                     self.logger.warning(f'Failed to send event to client: {e}, marking for removal')
                     disconnected.add(connection)
-                    raise RuntimeError('Automation failed') from e
             self._connections -= disconnected
         except Exception as e:
             self.logger.error(f'Error broadcasting event: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def add_connection(self, websocket: WebSocket) -> None:
         """

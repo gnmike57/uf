@@ -43,7 +43,6 @@ class TaskVisualizationHandler:
                 self.task_display.display_task_started(task, additional_info)
         except Exception as e:
             self.logger.debug(f'Error displaying task start: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_task_completed(self, event: TaskEvent, constellation: TaskConstellation) -> None:
         """
@@ -64,7 +63,6 @@ class TaskVisualizationHandler:
                 self._visualizer.display_execution_flow(constellation)
         except Exception as e:
             self.logger.debug(f'Error displaying task completion: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_task_failed(self, event: TaskEvent, constellation: TaskConstellation) -> None:
         """
@@ -86,7 +84,6 @@ class TaskVisualizationHandler:
                 self.task_display.display_task_failed(task, error, retry_info, newly_ready_count)
         except Exception as e:
             self.logger.debug(f'Error displaying task failure: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def handle_task_event(self, event: TaskEvent, constellation: TaskConstellation) -> None:
         """

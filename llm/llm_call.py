@@ -297,7 +297,6 @@ async def get_completions(messages, agent: str=AgentType.APP, use_backup_engine:
             is_exceeded = CostTracker.get_instance().is_budget_exceeded()
         except Exception as e:
             logger.warning(f'[Telemetry] Budget check failed: {e}')
-            raise RuntimeError('Automation failed') from e
         if is_exceeded:
             logger.critical(f"[Telemetry] Daily budget exceeded. Locking out cloud agent '{agent_type}'.")
             if use_backup_engine and agent_type != fallback_target:
@@ -305,7 +304,7 @@ async def get_completions(messages, agent: str=AgentType.APP, use_backup_engine:
                 try:
                     fallback_config = get_agent_config(fallback_target) if not configs else configs.get(fallback_target)
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
                 if fallback_config and (not is_cloud_agent_config(fallback_config)):
                     logger.info(f"[Telemetry] Routing to non-cloud fallback agent '{fallback_target}'.")
                     return await get_completions(messages, agent=fallback_target, use_backup_engine=False, n=n, configs=configs, response_schema=response_schema)
@@ -334,7 +333,6 @@ async def get_completions(messages, agent: str=AgentType.APP, use_backup_engine:
         except Exception as e:
             logger.warning(f'[Redactor] PII text redaction failed: {e}')
             dispatch_messages = messages
-            raise RuntimeError('Automation failed') from e
     try:
         api_type_lower = api_type.lower()
         service = BaseService.get_service(api_type_lower, agent_type, api_model.lower())
@@ -348,7 +346,6 @@ async def get_completions(messages, agent: str=AgentType.APP, use_backup_engine:
             CostTracker.get_instance().record_usage(model=result.model or api_model, api_type=result.api_type or api_type, prompt_tokens=result.prompt_tokens, completion_tokens=result.completion_tokens)
         except Exception as e:
             logger.warning(f'[Telemetry] Usage recording failed: {e}')
-            raise RuntimeError('Automation failed') from e
         _circuit_breaker.record_success(agent_type)
         if response_schema and result.responses:
             for attempt in range(_SCHEMA_VALIDATION_MAX_RETRIES):
@@ -374,4 +371,3 @@ async def get_completions(messages, agent: str=AgentType.APP, use_backup_engine:
         else:
             record_dlq_event(agent_type=agent_type, messages=messages if isinstance(messages, list) else [], error=e, model=api_model, circuit_breaker_state=_circuit_breaker.get_state(agent_type))
             raise e
-        raise RuntimeError('Automation failed') from e

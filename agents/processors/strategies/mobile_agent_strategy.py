@@ -71,7 +71,6 @@ class MobileScreenshotCaptureStrategy(BaseProcessingStrategy):
             error_msg = f'Screenshot capture failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.DATA_COLLECTION, context)
-            raise RuntimeError('Automation failed') from e
 
     async def _capture_screenshot(self, save_path: str, command_dispatcher: BasicCommandDispatcher) -> str:
         """
@@ -152,7 +151,6 @@ class MobileAppsCollectionStrategy(BaseProcessingStrategy):
             error_msg = f'Apps collection failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.DATA_COLLECTION, context)
-            raise RuntimeError('Automation failed') from e
 
     def _target_info_to_dict(self, target_info: TargetInfo) -> Dict[str, Any]:
         """
@@ -251,7 +249,6 @@ class MobileControlsCollectionStrategy(BaseProcessingStrategy):
             error_msg = f'Controls collection failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.DATA_COLLECTION, context)
-            raise RuntimeError('Automation failed') from e
 
     def _target_info_to_dict(self, target_info: TargetInfo) -> Dict[str, Any]:
         """
@@ -339,7 +336,6 @@ class MobileControlsCollectionStrategy(BaseProcessingStrategy):
             self.logger.error(f'Failed to save annotated screenshot: {str(e)}')
             self.logger.error(traceback.format_exc())
             return None
-            raise RuntimeError('Automation failed') from e
 
 @depends_on('installed_apps', 'current_controls', 'clean_screenshot_url')
 @provides('parsed_response', 'response_text', 'llm_cost', 'prompt_message', 'action', 'thought', 'comment')
@@ -390,7 +386,6 @@ class MobileLLMInteractionStrategy(AppLLMInteractionStrategy):
             error_msg = f'Mobile LLM interaction failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.LLM_INTERACTION, context)
-            raise RuntimeError('Automation failed') from e
 
 class MobileActionExecutionStrategy(AppActionExecutionStrategy):
     """
@@ -431,7 +426,6 @@ class MobileActionExecutionStrategy(AppActionExecutionStrategy):
             error_msg = f'Mobile action execution failed: {str(traceback.format_exc())}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.ACTION_EXECUTION, context)
-            raise RuntimeError('Automation failed') from e
 
     def _create_action_info(self, actions: ActionCommandInfo | List[ActionCommandInfo], execution_results: List[Result]) -> List[ActionCommandInfo]:
         """
@@ -456,7 +450,6 @@ class MobileActionExecutionStrategy(AppActionExecutionStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to create action info: {str(e)}')
             return []
-            raise RuntimeError('Automation failed') from e
 
 class MobileLoggingMiddleware(AppAgentLoggingMiddleware):
     """

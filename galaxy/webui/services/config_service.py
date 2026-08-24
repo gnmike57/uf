@@ -75,7 +75,6 @@ class ConfigService:
         except Exception as e:
             self.logger.error(f'Failed to get device IDs: {e}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     def device_id_exists(self, device_id: str) -> bool:
         """

@@ -127,7 +127,6 @@ class TestConfigConversion(unittest.TestCase):
                     self.fail(f'Failed to parse {yaml_file.name}: {e}')
                 except Exception as e:
                     self.fail(f'Failed to load {yaml_file.name}: {e}')
-                    raise RuntimeError('Automation failed') from e
 
     def test_mcp_config_conversion(self):
         """Test agent_mcp.yaml → mcp.yaml conversion."""

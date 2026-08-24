@@ -20,7 +20,7 @@ def find_adb():
         if result.returncode == 0:
             return result.stdout.strip().split('\n')[0]
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return None
 
 def check_adb():
@@ -44,7 +44,6 @@ def check_adb():
     except Exception as e:
         print(f'   ❌ Error: {e}')
         return (False, adb_path)
-        raise RuntimeError('Automation failed') from e
 
 def check_device(adb_path):
     """Check if Android device is connected"""
@@ -74,7 +73,6 @@ def check_device(adb_path):
     except Exception as e:
         print(f'   ❌ Error: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def check_device_info(adb_path):
     """Get basic device information"""
@@ -97,7 +95,6 @@ def check_device_info(adb_path):
     except Exception as e:
         print(f'   ⚠️  Could not get device info: {e}')
         return True
-        raise RuntimeError('Automation failed') from e
 
 def check_python_packages():
     """Check if required Python packages are installed"""

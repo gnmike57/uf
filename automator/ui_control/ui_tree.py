@@ -26,7 +26,6 @@ class UITree:
             self._ui_tree = self._get_ui_tree(self.root)
         except Exception as e:
             self._ui_tree = {'error': traceback.format_exc()}
-            raise RuntimeError('Automation failed') from e
 
     def _generate_node_id(self) -> str:
         """
@@ -61,7 +60,6 @@ class UITree:
                         ui_tree['children'].append(self._get_ui_tree(child, level + 1, self_root_rect))
                 except Exception as e:
                     ui_tree['error'] = traceback.format_exc()
-                    raise RuntimeError('Automation failed') from e
         return ui_tree
 
     @property

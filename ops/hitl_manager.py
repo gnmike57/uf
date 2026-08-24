@@ -28,8 +28,10 @@ Usage (sync):
         timeout_minutes=15,
     )
     if resolution["decision"] == "APPROVE":
+        pass
         # Resume execution
     elif resolution["decision"] == "ABORT":
+        pass
         # Terminate
 
 Usage (async):
@@ -55,7 +57,7 @@ def _load_hitl_config() -> Dict[str, Any]:
         if df and isinstance(df, dict):
             defaults['REDIS_URL'] = df.get('REDIS_URL', defaults['REDIS_URL'])
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 class HITLManager:
@@ -83,7 +85,6 @@ class HITLManager:
             self._available = True
         except Exception as e:
             logger.warning(f'[HITL] Redis unavailable: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def wait_for_resolution(self, workflow_id: str, timeout_minutes: Optional[int]=None, context: Optional[Dict[str, Any]]=None) -> Dict[str, Any]:
         """
@@ -137,7 +138,7 @@ class HITLManager:
                 pubsub.unsubscribe(channel)
                 pubsub.close()
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
 
     async def async_wait_for_resolution(self, workflow_id: str, timeout_minutes: Optional[int]=None, context: Optional[Dict[str, Any]]=None) -> Dict[str, Any]:
         """
@@ -205,12 +206,11 @@ class HITLManager:
                     dlq = DeadLetterQueueManager()
                     dlq.capture_failure(task_id=f'HITL_{workflow_id}', error_chain=f'HITL escalation: {reason}', dag_state=dag_state, screenshots={'current': screenshot_path})
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
             return True
         except Exception as e:
             logger.error(f'[HITL] Review request failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def _register_waiting(self, workflow_id: str, context: Optional[Dict[str, Any]]=None) -> None:
         """Mark this workflow as waiting for HITL resolution."""
@@ -220,7 +220,7 @@ class HITLManager:
             info = {'workflow_id': workflow_id, 'waiting_since': time.time(), 'context': context or {}}
             self._redis.setex(f'ufo:hitl:waiting:{workflow_id}', 3600, json.dumps(info))
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
 
     def _unregister_waiting(self, workflow_id: str) -> None:
         """Remove the waiting marker."""
@@ -229,7 +229,7 @@ class HITLManager:
         try:
             self._redis.delete(f'ufo:hitl:waiting:{workflow_id}')
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
 
     def _check_pending_resolution(self, workflow_id: str) -> Optional[Dict[str, Any]]:
         """Check if a resolution was queued before we subscribed."""
@@ -242,7 +242,7 @@ class HITLManager:
                 self._redis.delete(key)
                 return json.loads(data)
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
         return None
 
     def _local_fallback(self, workflow_id: str, timeout_seconds: float) -> Dict[str, Any]:

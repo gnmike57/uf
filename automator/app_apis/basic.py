@@ -73,7 +73,6 @@ class WinCOMReceiverBasic(ReceiverBasic):
             return full_path
         except Exception:
             return ''
-            raise RuntimeError('Automation failed')
 
     def save(self) -> None:
         """
@@ -82,7 +81,7 @@ class WinCOMReceiverBasic(ReceiverBasic):
         try:
             self.com_object.Save()
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
 
     def save_to_xml(self, file_path: str) -> None:
         """
@@ -92,7 +91,7 @@ class WinCOMReceiverBasic(ReceiverBasic):
         try:
             self.com_object.SaveAs(file_path, self.xml_format_code)
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
 
     def close(self) -> None:
         """
@@ -101,7 +100,7 @@ class WinCOMReceiverBasic(ReceiverBasic):
         try:
             self.com_object.Close()
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
 
     @property
     def type_name(self):

@@ -204,7 +204,6 @@ class ConfigLoader:
         except Exception as e:
             logger.warning(f'Error loading {path}: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     def _deep_merge(self, target: Dict[str, Any], source: Dict[str, Any]) -> None:
         """
@@ -326,7 +325,6 @@ class ConfigLoader:
                 parsed_val = yaml.safe_load(env_v)
             except Exception:
                 parsed_val = env_v
-                raise RuntimeError('Automation failed')
             if '__' in suffix:
                 parts = suffix.split('__')
                 target = config_data

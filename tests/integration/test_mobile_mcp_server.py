@@ -43,7 +43,6 @@ class TestMobileMCPServers:
             pytest.skip('ADB not found in PATH. Please install Android SDK platform-tools.')
         except Exception as e:
             pytest.skip(f'Error checking ADB: {e}')
-            raise RuntimeError('Automation failed') from e
 
     @pytest.fixture(scope='class')
     def mobile_agent_config(self):

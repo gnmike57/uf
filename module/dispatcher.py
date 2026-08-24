@@ -79,7 +79,6 @@ class LocalCommandDispatcher(BasicCommandDispatcher):
         except Exception as e:
             self.logger.warning(f'Error occurred while executing commands {commands}: {e}')
             return self.generate_error_results(commands, e)
-            raise RuntimeError('Automation failed') from e
         return action_results
 
 class WebSocketCommandDispatcher(BasicCommandDispatcher):
@@ -147,7 +146,6 @@ class WebSocketCommandDispatcher(BasicCommandDispatcher):
             self.logger.error(f'[AIP] Error sending commands: {e}')
             self.pending.pop(server_message.response_id, None)
             return self.generate_error_results(commands, e)
-            raise RuntimeError('Automation failed') from e
         try:
             result = await asyncio.wait_for(fut, timeout)
             return result

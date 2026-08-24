@@ -19,6 +19,7 @@ Architecture:
      semantic comparison to verify intent fulfillment.
 
 Usage:
+    pass
     
 from ufo.agents.evaluation_agent.state_verifier import StateVerifier
 
@@ -101,7 +102,6 @@ class StateVerifier:
                 self._check_enabled = bool(us_cfg.get('CHECK_CONTROL_ENABLED', _DEFAULT_CHECK_ENABLED))
         except Exception as e:
             logger.debug(f'Using default UI settlement config: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def wait_for_settlement(self, app_window: Any, target_control: Any=None, timeout: Optional[float]=None) -> SettlementResult:
         """
@@ -139,7 +139,6 @@ class StateVerifier:
             except Exception as e:
                 logger.debug(f'UIA query error during settlement: {e}')
                 stable_iterations = 0
-                raise RuntimeError('Automation failed') from e
             if self._check_foreground and stable_iterations >= self._stable_threshold:
                 foreground_valid = self._verify_foreground(app_window)
                 if not foreground_valid:
@@ -196,7 +195,6 @@ class StateVerifier:
         except Exception as e:
             logger.error(f'Visual diff verification failed: {e}')
             return VerificationResult(success=False, observed_state='Unknown', error_reason=str(e), source='cloud_vlm')
-            raise RuntimeError('Automation failed') from e
 
     def quick_verify(self, app_window: Any, expected_change: str='any', pre_control_count: Optional[int]=None) -> VerificationResult:
         """
@@ -235,9 +233,8 @@ class StateVerifier:
                 for child in app_window.children():
                     count += 1
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
             return count
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _verify_foreground(app_window: Any) -> bool:
@@ -251,7 +248,6 @@ class StateVerifier:
             return foreground_hwnd == window_handle
         except Exception:
             return True
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _verify_control_enabled(control: Any) -> bool:
@@ -260,7 +256,6 @@ class StateVerifier:
             return control.is_enabled()
         except Exception:
             return True
-            raise RuntimeError('Automation failed')
 
     @staticmethod
     def _encode_screenshot(path: str) -> Optional[str]:
@@ -271,7 +266,6 @@ class StateVerifier:
         except Exception as e:
             logger.warning(f'Failed to encode screenshot {path}: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     @staticmethod
     def _parse_verification_response(text: str) -> VerificationResult:

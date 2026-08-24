@@ -43,7 +43,7 @@ def is_diagnostic_warning_frame(img: Image.Image) -> bool:
             if bg_count / total_pixels > 0.75 and red_count / total_pixels > 0.005:
                 return True
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return False
 
 def is_valid_step_image(image_path: str, min_stddev: float=5.0) -> Tuple[bool, str]:
@@ -73,7 +73,6 @@ def is_valid_step_image(image_path: str, min_stddev: float=5.0) -> Tuple[bool, s
             return (True, f'Valid screenshot ({w}x{h}, size={file_size}B, stddev={max_stddev:.2f})')
     except Exception as e:
         return (False, f'Corrupted image or read failure: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def scan_and_verify_screenshots(target_dir: str, pattern: str='*.png', min_stddev: float=5.0) -> Dict[str, Any]:
     """
@@ -104,6 +103,7 @@ def scan_and_verify_screenshots(target_dir: str, pattern: str='*.png', min_stdde
 def verify_task_screenshots(log_dir: str, min_stddev: float=5.0) -> bool:
     """
     Interface contract function as defined in PROJECT.md:
+        pass
     verify_task_screenshots(log_dir) -> bool
     Returns True only if all step PNGs in log_dir contain valid, non-black UI screen renders.
     """

@@ -15,7 +15,7 @@ if TYPE_CHECKING or platform.system() == 'Windows':
         import ctypes
         ctypes.windll.user32.SetProcessDPIAware()
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
 else:
     UIAWrapper = Any
     RECT = Any
@@ -57,7 +57,7 @@ def is_diagnostic_warning_frame(image: Optional[Image.Image]) -> bool:
             if bg_count / total_pixels > 0.75 and red_count / total_pixels > 0.005:
                 return True
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return False
 
 def is_valid_capture_image(image: Optional[Image.Image], min_stddev: float=5.0) -> bool:
@@ -87,7 +87,6 @@ def is_valid_capture_image(image: Optional[Image.Image], min_stddev: float=5.0) 
     except Exception as e:
         logger.warning(f'Error validating image quality: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def _ensure_window_restored(hwnd: int) -> bool:
     """
@@ -113,14 +112,13 @@ def _ensure_window_restored(hwnd: int) -> bool:
             win32gui.BringWindowToTop(hwnd)
             win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
         win32gui.RedrawWindow(hwnd, None, None, win32con.RDW_INVALIDATE | win32con.RDW_UPDATENOW | win32con.RDW_ERASE | win32con.RDW_ALLCHILDREN)
         time.sleep(0.25)
         return True
     except Exception as e:
         logger.warning(f'Failed to restore window state for hwnd={hwnd}: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def _crop_desktop_rect(hwnd: int, rect: Tuple[int, int, int, int]) -> Optional[Image.Image]:
     """
@@ -138,7 +136,7 @@ def _crop_desktop_rect(hwnd: int, rect: Tuple[int, int, int, int]) -> Optional[I
             try:
                 win32gui.BringWindowToTop(hwnd)
             except Exception:
-                raise RuntimeError('Automation failed')
+                pass
             time.sleep(0.05)
         desktop_photographer = DesktopPhotographer(all_screens=False)
         desktop_img = desktop_photographer.capture()
@@ -156,7 +154,6 @@ def _crop_desktop_rect(hwnd: int, rect: Tuple[int, int, int, int]) -> Optional[I
                     return cropped
     except Exception as e:
         logger.warning(f'Desktop DC cropping fallback failed for hwnd={hwnd}: {e}')
-        raise RuntimeError('Automation failed') from e
     return None
 
 def _create_diagnostic_error_frame() -> Image.Image:
@@ -232,7 +229,6 @@ class ControlPhotographer(Photographer):
                     screenshot = None
             except Exception as e:
                 logger.warning(f'control.capture_as_image() failed: {e}')
-                raise RuntimeError('Automation failed') from e
             if screenshot is None and hwnd:
                 try:
                     logger.info('Trying PrintWindow for window capture (RDP-safe)')
@@ -242,7 +238,6 @@ class ControlPhotographer(Photographer):
                         screenshot = None
                 except Exception as e:
                     logger.warning(f'PrintWindow fallback failed: {e}')
-                    raise RuntimeError('Automation failed') from e
             if screenshot is None and hwnd:
                 try:
                     logger.info('Trying Desktop DC Bounding Box Crop for GPU window')
@@ -254,7 +249,6 @@ class ControlPhotographer(Photographer):
                         screenshot = None
                 except Exception as e:
                     logger.warning(f'Desktop DC Bounding Box Crop failed: {e}')
-                    raise RuntimeError('Automation failed') from e
             if screenshot is None:
                 logger.info('Falling back to desktop screenshot for window capture')
                 desktop = DesktopPhotographer(all_screens=False)
@@ -436,7 +430,6 @@ class DesktopPhotographer(Photographer):
                 screenshot = None
         except Exception as e:
             logger.warning(f'ImageGrab.grab(all_screens={self.all_screens}) failed: {e}')
-            raise RuntimeError('Automation failed') from e
         if screenshot is None and self.all_screens:
             try:
                 logger.info('Retrying screenshot with primary screen only')
@@ -446,7 +439,6 @@ class DesktopPhotographer(Photographer):
                     screenshot = None
             except Exception as e:
                 logger.warning(f'ImageGrab.grab(all_screens=False) also failed: {e}')
-                raise RuntimeError('Automation failed') from e
         if screenshot is None:
             logger.info('Falling back to win32 API screen capture')
             screenshot = _win32_grab_screen()
@@ -471,7 +463,6 @@ class DesktopPhotographer(Photographer):
                             logger.info('Successfully captured screenshot via desktop relay.')
             except Exception as e:
                 logger.warning(f'Desktop relay fallback failed: {e}')
-                raise RuntimeError('Automation failed') from e
         return screenshot if is_valid_capture_image(screenshot) else None
 
     def capture(self, save_path: str=None, scalar: List[int]=None) -> Image.Image:
@@ -1201,8 +1192,6 @@ class PhotographerFacade:
             except Exception as fallback_error:
                 logger.error(f'Fallback encoding also failed: {fallback_error}')
                 return cls._empty_image_string
-                raise RuntimeError('Automation failed') from fallback_error
-            raise RuntimeError('Automation failed') from e
 
     @classmethod
     def encode_image_from_path(cls, image_path: str, mime_type: Optional[str]=None) -> str:
@@ -1234,8 +1223,6 @@ class PhotographerFacade:
             except Exception as fallback_error:
                 logger.error(f'Fallback encoding failed for {image_path}: {fallback_error}')
                 return cls._empty_image_string
-                raise RuntimeError('Automation failed') from fallback_error
-            raise RuntimeError('Automation failed') from image_error
 
     def capture_app_window_screenshot_with_target_list(self, application_window_info: 'TargetInfo', target_list: List['TargetInfo'], color_diff: bool=True, color_default: str='#FFF68F', save_path: Optional[str]=None, path: Optional[str]=None, highlight_bbox: bool=False) -> Image.Image:
         """

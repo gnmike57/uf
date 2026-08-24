@@ -53,7 +53,6 @@ class CUASkills:
                 return f'Dismissed dialog via {name}'
             except Exception as e:
                 logger.warning(f'CUA-Skills: Dismiss via {name} failed: {e}')
-                raise RuntimeError('Automation failed') from e
         return 'Failed to dismiss dialog after all attempts'
 
     def open_file_dialog_and_select(self, file_path: str, timeout: float=5.0) -> str:
@@ -81,7 +80,6 @@ class CUASkills:
         except Exception as e:
             logger.error(f'CUA-Skills: open_file_dialog failed: {e}')
             return f'Failed: {e}'
-            raise RuntimeError('Automation failed') from e
 
     def save_as(self, file_path: str) -> str:
         """
@@ -106,7 +104,6 @@ class CUASkills:
         except Exception as e:
             logger.error(f'CUA-Skills: save_as failed: {e}')
             return f'Failed: {e}'
-            raise RuntimeError('Automation failed') from e
 
     def switch_to_window(self, title_fragment: str) -> str:
         """
@@ -147,7 +144,6 @@ class CUASkills:
         except Exception as e:
             logger.error(f'CUA-Skills: switch_to_window failed: {e}')
             return f'Failed: {e}'
-            raise RuntimeError('Automation failed') from e
 
     def type_text(self, text: str, use_clipboard: bool=True) -> str:
         """
@@ -170,7 +166,6 @@ class CUASkills:
         except Exception as e:
             logger.error(f'CUA-Skills: type_text failed: {e}')
             return f'Failed: {e}'
-            raise RuntimeError('Automation failed') from e
 
     def wait_for_window(self, title_fragment: str, timeout: float=30.0, poll_interval: float=1.0) -> bool:
         """
@@ -227,4 +222,3 @@ class CUASkills:
         except Exception as e:
             logger.error(f'CUA-Skills: screenshot_region failed: {e}')
             return f'Failed: {e}'
-            raise RuntimeError('Automation failed') from e

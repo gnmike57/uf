@@ -35,6 +35,7 @@ Usage:
         status="success",
     )
     # Verify the chain hasn't been tampered with:
+        pass
     assert audit.verify_chain()
 """
 import hashlib
@@ -59,7 +60,7 @@ def _load_audit_config() -> Dict[str, Any]:
         if audit_cfg and isinstance(audit_cfg, dict):
             defaults.update({k: v for k, v in audit_cfg.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 class ImmutableAuditLogger:
@@ -198,7 +199,6 @@ class ImmutableAuditLogger:
         except Exception as e:
             logger.warning(f'[Audit] Failed to init local log: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     def _append_to_local_log(self, record: Dict[str, Any]) -> None:
         """Append a record to the local WORM JSONL file."""
@@ -209,7 +209,6 @@ class ImmutableAuditLogger:
                 f.write(json.dumps(record, sort_keys=True, default=str) + '\n')
         except Exception as e:
             logger.error(f'[Audit] Local log write failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _recover_chain_state(self) -> None:
         """Recover the last hash from existing log file on startup."""
@@ -233,7 +232,6 @@ class ImmutableAuditLogger:
                 logger.info(f'[Audit] Recovered chain state: {count} records, last_hash={self._last_hash[:12]}')
         except Exception as e:
             logger.warning(f'[Audit] Chain recovery failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     def _dispatch_to_secure_sink(self, record: Dict[str, Any]) -> None:
         """
@@ -264,7 +262,6 @@ class ImmutableAuditLogger:
             logger.warning(f"[Audit] Sink dispatch failed for record #{record.get('sequence', '?')}: {e}")
         except Exception as e:
             logger.warning(f'[Audit] Sink dispatch error: {e}')
-            raise RuntimeError('Automation failed') from e
 _default_audit: Optional[ImmutableAuditLogger] = None
 
 def get_audit_logger() -> ImmutableAuditLogger:

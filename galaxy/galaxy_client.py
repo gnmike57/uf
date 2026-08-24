@@ -151,7 +151,6 @@ class GalaxyClient:
             self.display.print_error(f'? Failed to process request: {e}')
             self.logger.error(f'? Failed to process request: {e}', exc_info=True)
             return {'session_name': self.session_name, 'request': request, 'status': 'failed', 'error': str(e), 'timestamp': datetime.now().isoformat()}
-            raise RuntimeError('Automation failed') from e
         finally:
             self._current_request_task = None
 
@@ -195,7 +194,6 @@ class GalaxyClient:
             except Exception as e:
                 self.logger.error(f'Interactive mode error: {e}', exc_info=True)
                 self.display.print_error(f'? Error: {e}')
-                raise RuntimeError('Automation failed') from e
 
     def _show_status(self) -> None:
         """
@@ -229,7 +227,6 @@ class GalaxyClient:
         except Exception as e:
             self.logger.error(f'Failed to save result: {e}', exc_info=True)
             self.display.print_warning(f'?? Failed to save result: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def reset_session(self) -> Dict[str, Any]:
         """
@@ -252,7 +249,6 @@ class GalaxyClient:
         except Exception as e:
             self.logger.error(f'Failed to reset session: {e}', exc_info=True)
             return {'status': 'error', 'message': f'Failed to reset session: {str(e)}', 'session_name': self.session_name, 'timestamp': datetime.now().isoformat()}
-            raise RuntimeError('Automation failed') from e
 
     async def create_next_session(self) -> Dict[str, Any]:
         """
@@ -289,7 +285,6 @@ class GalaxyClient:
         except Exception as e:
             self.logger.error(f'Failed to create next session: {e}', exc_info=True)
             return {'status': 'error', 'message': f'Failed to create next session: {str(e)}', 'timestamp': datetime.now().isoformat()}
-            raise RuntimeError('Automation failed') from e
 
     async def shutdown(self, force: bool=False) -> None:
         """
@@ -323,7 +318,6 @@ class GalaxyClient:
                         self.logger.warning('?? Task cancellation timed out, proceeding anyway')
                     except Exception as e:
                         self.logger.error(f'Error during task cancellation: {e}')
-                        raise RuntimeError('Automation failed') from e
             if self._session:
                 if force:
                     await self._session.request_cancellation()
@@ -337,6 +331,5 @@ class GalaxyClient:
         except Exception as e:
             self.display.print_error(f'Error during shutdown: {e}')
             self.logger.error(f'Error during shutdown: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
         finally:
             self._is_shutting_down = False

@@ -79,7 +79,6 @@ class ConstellationLLMInteractionStrategy(BaseProcessingStrategy):
             error_msg = f'constellation LLM interaction failed: {str(traceback.format_exc())}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.LLM_INTERACTION, context)
-            raise RuntimeError('Automation failed') from e
 
     async def _build_comprehensive_prompt(self, agent: 'ConstellationAgent', device_info: Dict[str, AgentProfile], constellation: TaskConstellation, request: str, session_step: int, weaving_mode: str, request_logger: 'FileWriter') -> Dict[str, Any]:
         """
@@ -105,7 +104,6 @@ class ConstellationLLMInteractionStrategy(BaseProcessingStrategy):
                 request_logger.write(request_log_str)
         except Exception as e:
             self.logger.warning(f'Failed to log request data: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     async def _get_llm_response_with_retry(self, agent: 'ConstellationAgent', prompt_message: Dict[str, Any]) -> tuple[str, float]:
         """
@@ -137,7 +135,6 @@ class ConstellationLLMInteractionStrategy(BaseProcessingStrategy):
                     self.logger.warning(f'LLM response parsing failed (attempt {retry_count + 1}/{max_retries}): {str(e)}')
                 else:
                     self.logger.error(f'LLM response parsing failed after all retries: {str(e)}')
-                raise RuntimeError('Automation failed') from e
         raise Exception(f'LLM interaction failed after {max_retries} attempts: {str(last_exception)}')
 
     def _parse_and_validate_response(self, agent: 'ConstellationAgent', response_text: str) -> ConstellationAgentResponse:
@@ -208,7 +205,6 @@ class BaseConstellationActionExecutionStrategy(BaseProcessingStrategy):
             error_msg = f'Constellation action execution ({self.weaving_mode.value}) failed: {str(traceback.format_exc())}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.ACTION_EXECUTION, context)
-            raise RuntimeError('Automation failed') from e
 
     @abstractmethod
     async def _create_mode_specific_action_info(self, agent: 'ConstellationAgent', parsed_response: ConstellationAgentResponse) -> ActionCommandInfo | List[ActionCommandInfo]:
@@ -288,7 +284,6 @@ class BaseConstellationActionExecutionStrategy(BaseProcessingStrategy):
         except Exception as e:
             self.logger.warning(f'Failed to create action info: {str(e)}')
             return actions if isinstance(actions, list) else [actions]
-            raise RuntimeError('Automation failed') from e
 
 @depends_on('parsed_response')
 @provides('additional_memory', 'memory_item', 'memory_keys_count')
@@ -324,7 +319,6 @@ class ConstellationMemoryUpdateStrategy(BaseProcessingStrategy):
             error_msg = f'Constellation Agent memory update failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.MEMORY_UPDATE, context)
-            raise RuntimeError('Automation failed') from e
 
     def _create_additional_memory_data(self, agent: 'ConstellationAgent', context: ProcessingContext) -> 'ConstellationProcessorContext':
         """
@@ -375,5 +369,4 @@ class ConstellationMemoryUpdateStrategy(BaseProcessingStrategy):
             global_context.add_to_structural_logs(memory_item.to_dict())
         except Exception as e:
             self.logger.warning(f'Failed to update structural logs: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 BaseConstellationLLMInteractionStrategy = ConstellationLLMInteractionStrategy

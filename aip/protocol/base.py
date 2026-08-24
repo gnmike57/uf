@@ -146,7 +146,6 @@ class AIPProtocol:
                     await handler(msg)
                 except Exception as e:
                     self.logger.error(f'Error in handler for {msg_type}: {e}', exc_info=True)
-                    raise RuntimeError('Automation failed') from e
         else:
             self.logger.warning(f'No handler for message type: {msg_type}')
 

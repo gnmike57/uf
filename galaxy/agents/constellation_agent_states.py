@@ -160,7 +160,6 @@ class StartConstellationAgentState(ConstellationAgentState):
                 agent.logger.error(f'Error in start state: {e}')
             agent._status = 'failed'
             agent.status = 'failed'
-            raise RuntimeError('Automation failed') from e
 
     def next_agent(self, agent):
         return agent
@@ -265,7 +264,7 @@ class ContinueConstellationAgentState(ConstellationAgentState):
                 try:
                     context.set(ContextNames.WEAVING_MODE, WeavingMode.EDITING)
                 except Exception:
-                    raise RuntimeError('Automation failed')
+                    pass
             await self._process_pending_updates(agent, context)
             if hasattr(agent, 'update_constellation_with_lock') and callable(agent.update_constellation_with_lock):
                 completed_task_events = []
@@ -324,7 +323,6 @@ class ContinueConstellationAgentState(ConstellationAgentState):
                 agent.logger.error(f'Error in continue state: {e}')
             agent._status = 'failed'
             agent.status = 'failed'
-            raise RuntimeError('Automation failed') from e
 
     def next_agent(self, agent):
         return agent

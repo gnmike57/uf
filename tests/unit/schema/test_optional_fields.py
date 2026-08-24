@@ -66,7 +66,6 @@ def main():
     except Exception as e:
         print(f'\n[FAIL] Some tests failed: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     return True
 if __name__ == '__main__':
     success = main()

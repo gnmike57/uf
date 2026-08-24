@@ -68,7 +68,6 @@ class MockGalaxyClientTester:
         except Exception as e:
             print(f'❌ Mock client test failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def test_visualization_display_functions(self):
         """Test all visualization display functions."""
@@ -95,7 +94,6 @@ class MockGalaxyClientTester:
         except Exception as e:
             print(f'❌ Visualization test failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def test_display_formatting(self):
         """Test display formatting with various data."""
@@ -119,7 +117,6 @@ class MockGalaxyClientTester:
         except Exception as e:
             print(f'❌ Display formatting test failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def test_mock_constellation_agent(self):
         """Test the MockConstellationAgent functionality."""
@@ -144,7 +141,6 @@ class MockGalaxyClientTester:
         except Exception as e:
             print(f'❌ Mock constellation agent test failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def run_all_tests(self):
         """Run all mock and visualization tests."""

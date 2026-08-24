@@ -65,7 +65,6 @@ class DAGVisualizationObserver(IEventObserver):
                 await self._handle_task_event(event)
         except Exception as e:
             self.logger.debug(f'Visualization error: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_constellation_event(self, event: ConstellationEvent) -> None:
         """

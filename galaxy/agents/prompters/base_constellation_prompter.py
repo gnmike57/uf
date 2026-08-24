@@ -88,7 +88,6 @@ class BaseConstellationPrompter(BasicPrompter, ABC):
             constellation_dict = constellation.to_dict()
         except Exception:
             return 'Constellation information unavailable due to formatting error.'
-            raise RuntimeError('Automation failed')
         lines = []
         lines.append(f"Task Constellation: {constellation_dict.get('name', 'Unnamed')}")
         lines.append(f"Status: {constellation_dict.get('state', 'unknown')}")
@@ -100,7 +99,6 @@ class BaseConstellationPrompter(BasicPrompter, ABC):
         except Exception:
             modifiable_task_ids = set()
             modifiable_dep_ids = set()
-            raise RuntimeError('Automation failed')
         tasks = constellation_dict.get('tasks', {})
         if tasks:
             lines.append('Tasks:')

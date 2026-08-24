@@ -20,7 +20,7 @@ class TestAgentPresenterIntegration(unittest.TestCase):
         try:
             Config.get_instance()
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
 
     @patch('ufo.agents.presenters.rich_presenter.Console')
     def test_basic_agent_has_presenter(self, mock_console_class):
@@ -186,7 +186,6 @@ class TestPresenterFactoryConfig(unittest.TestCase):
             config_data = config.config_data
         except Exception:
             config_data = {}
-            raise RuntimeError('Automation failed')
         presenter_type = config_data.get('OUTPUT_PRESENTER', 'rich')
         self.assertEqual(presenter_type, 'rich')
 

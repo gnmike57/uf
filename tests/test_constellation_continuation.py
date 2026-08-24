@@ -102,11 +102,9 @@ if __name__ == '__main__':
             print('✅ Basic continuation test completed')
         except Exception as e:
             print(f'❌ Basic continuation test failed: {e}')
-            raise RuntimeError('Automation failed') from e
         try:
             await test_case.test_constellation_continuation_with_new_tasks()
             print('✅ Continuation with new tasks test completed')
         except Exception as e:
             print(f'❌ Continuation with new tasks test failed: {e}')
-            raise RuntimeError('Automation failed') from e
     asyncio.run(run_tests())

@@ -68,7 +68,6 @@ class CustomizedScreenshotCaptureStrategy(BaseProcessingStrategy):
             error_msg = f'Screenshot capture failed: {str(e)}'
             self.logger.error(error_msg)
             return self.handle_error(e, ProcessingPhase.DATA_COLLECTION, context)
-            raise RuntimeError('Automation failed') from e
 
     async def _capture_screenshot(self, save_path: str, command_dispatcher: BasicCommandDispatcher) -> str:
         """

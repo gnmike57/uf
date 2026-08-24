@@ -41,7 +41,6 @@ class OmniparserGrounding(BasicGrounding):
         except Exception as e:
             logger.warning(f'Failed to get grounding results for Omniparser. Error: {e}')
             return list_of_grounding_results
-            raise RuntimeError('Automation failed') from e
         for item in grounding_results:
             try:
                 item = json.loads(item)
@@ -90,7 +89,6 @@ class OmniparserGrounding(BasicGrounding):
             return (rect.left, rect.top, rect.width(), rect.height())
         except Exception:
             return (0, 0, 0, 0)
-            raise RuntimeError('Automation failed')
 
     def _get_application_rect_from_target_info(self, application_window_info: TargetInfo=None) -> tuple:
         """
@@ -135,7 +133,6 @@ class OmniparserGrounding(BasicGrounding):
                 scale_factor = scale_val.value
             except Exception:
                 scale_factor = 100
-                raise RuntimeError('Automation failed')
         multiplier = scale_factor / 100.0
         return {'control_type': control_info.get('type', 'Button'), 'name': control_info.get('content', ''), 'x0': int(control_left * multiplier), 'y0': int(control_top * multiplier), 'x1': int(control_right * multiplier), 'y1': int(control_bottom * multiplier)}
 

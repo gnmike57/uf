@@ -60,7 +60,7 @@ def _load_redactor_config() -> Dict[str, Any]:
             if isinstance(redactor, dict):
                 defaults.update({k: v for k, v in redactor.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 class PIIRedactor:

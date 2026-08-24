@@ -31,7 +31,6 @@ def pre_cleanup(report_filename: str=DEFAULT_REPORT_FILENAME) -> None:
                 logger.info(f'[Stage R4 Pre-Cleanup] Removed existing report file: {target_path}')
             except Exception as e:
                 logger.warning(f'[Stage R4 Pre-Cleanup] Could not remove {target_path}: {e}')
-                raise RuntimeError('Automation failed') from e
     try:
         proc_ver = verify_bankfidelity_process()
         if not proc_ver['verified']:
@@ -42,7 +41,6 @@ def pre_cleanup(report_filename: str=DEFAULT_REPORT_FILENAME) -> None:
                 time.sleep(1.0)
     except Exception as e:
         logger.warning(f'[Stage R4 Pre-Cleanup] Could not pre-launch BankFidelity: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def verify_r4(stage_data: Optional[Union[Dict[str, Any], str, Path]]=None, output_dir: Optional[Union[str, Path]]=None, task_log_dir: Optional[Union[str, Path]]=None, dry_run: bool=False, report_filename: str=DEFAULT_REPORT_FILENAME) -> Dict[str, Any]:
     """

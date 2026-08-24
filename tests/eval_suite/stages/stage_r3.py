@@ -33,7 +33,6 @@ def pre_cleanup() -> None:
                 logger.warning(f'[Stage R3 Pre-Cleanup] BankFidelity executable not found at {bf_exe}')
     except Exception as e:
         logger.warning(f'[Stage R3 Pre-Cleanup] Could not pre-launch BankFidelity: {e}')
-        raise RuntimeError('Automation failed') from e
 
 def verify_r3(stage_data: Optional[Union[Dict[str, Any], str, Path]]=None, output_dir: Optional[Union[str, Path]]=None, task_log_dir: Optional[Union[str, Path]]=None, dry_run: bool=False) -> Dict[str, Any]:
     """

@@ -77,7 +77,6 @@ class FileWriter:
                 f.flush()
         except Exception as e:
             print(f'Failed to write to file {self.file_path}: {e}')
-            raise RuntimeError('Automation failed') from e
 
 class BaseRound(ABC):
     """
@@ -267,7 +266,6 @@ class BaseRound(ABC):
                 self.logger.info(f'Captured application window screenshot at final: {screenshot_save_path}')
             except Exception as e:
                 self.logger.warning(f'The last snapshot capture failed, due to the error: {e}')
-                raise RuntimeError('Automation failed') from e
             if ufo_config.system.save_ui_tree:
                 ui_tree_path = os.path.join(self.log_path, 'ui_trees')
                 ui_tree_file_name = f'ui_tree_round_{self.id}_final.json' if sub_round_id is None else f'ui_tree_round_{self.id}_sub_round_{sub_round_id}_final.json'
@@ -657,7 +655,6 @@ class BaseSession(ABC):
             result, cost = await evaluator.evaluate(request=requests, log_path=self.log_path, eva_all_screenshots=ufo_config.system.eva_all_screenshots, context=self.context)
         except Exception as e:
             result, cost = await evaluator.evaluate(request=requests, log_path=self.log_path, eva_all_screenshots=False, context=self.context)
-            raise RuntimeError('Automation failed') from e
         additional_info = {'level': 'session', 'request': requests, 'type': 'evaluation_result'}
         result.update(additional_info)
         self._results.append(result)
@@ -734,7 +731,6 @@ class BaseSession(ABC):
                 utils.save_image_string(image, save_path)
         except Exception as e:
             self.logger.warning(f'The last snapshot capture failed, due to the error: {e}')
-            raise RuntimeError('Automation failed') from e
 
     async def capture_last_ui_tree(self, save_path: str) -> None:
         """

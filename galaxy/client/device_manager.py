@@ -74,7 +74,6 @@ class ConstellationDeviceManager:
             self.logger.debug(f'📢 Published {event_type.value} event for device {device_id}')
         except Exception as e:
             self.logger.error(f'❌ Failed to publish device event for {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def register_device(self, device_id: str, server_url: str, os: str, capabilities: Optional[List[str]]=None, metadata: Optional[Dict[str, Any]]=None, auto_connect: bool=True) -> bool:
         """
@@ -101,7 +100,6 @@ class ConstellationDeviceManager:
         except Exception as e:
             self.logger.error(f'❌ Unexpected error registering device {device_id}: {e}', exc_info=True)
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def connect_device(self, device_id: str, is_reconnection: bool=False) -> bool:
         """
@@ -178,7 +176,6 @@ class ConstellationDeviceManager:
             if device_info.connection_attempts < device_info.max_retries:
                 self._schedule_reconnection(device_id)
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def disconnect_device(self, device_id: str) -> None:
         """Manually disconnect from a device"""
@@ -223,7 +220,6 @@ class ConstellationDeviceManager:
             self.logger.error(f'❌ Invalid device state during disconnection for {device_id}: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'❌ Unexpected error handling disconnection for device {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     def _schedule_reconnection(self, device_id: str) -> None:
         """Schedule automatic reconnection for a device"""
@@ -269,12 +265,10 @@ class ConstellationDeviceManager:
                     self.logger.debug(f'Timeout on reconnection attempt {retry_count}/{max_retries} for device {device_id}: {e}')
                 except Exception as e:
                     self.logger.warning(f'⚠️ Error on reconnection attempt {retry_count}/{max_retries} for device {device_id}: {e}')
-                    raise RuntimeError('Automation failed') from e
             self.logger.error(f'❌ Failed to reconnect to device {device_id} after {max_retries} attempts, giving up')
             self.device_registry.update_device_status(device_id, DeviceStatus.FAILED)
         except Exception as e:
             self.logger.error(f'❌ Reconnection loop failed for device {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
         finally:
             self._reconnect_tasks.pop(device_id, None)
 
@@ -333,7 +327,6 @@ class ConstellationDeviceManager:
             result = ExecutionResult(task_id=task_request.task_id, status=TaskStatus.FAILED, error=str(e), result={'error_type': 'execution_error', 'message': str(e), 'device_id': device_id, 'task_id': task_request.task_id}, metadata={'device_id': device_id, 'error_category': 'general_error'})
             self.task_queue_manager.fail_task(device_id, task_request.task_id, e)
             return result
-            raise RuntimeError('Automation failed') from e
         finally:
             self.device_registry.set_device_idle(device_id, task_request.task_id)
             device_info = self.device_registry.get_device(device_id)
@@ -427,7 +420,6 @@ class ConstellationDeviceManager:
                 except Exception as e:
                     self.logger.error(f'❌ Error connecting device {device_id}: {e}')
                     results[device_id] = False
-                    raise RuntimeError('Automation failed') from e
         connected_count = sum((1 for connected in results.values() if connected))
         total_count = len(results)
         self.logger.info(f'🔌 Connection check complete: {connected_count}/{total_count} devices connected')
@@ -450,5 +442,4 @@ class ConstellationDeviceManager:
                     self.logger.debug('Reconnect task cancelled during shutdown (expected)')
                 except Exception as e:
                     self.logger.warning(f'Error during reconnect task cleanup: {e}')
-                    raise RuntimeError('Automation failed') from e
         self.logger.info('✅ Device manager shutdown complete')

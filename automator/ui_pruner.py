@@ -75,13 +75,11 @@ def prune_uia_tree(element: 'UIAWrapper', max_depth: int=DEFAULT_MAX_DEPTH, curr
             bounding_box = [rect.left, rect.top, rect.right, rect.bottom]
         except Exception:
             bounding_box = [0, 0, 0, 0]
-            raise RuntimeError('Automation failed')
         node: Dict[str, Any] = {'control_type': control_type, 'name': name.strip(), 'automation_id': auto_id.strip(), 'bounding_box': bounding_box, 'children': []}
         try:
             children = element.children()
         except Exception:
             children = []
-            raise RuntimeError('Automation failed')
         for child in children:
             pruned_child = prune_uia_tree(child, max_depth=max_depth, current_depth=current_depth + 1, _node_counter=_node_counter)
             if pruned_child is not None:
@@ -97,7 +95,6 @@ def prune_uia_tree(element: 'UIAWrapper', max_depth: int=DEFAULT_MAX_DEPTH, curr
     except Exception as e:
         logger.debug(f'Skipping stale UIA element at depth {current_depth}: {e}')
         return None
-        raise RuntimeError('Automation failed') from e
 
 def prune_uia_tree_from_root(app_window: 'UIAWrapper', max_depth: int=DEFAULT_MAX_DEPTH) -> Dict[str, Any]:
     """
@@ -130,7 +127,7 @@ def _count_descendants(element: 'UIAWrapper', max_depth: int=20) -> int:
         for child in element.children():
             count += _count_descendants(child, max_depth - 1)
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return count
 
 def _count_dict_nodes(tree: Optional[Dict[str, Any]]) -> int:

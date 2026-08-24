@@ -83,7 +83,6 @@ class DeviceClientEndpoint(AIPEndpoint):
         except Exception as e:
             self.logger.error(f'Reconnection failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     async def cancel_device_tasks(self, device_id: str, reason: str) -> None:
         """

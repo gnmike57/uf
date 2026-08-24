@@ -39,7 +39,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to add tasks: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n2. Testing add_dependency...')
     try:
         dep_result = call_tool('add_dependency', from_task_id='mcp_test_task1', to_task_id='mcp_test_task2', condition_description='Task2 should wait for Task1 to complete successfully before starting execution. This ensures proper sequencing and prevents conflicts between the two tasks.')
@@ -49,7 +48,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to add dependency: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n3. Testing update_task...')
     try:
         updated_result = call_tool('update_task', task_id='mcp_test_task1', name='MCP Test Task 1 (Updated)', description='This is an updated task description with more details and enhanced requirements for better execution', target_device_id='updated_device_1', tips='Updated tips: Focus on accuracy and precision. Double-check all inputs and validate outputs thoroughly.')
@@ -58,7 +56,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to update task: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n4. Testing update_dependency...')
     try:
         updated_dep_result = call_tool('update_dependency', dependency_id=dep_id, condition_description='Updated condition: Task2 must wait for Task1 to complete successfully with full validation and verification of results before proceeding with its own execution.')
@@ -67,7 +64,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to update dependency: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n5. Testing build_constellation...')
     try:
         config = {'tasks': [{'task_id': 'batch_task1', 'name': 'Batch Task 1', 'description': 'First batch task created in bulk operation', 'priority': 1}, {'task_id': 'batch_task2', 'name': 'Batch Task 2', 'description': 'Second batch task created in bulk operation', 'priority': 2}], 'dependencies': [{'from_task_id': 'batch_task1', 'to_task_id': 'batch_task2', 'dependency_type': 'unconditional'}], 'metadata': {'batch_created': True, 'test_constellation': True}}
@@ -77,7 +73,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to build constellation: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n6. Testing remove_dependency...')
     try:
         constellation_result = call_tool('build_constellation', {'tasks': [], 'dependencies': [], 'metadata': {}})
@@ -94,7 +89,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to remove dependency: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     print('\n7. Testing remove_task...')
     try:
         remove_result = call_tool('remove_task', task_id='mcp_test_task2')
@@ -102,7 +96,6 @@ def test_mcp_server():
     except Exception as e:
         print(f'   ✗ Failed to remove task: {e}')
         return False
-        raise RuntimeError('Automation failed') from e
     return True
 
 def main():
@@ -123,7 +116,6 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-        raise RuntimeError('Automation failed') from e
     return 0
 if __name__ == '__main__':
     sys.exit(main())

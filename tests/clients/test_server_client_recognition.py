@@ -34,7 +34,6 @@ async def test_server_client_recognition():
         print('✅ 设备客户端测试完成')
     except Exception as e:
         print(f'❌ 设备客户端测试失败: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n[2] 测试星座客户端识别...')
     try:
         constellation_ws = await websockets.connect(server_url)
@@ -49,7 +48,6 @@ async def test_server_client_recognition():
         print('✅ 星座客户端测试完成')
     except Exception as e:
         print(f'❌ 星座客户端测试失败: {e}')
-        raise RuntimeError('Automation failed') from e
     print('\n' + '=' * 80)
     print('🎯 测试完成！请检查服务器日志以确认:')
     print('   - 设备客户端应该显示: 📱 Device client test_device_001 connected')
@@ -65,6 +63,5 @@ async def main():
         print('\n测试被用户中断')
     except Exception as e:
         print(f'测试失败: {e}')
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     asyncio.run(main())

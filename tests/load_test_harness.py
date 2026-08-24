@@ -199,7 +199,6 @@ class UFOLoadTestRunner:
             return (True, task_count, completed, None)
         except Exception as e:
             return (False, 0, 0, f'Simplified execution failure: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     async def _execute_galaxy_request(self, req_id: int, dag_type: str) -> Tuple[bool, int, int, Optional[str]]:
         """Execute request using full Galaxy TaskConstellationOrchestrator pipeline."""
@@ -215,7 +214,6 @@ class UFOLoadTestRunner:
             return (success, task_count, completed, None)
         except Exception as e:
             return (False, 0, 0, f'Galaxy orchestration failure: {str(e)}')
-            raise RuntimeError('Automation failed') from e
 
     async def run_single_request(self, req_id: int, semaphore: asyncio.Semaphore) -> RequestResult:
         """Run a single request guarded by the asyncio.Semaphore."""
@@ -310,6 +308,5 @@ def main():
     except Exception as e:
         print(f'\n💥 UNHANDLED LOAD TESTER ERROR: {e}', file=sys.stderr)
         sys.exit(1)
-        raise RuntimeError('Automation failed') from e
 if __name__ == '__main__':
     main()

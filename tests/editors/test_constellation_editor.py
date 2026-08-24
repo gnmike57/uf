@@ -201,13 +201,11 @@ def test_error_handling():
         assert False, 'Should have raised an error'
     except Exception as e:
         print(f'✅ Duplicate task error handled: {type(e).__name__}')
-        raise RuntimeError('Automation failed') from e
     try:
         editor.remove_task('non_existent')
         assert False, 'Should have raised an error'
     except Exception as e:
         print(f'✅ Non-existent task error handled: {type(e).__name__}')
-        raise RuntimeError('Automation failed') from e
     editor.create_and_add_task('cycle1', 'Cycle task 1')
     editor.create_and_add_task('cycle2', 'Cycle task 2')
     editor.create_and_add_dependency('cycle1', 'cycle2')
@@ -216,7 +214,6 @@ def test_error_handling():
         assert False, 'Should have raised an error for cycle'
     except Exception as e:
         print(f'✅ Cycle dependency error handled: {type(e).__name__}')
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all tests."""
@@ -237,7 +234,6 @@ def main():
         import traceback
         traceback.print_exc()
         return 1
-        raise RuntimeError('Automation failed') from e
     return 0
 if __name__ == '__main__':
     sys.exit(main())

@@ -135,7 +135,6 @@ class MessageProcessor:
                     self.logger.error(f'❌ Type error processing message from device {device_id}: {e}', exc_info=True)
                 except Exception as e:
                     self.logger.error(f'❌ Unexpected error processing message from device {device_id}: {e}', exc_info=True)
-                    raise RuntimeError('Automation failed') from e
         except ConnectionError as e:
             self.logger.warning(f'🔌 Connection to device {device_id} closed: {e} (messages received: {message_count})')
             await self._handle_disconnection(device_id)
@@ -154,7 +153,6 @@ class MessageProcessor:
         except Exception as e:
             self.logger.error(f'❌ Unexpected message handler error for device {device_id}: {e}')
             await self._handle_disconnection(device_id)
-            raise RuntimeError('Automation failed') from e
 
     async def _process_server_message(self, device_id: str, server_msg: ServerMessage) -> None:
         """
@@ -199,7 +197,6 @@ class MessageProcessor:
             self.logger.error(f'❌ Invalid message structure from device {device_id}: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'❌ Unexpected error processing server message from device {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_task_completion(self, device_id: str, server_msg: ServerMessage) -> None:
         """
@@ -236,7 +233,6 @@ class MessageProcessor:
             self.logger.info(f'✅ Task {task_id} completed on device {device_id} (status: {server_msg.status})')
         except Exception as e:
             self.logger.error(f'❌ Error handling task completion from device {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_error_message(self, device_id: str, server_msg: ServerMessage) -> None:
         """
@@ -268,7 +264,6 @@ class MessageProcessor:
             self.logger.error(f'❌ Missing command field from device {device_id}: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'❌ Unexpected error handling command from device {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_device_info_response(self, device_id: str, server_msg: ServerMessage) -> None:
         """
@@ -297,7 +292,6 @@ class MessageProcessor:
                 self.logger.warning(f'⚠️ ConnectionManager not set, cannot complete device info response')
         except Exception as e:
             self.logger.error(f'❌ Error handling device info response from {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _process_device_info_response(self, device_id: str, results: Any) -> None:
         """
@@ -321,7 +315,6 @@ class MessageProcessor:
             self.logger.error(f'❌ Invalid device info data type for {device_id}: {e}', exc_info=True)
         except Exception as e:
             self.logger.error(f'❌ Unexpected error processing device info for {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_disconnection(self, device_id: str) -> None:
         """
@@ -342,7 +335,6 @@ class MessageProcessor:
                 self.logger.warning(f'⚠️ No disconnection handler set for device {device_id}')
         except Exception as e:
             self.logger.error(f'❌ Error handling disconnection for device {device_id}: {e}', exc_info=True)
-            raise RuntimeError('Automation failed') from e
 
     def stop_all_handlers(self) -> None:
         """

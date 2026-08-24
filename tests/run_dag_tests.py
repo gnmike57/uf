@@ -34,7 +34,6 @@ def run_test(test_file: str, test_name: str) -> bool:
         duration = end_time - start_time
         print(f'\n💥 {test_name} ERROR ({duration:.2f}s): {e}')
         return False
-        raise RuntimeError('Automation failed') from e
 
 def main():
     """Run all DAG visualization tests."""

@@ -91,7 +91,6 @@ class WebSocketMessageHandler:
             except Exception as e:
                 self.logger.error(f'❌ Error processing request: {e}', exc_info=True)
                 await websocket.send_json({'type': WebSocketMessageType.REQUEST_FAILED, 'request': request_text, 'status': RequestStatus.FAILED, 'error': str(e)})
-                raise RuntimeError('Automation failed') from e
         asyncio.create_task(process_in_background())
 
     async def _handle_reset(self, websocket: WebSocket, data: dict) -> None:
@@ -113,7 +112,6 @@ class WebSocketMessageHandler:
         except Exception as e:
             self.logger.error(f'Failed to reset session: {e}', exc_info=True)
             await websocket.send_json({'type': WebSocketMessageType.ERROR, 'message': f'Failed to reset session: {str(e)}'})
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_next_session(self, websocket: WebSocket, data: dict) -> None:
         """
@@ -134,7 +132,6 @@ class WebSocketMessageHandler:
         except Exception as e:
             self.logger.error(f'Failed to create next session: {e}', exc_info=True)
             await websocket.send_json({'type': WebSocketMessageType.ERROR, 'message': f'Failed to create next session: {str(e)}'})
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_stop_task(self, websocket: WebSocket, data: dict) -> None:
         """
@@ -157,7 +154,6 @@ class WebSocketMessageHandler:
         except Exception as e:
             self.logger.error(f'Failed to stop task and restart client: {e}', exc_info=True)
             await websocket.send_json({'type': WebSocketMessageType.ERROR, 'message': f'Failed to stop task: {str(e)}'})
-            raise RuntimeError('Automation failed') from e
 
     async def _handle_unknown(self, websocket: WebSocket, message_type: str) -> None:
         """

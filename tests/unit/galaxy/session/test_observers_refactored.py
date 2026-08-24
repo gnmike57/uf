@@ -84,7 +84,6 @@ class TestConstellationProgressObserver:
             await observer._handle_task_event(task_event)
         except Exception:
             pytest.fail('Task event handling should not raise exceptions')
-            raise RuntimeError('Automation failed')
 
     @pytest.mark.asyncio
     async def test_constellation_event_handling(self, observer):
@@ -102,7 +101,6 @@ class TestConstellationProgressObserver:
             await observer._handle_constellation_event(constellation_event)
         except Exception:
             pytest.fail('Constellation event handling should not raise exceptions')
-            raise RuntimeError('Automation failed')
 
     @pytest.mark.asyncio
     async def test_on_event_routing(self, observer, mock_agent):

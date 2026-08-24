@@ -53,7 +53,6 @@ def verify_file_on_desktop(filename: str='ufo_test.txt', expected_content: Optio
                 continue
     except Exception as e:
         return {'verified': False, 'exists': True, 'content_matched': False, 'file_path': str(target_path), 'actual_content': None, 'error': f"Error reading file '{target_path}': {e}"}
-        raise RuntimeError('Automation failed') from e
     if not read_success:
         return {'verified': False, 'exists': True, 'content_matched': False, 'file_path': str(target_path), 'actual_content': None, 'error': f"Failed to decode content of file '{target_path}'."}
     if actual_content.startswith('\ufeff'):
@@ -88,11 +87,9 @@ def verify_process_running(process_name: Union[str, List[str]]) -> Dict[str, Any
                         running.append(pname)
                 except Exception:
                     continue
-                    raise RuntimeError('Automation failed')
             psutil_success = True
         except Exception as pe:
             logger.warning(f'psutil iteration error: {pe}')
-            raise RuntimeError('Automation failed') from pe
     except ImportError:
         pass
     if not psutil_success:
@@ -103,7 +100,6 @@ def verify_process_running(process_name: Union[str, List[str]]) -> Dict[str, Any
                     running.append(target)
         except Exception as e:
             logger.warning(f'Process verification tasklist fallback error: {e}')
-            raise RuntimeError('Automation failed') from e
     verified = len(running) > 0
     return {'verified': verified, 'running_processes': list(set(running)), 'error': None if verified else f'None of processes {process_names} were detected running.'}
 
@@ -169,7 +165,6 @@ def verify_session_logs(log_dir: Optional[Union[str, Path]]=None, required_patte
                     resolved_p = p.resolve()
                 except Exception:
                     resolved_p = p
-                    raise RuntimeError('Automation failed')
                 if resolved_p not in seen_paths:
                     seen_paths.add(resolved_p)
                     json_logs.append(p)
@@ -203,7 +198,6 @@ def verify_session_logs(log_dir: Optional[Union[str, Path]]=None, required_patte
                             matched_patterns.add(p)
         except Exception as e:
             logger.warning(f"Error reading log file '{log_file}': {e}")
-            raise RuntimeError('Automation failed') from e
     patterns_satisfied = True
     if patterns:
         patterns_satisfied = all((p in matched_patterns for p in patterns))

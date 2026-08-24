@@ -45,7 +45,6 @@ def _run_preflight_checks(logger: logging.Logger) -> None:
                 logger.warning('PRE-FLIGHT: GetForegroundWindow() returned 0. Screenshots will fail. Run from a desktop shell, not an IDE terminal.')
         except Exception as e:
             logger.warning(f'PRE-FLIGHT: Win32 desktop check failed: {e}')
-            raise RuntimeError('Automation failed') from e
     try:
         from PIL import ImageGrab
         img = ImageGrab.grab(bbox=(0, 0, 100, 100))
@@ -53,7 +52,6 @@ def _run_preflight_checks(logger: logging.Logger) -> None:
             logger.warning('PRE-FLIGHT: Screen capture returned empty image')
     except Exception as e:
         logger.warning(f'PRE-FLIGHT: Screen capture test failed: {e}')
-        raise RuntimeError('Automation failed') from e
     try:
         import psutil
         avail_gb = psutil.virtual_memory().available / 1024 ** 3
@@ -91,7 +89,7 @@ def _ensure_llm_reachable(logger: logging.Logger) -> None:
                     logger.info(f'AUTO-FALLBACK: Local LLM at {api_base} is healthy')
                     return
         except Exception:
-            raise RuntimeError('Automation failed')
+            pass
         logger.warning(f'AUTO-FALLBACK: Local LLM at {api_base} is unreachable')
         if set_process_override('cloud'):
             logger.warning('AUTO-FALLBACK: Switched active LLM route to Gemini cloud API in memory (zero disk writes).')
@@ -99,19 +97,21 @@ def _ensure_llm_reachable(logger: logging.Logger) -> None:
             logger.error('AUTO-FALLBACK: Could not enable in-memory cloud fallback (agents_cloud.yaml missing or invalid). Keeping current configuration.')
     except Exception as e:
         logger.warning(f'AUTO-FALLBACK: LLM reachability probe encountered error: {e}')
-        raise RuntimeError('Automation failed') from e
 
 async def main(parsed_args: Optional[argparse.Namespace]=None):
     """
     Main function to run the UFO system.
 
     To use normal mode, run the following command:
+        pass
     python -m ufo -t task_name
 
     To use follower mode that follows a plan file or folder, run the following command:
+        pass
     python -m ufo -t task_name -m follower -p path_to_plan_file_or_folder
 
     To use batch mode that follows a plan file or folder, run the following command:
+        pass
     python -m ufo -t task_name -m batch_normal -p path_to_plan_file_or_folder
     """
     from ufo.ufo_logging.setup import setup_logger
@@ -137,7 +137,6 @@ async def main(parsed_args: Optional[argparse.Namespace]=None):
         logger.info('LLM Watchdog daemon started for mid-task resilience')
     except Exception as wd_err:
         logger.warning(f'LLM Watchdog failed to start (non-fatal): {wd_err}')
-        raise RuntimeError('Automation failed') from wd_err
     try:
         from ufo.module.session_pool import SessionFactory, SessionPool
         from ufo.utils.ipc import UfoTaskResult
@@ -188,4 +187,3 @@ if __name__ == '__main__':
     except Exception as global_e:
         logging.getLogger('UFO_Global').critical(f'Unhandled Asyncio Loop Crash: {global_e}', exc_info=True)
         sys.exit(1)
-        raise RuntimeError('Automation failed') from global_e

@@ -214,7 +214,6 @@ class ConstellationManager:
             if self._logger:
                 self._logger.error(f'Failed to get available devices: {e}')
             return []
-            raise RuntimeError('Automation failed') from e
 
     def validate_constellation_assignments(self, constellation: TaskConstellation) -> tuple[bool, List[str]]:
         """
@@ -254,7 +253,6 @@ class ConstellationManager:
             except Exception as e:
                 if self._logger:
                     self._logger.error(f"Failed to get device info for task '{task_id}': {e}")
-                raise RuntimeError('Automation failed') from e
         return None
 
     def reassign_task_device(self, constellation: TaskConstellation, task_id: str, new_device_id: str) -> bool:

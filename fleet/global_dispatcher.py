@@ -48,7 +48,7 @@ def _load_dispatcher_config() -> Dict[str, Any]:
         if df and isinstance(df, dict):
             defaults.update({k: v for k, v in df.items() if v is not None})
     except Exception:
-        raise RuntimeError('Automation failed')
+        pass
     return defaults
 
 def _resolve_worker_id(configured: str) -> str:
@@ -95,7 +95,6 @@ class GlobalDispatcher:
             logger.info('[Dispatcher] redis not installed — dispatcher disabled.')
         except Exception as e:
             logger.warning(f'[Dispatcher] Redis connection failed: {e}')
-            raise RuntimeError('Automation failed') from e
 
     @property
     def worker_id(self) -> str:
@@ -136,7 +135,6 @@ class GlobalDispatcher:
         except Exception as e:
             logger.error(f'[Dispatcher] Fetch failed: {e}')
             return None
-            raise RuntimeError('Automation failed') from e
 
     def mark_workflow_complete(self, workflow_id: str, raw_payload: Optional[str]=None) -> bool:
         """
@@ -163,7 +161,6 @@ class GlobalDispatcher:
         except Exception as e:
             logger.error(f'[Dispatcher] Complete marking failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def mark_workflow_failed(self, workflow_id: str, error: str='', raw_payload: Optional[str]=None) -> bool:
         """
@@ -191,7 +188,6 @@ class GlobalDispatcher:
         except Exception as e:
             logger.error(f'[Dispatcher] DLQ move failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def submit_workflow(self, task: Dict[str, Any]) -> bool:
         """
@@ -212,7 +208,6 @@ class GlobalDispatcher:
         except Exception as e:
             logger.error(f'[Dispatcher] Submit failed: {e}')
             return False
-            raise RuntimeError('Automation failed') from e
 
     def get_queue_depth(self) -> int:
         """Get the number of pending tasks in the global queue."""
@@ -222,7 +217,6 @@ class GlobalDispatcher:
             return self._redis.llen(self._queue_name)
         except Exception:
             return 0
-            raise RuntimeError('Automation failed')
 
     def get_processing_count(self) -> int:
         """Get the number of tasks currently being processed by this worker."""
@@ -232,7 +226,6 @@ class GlobalDispatcher:
             return self._redis.llen(self._processing_queue)
         except Exception:
             return 0
-            raise RuntimeError('Automation failed')
 
     def get_dlq_depth(self) -> int:
         """Get the number of tasks in the DLQ."""
@@ -242,4 +235,3 @@ class GlobalDispatcher:
             return self._redis.llen(self._dlq_queue)
         except Exception:
             return 0
-            raise RuntimeError('Automation failed')
