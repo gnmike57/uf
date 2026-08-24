@@ -232,21 +232,11 @@ class HostLLMInteractionStrategy(BaseProcessingStrategy):
                 raise ValueError('Host agent not available')
             self.logger.info('Building prompt message with context')
             prompt_message = await self._build_comprehensive_prompt(host_agent, target_info_list, desktop_screenshot_url, prev_plan, previous_subtasks, request, session_step, request_logger)
-            if 'bankfidelity' in request.lower() or 'bank statement' in request.lower():
-                self.logger.info('Intercepted BankFidelity request. Using static Constellation DAG.')
-                from ufo.agents.processors.schemas.response_schema import HostAgentResponse
-                static_dag_config = {'tasks': [{'task_id': 'open_bankfidelity', 'name': 'Open BankFidelity', 'description': 'Open BankFidelity App'}, {'task_id': 'download_statement', 'name': 'Download Statement', 'description': 'Download Bank Statement from the app'}], 'dependencies': [{'from_task_id': 'open_bankfidelity', 'to_task_id': 'download_statement'}]}
-                parsed_response = HostAgentResponse(function='execute_constellation', arguments={'config': static_dag_config, 'clear_existing': True}, status='FINISH', thought='Executing statically compiled DAG for BankFidelity to ensure 100% reliability.', observation='Intercepted BankFidelity prompt.')
-                response_text = 'Static DAG Interception'
-                llm_cost = 0.0
-            else:
-                self.logger.info('Sending request to LLM')
-                response_text, llm_cost = await self._get_llm_response_with_retry(host_agent, prompt_message)
-            if response_text == 'Static DAG Interception':
-                pass
-            else:
-                self.logger.info('Parsing LLM response')
-                parsed_response = self._parse_and_validate_response(host_agent, response_text)
+            self.logger.info('Sending request to LLM')
+            response_text, llm_cost = await self._get_llm_response_with_retry(host_agent, prompt_message)
+
+            self.logger.info('Parsing LLM response')
+            parsed_response = self._parse_and_validate_response(host_agent, response_text)
             self.logger.info(f"Host LLM interaction status set to: {context.get_local('status')}")
             structured_data = self._extract_structured_response_data(parsed_response)
             return ProcessingResult(success=True, data={'parsed_response': parsed_response, 'response_text': response_text, 'llm_cost': llm_cost, 'prompt_message': prompt_message, **structured_data}, phase=ProcessingPhase.LLM_INTERACTION)

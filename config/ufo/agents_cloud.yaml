@@ -1,38 +1,31 @@
 HOST_AGENT:
-  VISUAL_MODE: true
+  VISUAL_MODE: false
   REASONING_MODEL: false
-  API_TYPE: openai
-  API_KEY: ${FEATHERLESS_API_KEY}
-  API_BASE: ${FEATHERLESS_API_BASE}
-  API_MODEL: gghfez/Amoral-gemma3-12B-vision
+  API_TYPE: gemini
+  API_KEY: ${GEMINI_API_KEY}
+  API_MODEL: gemini-3.5-flash
   PROMPT: ufo/prompts/share/base/host_agent.yaml
   EXAMPLE_PROMPT: ufo/prompts/examples/{mode}/host_agent_example.yaml
 APP_AGENT:
-  VISUAL_MODE: true
+  VISUAL_MODE: false
   REASONING_MODEL: false
-  API_TYPE: openai
-  API_KEY: ${FEATHERLESS_API_KEY}
-  API_BASE: ${FEATHERLESS_API_BASE}
-  API_VERSION: 2025-02-01-preview
-  API_MODEL: gghfez/Amoral-gemma3-12B-vision
+  API_TYPE: gemini
+  API_KEY: ${GEMINI_API_KEY}
+  API_MODEL: gemini-3.5-flash
   PROMPT: ufo/prompts/share/base/app_agent.yaml
   EXAMPLE_PROMPT: ufo/prompts/examples/{mode}/app_agent_example.yaml
   EXAMPLE_PROMPT_AS: ufo/prompts/examples/{mode}/app_agent_example_as.yaml
 BACKUP_AGENT:
-  VISUAL_MODE: true
-  API_TYPE: openai
-  API_KEY: ${FEATHERLESS_API_KEY}
-  API_BASE: ${FEATHERLESS_API_BASE}
-  API_VERSION: 2025-02-01-preview
-  API_MODEL: Qwen3.8-27B-AEON-ULTIMATE-UNCENSORED
+  VISUAL_MODE: false
+  API_TYPE: gemini
+  API_KEY: ${GEMINI_API_KEY}
+  API_MODEL: gemini-3.5-pro
 EVALUATION_AGENT:
   VISUAL_MODE: false
   REASONING_MODEL: false
-  API_TYPE: openai
-  API_KEY: ${FEATHERLESS_API_KEY}
-  API_BASE: ${FEATHERLESS_API_BASE}
-  API_VERSION: 2025-02-01-preview
-  API_MODEL: Qwen3.8-27B-AEON-ULTIMATE-UNCENSORED
+  API_TYPE: gemini
+  API_KEY: ${GEMINI_API_KEY}
+  API_MODEL: gemini-3.5-pro
 OMNIPARSER:
   ENDPOINT: ''
   BOX_THRESHOLD: 0.02

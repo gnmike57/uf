@@ -147,13 +147,16 @@ async def main(parsed_args: Optional[argparse.Namespace]=None):
         await clients.run_all()
         
         output_str = "Completed"
-        if sessions and sessions[0].results:
-            try:
-                last_res = sessions[0].results[-1].get('result', '')
-                output_str = str(last_res)
-            except Exception:
-                pass
-        res = UfoTaskResult(status="success", task_id=parsed_args.task, output=output_str)
+        if sessions and sessions[0].is_error():
+            res = UfoTaskResult(status="error", task_id=parsed_args.task, error_type="Crash", error_message="Session ended in error state (check output.md or logs for details)", traceback="")
+        else:
+            if sessions and sessions[0].results:
+                try:
+                    last_res = sessions[0].results[-1].get('result', '')
+                    output_str = str(last_res)
+                except Exception:
+                    pass
+            res = UfoTaskResult(status="success", task_id=parsed_args.task, output=output_str)
         log_dir = Path("logs") / parsed_args.task
         log_dir.mkdir(parents=True, exist_ok=True)
         with open(log_dir / "result.json", "w", encoding="utf-8") as f:
@@ -184,6 +187,57 @@ if __name__ == '__main__':
     import asyncio
     try:
         asyncio.run(main())
-    except Exception as global_e:
+    except SystemExit as sys_exit:
+        if sys_exit.code == 0:
+            sys.exit(0)
+        else:
+            global_e = sys_exit
+            logging.getLogger('UFO_Global').critical(f'Unhandled Asyncio Loop Crash: {global_e}', exc_info=True)
+            import traceback
+            import sys
+            from ufo.utils.ipc import UfoTaskResult
+            from pathlib import Path
+            import argparse
+            # Fallback to sys.argv if parsed_args is not available here
+            task_id = "unknown_crash"
+            for i, arg in enumerate(sys.argv):
+                if arg in ('--task', '-t') and i + 1 < len(sys.argv):
+                    task_id = sys.argv[i + 1]
+                    break
+            res = UfoTaskResult(
+                status="error",
+                task_id=task_id,
+                error_type=type(global_e).__name__,
+                error_message=str(global_e),
+                traceback=traceback.format_exc()
+            )
+            log_dir = Path("logs") / task_id
+            log_dir.mkdir(parents=True, exist_ok=True)
+            with open(log_dir / "result.json", "w", encoding="utf-8") as f:
+                f.write(res.model_dump_json())
+            sys.exit(sys_exit.code)
+    except BaseException as global_e:
         logging.getLogger('UFO_Global').critical(f'Unhandled Asyncio Loop Crash: {global_e}', exc_info=True)
+        import traceback
+        import sys
+        from ufo.utils.ipc import UfoTaskResult
+        from pathlib import Path
+        import argparse
+        # Fallback to sys.argv if parsed_args is not available here
+        task_id = "unknown_crash"
+        for i, arg in enumerate(sys.argv):
+            if arg in ('--task', '-t') and i + 1 < len(sys.argv):
+                task_id = sys.argv[i + 1]
+                break
+        res = UfoTaskResult(
+            status="error",
+            task_id=task_id,
+            error_type=type(global_e).__name__,
+            error_message=str(global_e),
+            traceback=traceback.format_exc()
+        )
+        log_dir = Path("logs") / task_id
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with open(log_dir / "result.json", "w", encoding="utf-8") as f:
+            f.write(res.model_dump_json())
         sys.exit(1)

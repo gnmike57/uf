@@ -141,12 +141,12 @@ class Computer:
             error_msg = f'Tool {tool_name} execution timed out after {self._tool_timeout}s'
             self.logger.error(error_msg)
             error_content = [TextContent(type='text', text=error_msg)]
-            return CallToolResult(content=error_content, structured_content=None, data=None, is_error=True)
+            return CallToolResult(content=error_content, structured_content=None, data=None, is_error=True, meta={})
         except Exception as e:
             error_msg = f'Tool {tool_name} execution failed: {str(e)}'
             self.logger.error(error_msg, exc_info=True)
             error_content = [TextContent(type='text', text=error_msg)]
-            return CallToolResult(content=error_content, structured_content=None, data=None, is_error=True)
+            return CallToolResult(content=error_content, structured_content=None, data=None, is_error=True, meta={})
 
     async def run_actions(self, tool_calls: List[MCPToolCall]) -> List[CallToolResult]:
         """
@@ -259,7 +259,7 @@ class Computer:
             if (tool_type is None or tool.tool_type == tool_type) and (namespace is None or tool.namespace == namespace) and (not remove_meta or tool.tool_name not in self._meta_tools):
                 tools.append(tool.tool_info.model_dump())
         content = [TextContent(type='text', text=json.dumps(tools))]
-        tool_result = CallToolResult(content=content, structured_content=None, data=tools, is_error=False)
+        tool_result = CallToolResult(content=content, structured_content=None, data=tools, is_error=False, meta={})
         return tool_result
 
     def command2tool(self, command: Command) -> MCPToolCall:

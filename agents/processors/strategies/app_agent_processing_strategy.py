@@ -947,17 +947,15 @@ class AppActionExecutionStrategy(BaseProcessingStrategy):
                                 from ufo.aip.messages import Result, ResultStatus
                                 success_result = Result(status=ResultStatus.SUCCESS, return_data=fallback_result_msg, namespace='action')
                                 actions_list = self._create_action_info(annotation_dict, action, [success_result])
-                                from ufo.agents.processors.schemas.actions import ListActionCommandInfo
                                 action_info = ListActionCommandInfo(actions_list)
                                 return ProcessingResult(success=True, data={'execution_result': [success_result], 'action_info': action_info, 'selected_control_screenshot_path': context.get_local('clean_screenshot_path', ''), 'control_log': action_info.get_target_info() if action_info else [], 'status': 'CONTINUE'}, phase=ProcessingPhase.ACTION_EXECUTION)
             except Exception as fallback_e:
                 self.logger.warning(f'Visual Coordinate Fallback failed: {str(fallback_e)}')
             from ufo.aip.messages import Result, ResultStatus
-            failed_result = Result(status=ResultStatus.FAILED, return_data=f'Action execution failed: {str(e)}. The UI state might have changed or a popup might be blocking the view. Please observe the new screenshot carefully and formulate a recovery plan.', namespace='action')
+            failed_result = Result(status=ResultStatus.FAILURE, return_data=f'Action execution failed: {str(e)}. The UI state might have changed or a popup might be blocking the view. Please observe the new screenshot carefully and formulate a recovery plan.', namespace='action')
             action_info = None
             try:
                 actions = self._create_action_info(context.get_local('annotation_dict', {}), context.get_local('parsed_response').action if context.get_local('parsed_response') else [], [failed_result])
-                from ufo.agents.processors.schemas.actions import ListActionCommandInfo
                 action_info = ListActionCommandInfo(actions)
             except Exception:
                 pass
