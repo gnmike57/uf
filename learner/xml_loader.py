@@ -2,7 +2,7 @@ from . import basic
 import os
 import logging
 from langchain_community.document_loaders import UnstructuredXMLLoader
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 import defusedxml.ElementTree as ET
 logger = logging.getLogger(__name__)
 
