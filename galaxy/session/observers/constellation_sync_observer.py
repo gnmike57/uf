@@ -111,6 +111,8 @@ class ConstellationModificationSynchronizer(IEventObserver):
             if not task_ids:
                 self.logger.warning("CONSTELLATION_MODIFIED event missing 'on_task_id' field")
                 return
+            if isinstance(task_ids, str):
+                task_ids = [task_ids]
             new_constellation = event.data.get('new_constellation')
             if new_constellation:
                 self._current_constellation = new_constellation

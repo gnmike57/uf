@@ -77,7 +77,7 @@ def simple_constellation():
     # Create simple tasks
     task_a = TaskStar(
         task_id="task_A",
-        task_name="Task A",
+        status="completed",
         instruction="Do A",
         device_type="desktop",
         dependencies=[],
@@ -85,7 +85,7 @@ def simple_constellation():
     
     task_b = TaskStar(
         task_id="task_B",
-        task_name="Task B",
+        status="completed",
         instruction="Do B",
         device_type="desktop",
         dependencies=["task_A"],
@@ -93,7 +93,7 @@ def simple_constellation():
     
     task_c = TaskStar(
         task_id="task_C",
-        task_name="Task C",
+        status="completed",
         instruction="Do C",
         device_type="desktop",
         dependencies=["task_B"],
@@ -165,7 +165,7 @@ class TestBasicIntegration:
             source_id="test_orchestrator",
             timestamp=time.time(),
             task_id="flow_task",
-            task_name="Flow Task",
+            status="completed",
             data={"constellation_id": "flow_constellation"},
         )
         await event_bus.publish_event(task_event)
@@ -252,7 +252,7 @@ class TestRaceConditionPrevention:
                 source_id="orchestrator",
                 timestamp=time.time(),
                 task_id="race_task",
-                task_name="Race Task",
+                status="completed",
                 data={"constellation_id": "race_constellation"},
             )
             await event_bus.publish_event(task_event)
@@ -307,7 +307,7 @@ class TestRaceConditionPrevention:
                 source_id="orchestrator",
                 timestamp=time.time(),
                 task_id=task_id,
-                task_name=task_id,
+                status="completed",
                 data={"constellation_id": "concurrent_constellation"},
             )
             await event_bus.publish_event(event)
@@ -355,7 +355,7 @@ class TestTimeoutScenarios:
             source_id="orchestrator",
             timestamp=time.time(),
             task_id="timeout_task",
-            task_name="Timeout Task",
+            status="completed",
             data={"constellation_id": "timeout_constellation"},
         )
         await event_bus.publish_event(task_event)
@@ -397,7 +397,7 @@ class TestComplexDAGScenarios:
                 source_id="orchestrator",
                 timestamp=time.time(),
                 task_id=task_id,
-                task_name=task_id,
+                status="completed",
                 data={"constellation_id": "sequential_constellation"},
             )
             await event_bus.publish_event(task_event)
@@ -454,7 +454,7 @@ class TestErrorRecoveryIntegration:
             source_id="orchestrator",
             timestamp=time.time(),
             task_id="failed_task",
-            task_name="Failed Task",
+            status="completed",
             data={
                 "constellation_id": "failure_constellation",
                 "error": "Task execution failed",
@@ -511,7 +511,7 @@ class TestPerformanceCharacteristics:
                 source_id="orchestrator",
                 timestamp=time.time(),
                 task_id=f"perf_task_{i}",
-                task_name=f"Performance Task {i}",
+                status="completed",
                 data={"constellation_id": "perf_constellation"},
             )
             await event_bus.publish_event(task_event)
