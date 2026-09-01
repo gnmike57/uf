@@ -92,10 +92,12 @@ def _ensure_window_restored(hwnd: int) -> bool:
     """
     Check target window state and restore if minimized or hidden.
     Calls SW_RESTORE / SW_SHOW, SetForegroundWindow, BringWindowToTop, RedrawWindow with 0.25s repaint pause.
+    Uses Win32 thread-attachment and Alt-key tap to bypass Windows 10/11 foreground restrictions.
     """
     try:
         import win32gui
         import win32con
+        import ctypes
         import time
         if not hwnd or not win32gui.IsWindow(hwnd):
             return False
@@ -106,13 +108,43 @@ def _ensure_window_restored(hwnd: int) -> bool:
             if is_minimized:
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
             win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+
+        user32 = ctypes.windll.user32
+        kernel32 = ctypes.windll.kernel32
+
+        # Allow foreground activation
+        user32.AllowSetForegroundWindow(-1)
+
+        # Thread attachment bypass
+        cur_fore_hwnd = user32.GetForegroundWindow()
+        cur_thread_id = kernel32.GetCurrentThreadId()
+        fore_thread_id = user32.GetWindowThreadProcessId(cur_fore_hwnd, None) if cur_fore_hwnd else 0
+        target_thread_id = user32.GetWindowThreadProcessId(hwnd, None)
+
+        attached_fore = False
+        attached_target = False
+        if fore_thread_id and fore_thread_id != cur_thread_id:
+            attached_fore = bool(user32.AttachThreadInput(fore_thread_id, cur_thread_id, True))
+        if target_thread_id and target_thread_id != cur_thread_id:
+            attached_target = bool(user32.AttachThreadInput(target_thread_id, cur_thread_id, True))
+
+        # Alt key tap trick (clears Windows foreground lock)
+        user32.keybd_event(0x12, 0, 0, 0)
+        user32.keybd_event(0x12, 0, 2, 0)
+
         try:
             win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
-            win32gui.SetForegroundWindow(hwnd)
-            win32gui.BringWindowToTop(hwnd)
             win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
+            win32gui.BringWindowToTop(hwnd)
+            win32gui.SetForegroundWindow(hwnd)
         except Exception:
             pass
+
+        if attached_fore:
+            user32.AttachThreadInput(fore_thread_id, cur_thread_id, False)
+        if attached_target:
+            user32.AttachThreadInput(target_thread_id, cur_thread_id, False)
+
         win32gui.RedrawWindow(hwnd, None, None, win32con.RDW_INVALIDATE | win32con.RDW_UPDATENOW | win32con.RDW_ERASE | win32con.RDW_ALLCHILDREN)
         time.sleep(0.25)
         return True
