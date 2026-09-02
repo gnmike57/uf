@@ -134,6 +134,13 @@ mcp_servers:
     - ufo.client.mcp.local_servers.web_research_mcp_server
     command: C:\ufo\ufo\python_env\python.exe
     description: Web search and URL scraping tools for research.
+  bankfidelity:
+    type: stdio
+    command: C:\bankfidelity\bankfidelity\target\release\dual-core-pdf-pipeline.exe
+    args:
+    - mcp
+    cwd: C:\bankfidelity\bankfidelity
+    description: BankFidelity Native Statement Editor, Precision Balancer & Visual Auditor MCP Server.
 
 HOST_AGENT:
   default:
@@ -157,6 +164,9 @@ HOST_AGENT:
     - name: mcp_fallback_omniparser
       namespace: mcp_fallback_omniparser
       type: local
+    - name: bankfidelity
+      namespace: bankfidelity
+      type: stdio
 
 APP_AGENT:
   default:
@@ -192,3 +202,6 @@ APP_AGENT:
     - name: mcp_fallback_omniparser
       namespace: mcp_fallback_omniparser
       type: local
+    - name: bankfidelity
+      namespace: bankfidelity
+      type: stdio
