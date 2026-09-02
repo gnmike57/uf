@@ -7,7 +7,8 @@ mcp_servers:
     - -m
     - ufo.client.mcp.local_servers.ui_mcp_server
     command: C:\ufo\ufo\python_env\python.exe
-    description: Data collection server that captures screenshots and window information for GUI automation.
+    description: Data collection server that captures screenshots and window information
+      for GUI automation.
   HostUIExecutor:
     type: local
     args:
@@ -61,7 +62,8 @@ mcp_servers:
     - -m
     - ufo.client.mcp.local_servers.code_interpreter_mcp_server
     command: C:\ufo\ufo\python_env\python.exe
-    description: Arbitrary Python Code Execution for PDF/XLSX parsing and Graphic edits.
+    description: Arbitrary Python Code Execution for PDF/XLSX parsing and Graphic
+      edits.
   mcp_rdp_controller:
     type: local
     args:
@@ -140,8 +142,8 @@ mcp_servers:
     args:
     - mcp
     cwd: C:\bankfidelity\bankfidelity
-    description: BankFidelity Native Statement Editor, Precision Balancer & Visual Auditor MCP Server.
-
+    description: BankFidelity Native Statement Editor, Precision Balancer & Visual
+      Auditor MCP Server.
 HOST_AGENT:
   default:
     data_collection:
@@ -167,7 +169,6 @@ HOST_AGENT:
     - name: bankfidelity
       namespace: bankfidelity
       type: stdio
-
 APP_AGENT:
   default:
     data_collection:
