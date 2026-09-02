@@ -1,5 +1,7 @@
 @echo off
 setlocal
+title UFO Visual Diagnostic - Eyes Gauntlet
+chcp 65001 >nul
 echo ========================================
 echo   UFO Visual Diagnostic - Eyes Gauntlet
 echo ========================================
@@ -30,3 +32,4 @@ echo Report: %UFO_ROOT%\logs\visual_diagnostic\diagnostic_report.md
 echo Screenshots: %UFO_ROOT%\logs\visual_diagnostic\
 echo.
 pause
+exit /b %EXIT_CODE%

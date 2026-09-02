@@ -1,27 +1,34 @@
 @echo off
 setlocal EnableDelayedExpansion
-title UNIVERSAL MATRIX STRESS TEST
+title BANKFIDELITY // CROSS-BANK TRANSFER MATRIX STRESS TEST
 color 0B
 chcp 65001 >nul
 
+set "BF_DIR=C:\bankfidelity\bankfidelity"
+
+cls
 echo ==============================================================================
-echo                         E2E MATRIX STRESS TEST
+echo                   CROSS-BANK TRANSFER MATRIX STRESS TEST
+echo ==============================================================================
+echo This test executes pairwise statement transfers across all Australian bank formats:
+echo   • CommBank (SmartAccess)
+echo   • Bankwest
+echo   • Westpac (Choice)
+echo   • Macquarie
+echo   • ING (Orange)
+echo   • ANZ Plus
+echo.
+echo Utilizes Reducto / Gemini AI layout-agnostic parsing + PyMuPDF Pro / Typst engines.
+echo Audit logs and transformed output PDFs will be written to audit/transfer_tests/
 echo ==============================================================================
 echo.
-echo This terminal will execute the massive matrix stress test across UFO and 
-echo BankFidelity engines. It will consume real API tokens (Reducto, Gemini) 
-echo and generate hundreds of screenshots to your Desktop.
-echo.
-echo Press ANY KEY to authenticate screenshots and begin the execution, or 
-echo close this window to abort.
-echo ==============================================================================
 pause
 
-cd /d "C:\ufo\ufo"
-python scripts\e2e_matrix_stress_test.py
+cd /d "%BF_DIR%"
+cargo test --test au_transfer_stress -- --nocapture --ignored
 
 echo.
 echo ==============================================================================
-echo Matrix execution complete. Review the report on your Desktop.
+echo Matrix Stress Test Execution Complete. Check audit/transfer_tests/ for JSON reports.
 echo ==============================================================================
 pause

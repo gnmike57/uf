@@ -1,5 +1,7 @@
 @echo off
 setlocal
+title UFO Core UI Mechanics Sandbox Test
+chcp 65001 >nul
 echo ========================================
 echo     UFO Core UI Mechanics Sandbox Test
 echo ========================================
@@ -22,3 +24,4 @@ if %EXIT_CODE% EQU 0 (
 )
 
 pause
+exit /b %EXIT_CODE%
